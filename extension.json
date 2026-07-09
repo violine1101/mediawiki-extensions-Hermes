@@ -1,0 +1,52 @@
+{
+	"name": "Hermes",
+	"author": [
+		"violine1101"
+	],
+	"url": "https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:Hermes",
+	"descriptionmsg": "hermes-desc",
+	"license-name": "GPL-2.0-or-later",
+	"type": "other",
+	"requires": {
+		"MediaWiki": ">= 1.45.0"
+	},
+	"AutoloadNamespaces": {
+		"MediaWiki\\Extension\\Hermes\\": "src/"
+	},
+	"config": {
+		"HermesEnableFoo": {
+			"description": "Enable the Foo feature.",
+			"value": true
+		},
+		"HermesVandalizeEachPage": {
+			"description": "Write 'Hermes was here' on each page",
+			"value": false
+		}
+	},
+	"HookHandlers": {
+		"HermesHooks": {
+			"class": "MediaWiki\\Extension\\Hermes\\Hooks"
+		}
+	},
+	"Hooks": {
+		"BeforePageDisplay": "HermesHooks"
+	},
+	"MessagesDirs": {
+		"Hermes": [
+			"i18n"
+		]
+	},
+	"ResourceModules": {
+		"ext.hermes": {
+			"localBasePath": "resources/ext.hermes",
+			"remoteExtPath": "Hermes/resources/ext.hermes",
+			"dependencies": [],
+			"styles": [],
+			"packageFiles": [
+				"init.js"
+			],
+			"messages": []
+		}
+	},
+	"manifest_version": 2
+}
