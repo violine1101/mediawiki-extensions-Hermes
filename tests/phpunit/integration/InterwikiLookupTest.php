@@ -9,7 +9,7 @@ use MediaWikiIntegrationTestCase;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\Hermes\InterwikiLookup
+ * @covers \MediaWiki\Extension\Hermes\Decorators\InterwikiLookup
  */
 class InterwikiLookupTest extends MediaWikiIntegrationTestCase {
 

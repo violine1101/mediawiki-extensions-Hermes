@@ -7,7 +7,7 @@ use Wikimedia\Rdbms\IDatabase;
 
 class Hermes {
 
-    private const VIRTUAL_DOMAIN = 'virtual-hermes';
+	private const VIRTUAL_DOMAIN = 'virtual-hermes';
 
 	public static function getDB( int $mode = DB_REPLICA ): IDatabase {
 		$lbFactory = MediaWikiServices::getInstance()->getDBLoadBalancerFactory();

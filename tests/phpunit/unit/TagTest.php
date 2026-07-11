@@ -2,7 +2,7 @@
 
 namespace MediaWiki\Extension\Hermes\Tests;
 
-use MediaWiki\Extension\Hermes\InvalidTagNameException;
+use MediaWiki\Extension\Hermes\Exceptions\InvalidTagNameException;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWikiUnitTestCase;
 

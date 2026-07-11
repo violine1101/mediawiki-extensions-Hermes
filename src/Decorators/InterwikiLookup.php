@@ -5,7 +5,6 @@ namespace MediaWiki\Extension\Hermes\Decorators;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Interwiki\Interwiki;
 use MediaWiki\Interwiki\InterwikiLookup as IInterwikiLookup;
-use MediaWiki\MediaWikiServices;
 
 /**
  * Decorates the core InterwikiLookup service, resolving prefixes registered via

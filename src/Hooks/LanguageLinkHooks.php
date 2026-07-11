@@ -50,7 +50,7 @@ class LanguageLinkHooks implements LanguageLinksHook, MediaWikiServicesHook {
 		$services->addServiceManipulator(
 			'InterwikiLookup',
 			static function ( IInterwikiLookup $service, MediaWikiServices $services ) {
-				return new InterwikiLookup( $service, $services->getMainConfig()->get( 'Hermes' ) );
+				return new InterwikiLookup( $service, $services->getMainConfig()->get( 'HermesWikis' ) );
 			}
 		);
 	}
