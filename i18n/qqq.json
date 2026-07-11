@@ -4,5 +4,8 @@
 			"violine1101"
 		]
 	},
-	"hermes-desc": "{{desc|name=Hermes|url=https://www.mediawiki.org/wiki/Extension:Hermes}}"
+	"hermes-desc": "{{desc|name=Hermes|url=https://www.mediawiki.org/wiki/Extension:Hermes}}",
+	"hermes-duplicate-call": "Warning shown on the rendered page when the <code>#hermes</code> parser function is used more than once on the same page. Refers to the wikitext parser function tag name, which is not translated.",
+	"hermes-duplicate-category": "Category added to pages with duplicate <code>#hermes</code> parser function calls.",
+	"hermes-invalid-tag-name": "Error shown when a tag passed to the <code>#hermes</code> parser function contains disallowed characters.\n* $1 - the invalid tag name, as entered by the user (not translated)"
 }

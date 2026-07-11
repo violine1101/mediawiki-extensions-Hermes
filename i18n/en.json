@@ -4,5 +4,8 @@
 			"violine1101"
 		]
 	},
-	"hermes-desc": "A simple translation and auto-interwiki extension"
+	"hermes-desc": "Simple and leightweight translation projects and interlanguage links",
+	"hermes-duplicate-call": "The <code>#hermes</code> parser function was used multiple times on this page; only the last call takes effect.",
+	"hermes-duplicate-category": "Pages with duplicate Hermes calls",
+	"hermes-invalid-tag-name": "Tag name <code>$1</code> is not valid. Allowed characters are ASCII digits, letters, and the special characters <code>_</code>, <code>/</code>, <code>.</code>, and <code>:</code>."
 }

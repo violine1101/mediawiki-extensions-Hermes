@@ -17,13 +17,12 @@ class PageDeleteHookTest extends MediaWikiIntegrationTestCase {
 		$this->editPage( $page, '{{#hermes:some_tag}}' );
 
 		$pageInfo = PageInfo::fromLocalPage( $page->getTitle() );
-		$store = new TagStore();
 
 		// sanity check it was written by LinksUpdateComplete
-		$this->assertNotEmpty( $store->getLinksForPage( $pageInfo ) );
+		$this->assertNotEmpty( TagStore::getLinksForPage( $pageInfo ) );
 
 		$this->deletePage( $page, 'test deletion', $this->getTestSysop()->getUser() );
 
-		$this->assertSame( [], $store->getLinksForPage( $pageInfo ) );
+		$this->assertSame( [], TagStore::getLinksForPage( $pageInfo ) );
 	}
 }

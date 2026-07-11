@@ -7,11 +7,15 @@
 
 namespace MediaWiki\Extension\Hermes\Hooks;
 
+use MediaWiki\Extension\Hermes\InvalidTagNameException;
 use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Hook\LinksUpdateCompleteHook;
 use MediaWiki\Hook\ParserFirstCallInitHook;
+use MediaWiki\Html\Html;
 use MediaWiki\Logging\ManualLogEntry;
+use MediaWiki\MediaWikiServices;
 use MediaWiki\Page\Hook\PageDeleteCompleteHook;
 use MediaWiki\Page\ProperPageIdentity;
 use MediaWiki\Parser\Parser;
@@ -27,41 +31,45 @@ class ParserFuncHooks implements LinksUpdateCompleteHook, PageDeleteCompleteHook
 	}
 
 	/**
-	 * {{#hermes:tag1|tag2|...}}
+	 * {{#hermes:tag1|tag2|tag3#section|...}}
 	 */
 	public static function renderHermes( Parser $parser, string ...$args ): string {
-		$tags = self::parseTagList( $args );
-		$parser->getOutput()->setPageProperty( 'hermes_tags', implode( '|', $tags ) );
-		return '';
+		$output = '';
+		
+		if ( $parser->getOutput()->getPageProperty( 'hermes_tags' ) !== null ) {
+			$parser->getOutput()->addCategory( 'Pages with duplicate Hermes calls' );
+			$output = Html::warningBox( wfMessage( 'hermes-duplicate-call' )->parse() );
+		}
+
+		try {
+			$json = json_encode( Tag::fromArgs( $args ) );
+		} catch ( InvalidTagNameException $e ) {
+			return Html::errorBox( wfMessage( 'hermes-invalid-tag-name', $e->tagName )->parse() );
+		}
+
+		$parser->getOutput()->setPageProperty( 'hermes_tags', $json );
+
+		$debug = MediaWikiServices::getInstance()->getMainConfig()->get( 'HermesDebug' );
+		if ( $debug ) {
+			$output .= Html::noticeBox( '#hermes: ' . htmlspecialchars( $json ) );
+		}
+
+		return $output;
 	}
 
 	/** @inheritDoc */
 	public function onLinksUpdateComplete( $linksUpdate, $ticket ) {
-		$page = PageInfo::fromLocalPage( $linksUpdate->getTitle() );
-		$store = new TagStore();
-
 		$output = $linksUpdate->getParserOutput();
-		$tagString = $output->getPageProperty( 'hermes_tags' );
-		if ( $tagString === null || $tagString === '' ) {
+		$json = $output->getPageProperty( 'hermes_tags' );
+		if ( $json === null ) {
 			return true;
 		}
-		$tags = explode( '|', $tagString );
 
-		$store->setTagsForPage( $page, $tags );
+		$page = PageInfo::fromLocalPage( $linksUpdate->getTitle() );
+		$tags = array_map( Tag::fromJson( ... ), json_decode( $json ) );
+		TagStore::setTagsForPage( $page, $tags );
+
 		return true;
-	}
-
-	private static function parseTagList( array $rawArgs ): array {
-		$tags = [];
-		foreach ( $rawArgs as $arg ) {
-			// TODO: support for {{#hermes:tag1|tag2=#section|tag3}}
-			$tag = trim( $arg );
-			// TODO: check for legal/illegal characters, and throw errors if necessary
-			if ( $tag !== '' ) {
-				$tags[] = $tag;
-			}
-		}
-		return $tags;
 	}
 
 	/** @inheritDoc */
@@ -75,8 +83,8 @@ class ParserFuncHooks implements LinksUpdateCompleteHook, PageDeleteCompleteHook
 		int $archivedRevisionCount
 	) {
 		$page = PageInfo::fromLocalPage( $page );
-		$store = new TagStore();
-		$store->deleteTagsForPage( $page );
+		TagStore::deleteTagsForPage( $page );
+
 		return true;
 	}
 }

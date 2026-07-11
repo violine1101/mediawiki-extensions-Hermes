@@ -17,7 +17,7 @@ class TagStoreTest extends MediaWikiIntegrationTestCase {
 		$pageInfo = PageInfo::fromLocalPage( $page->getTitle() );
 
 		$store = new TagStore();
-		$store->setTagsForPage( $pageInfo, [ 'tag_a', 'tag_b' ] );
+		TagStore::setTagsForPage( $pageInfo, [ 'tag_a', 'tag_b' ] );
 
 		$interwikis = $store->getLinksForPage( $pageInfo );
 		// TODO: assert that the return value is correct
@@ -28,11 +28,10 @@ class TagStoreTest extends MediaWikiIntegrationTestCase {
 		$page = $this->getExistingTestPage( 'DeleteTestPage' );
 		$pageInfo = PageInfo::fromLocalPage( $page->getTitle() );
 
-		$store = new TagStore();
-		$store->setTagsForPage( $pageInfo, [ 'tag_c' ] );
-		$store->deleteTagsForPage( $pageInfo );
+		TagStore::setTagsForPage( $pageInfo, [ 'tag_c' ] );
+		TagStore::deleteTagsForPage( $pageInfo );
 
-		$interwikis = $store->getLinksForPage( $pageInfo );
+		$interwikis = TagStore::getLinksForPage( $pageInfo );
 		$this->assertSame( [], $interwikis );
 	}
 }

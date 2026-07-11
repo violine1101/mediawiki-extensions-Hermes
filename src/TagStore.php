@@ -10,7 +10,7 @@ class TagStore {
 	private const VIRTUAL_DOMAIN = 'virtual-hermes';
 	private const TABLE_NAME = 'hermes_tags';
 
-	private function getDB( int $mode = DB_REPLICA ): IDatabase {
+	private static function getDB( int $mode = DB_REPLICA ): IDatabase {
 		$lbFactory = MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
 
 		return $mode === DB_PRIMARY
@@ -21,8 +21,8 @@ class TagStore {
 	/**
 	 * Remove all tags for a page (e.g. when the page is deleted).
 	 */
-	public function deleteTagsForPage( PageInfo $page ): void {
-		$dbw = $this->getDB( DB_PRIMARY );
+	public static function deleteTagsForPage( PageInfo $page ): void {
+		$dbw = self::getDB( DB_PRIMARY );
 		$dbw->delete(
 			self::TABLE_NAME,
 			[ 'ht_wiki' => $page->wiki, 'ht_page_id' => $page->id ],
@@ -36,8 +36,8 @@ class TagStore {
 	 * @param PageInfo $page
 	 * @param Tag[] $tags Ordered list of tags
 	 */
-	public function setTagsForPage( PageInfo $page, array $tags ): void {
-		$dbw = $this->getDB( DB_PRIMARY );
+	public static function setTagsForPage( PageInfo $page, array $tags ): void {
+		$dbw = self::getDB( DB_PRIMARY );
 		$dbw->startAtomic( __METHOD__ );
 
 		// Clear old tags for this page first - order/tag set may have changed.
@@ -49,15 +49,13 @@ class TagStore {
 
 		$rows = [];
 		foreach ( array_values( $tags ) as $order => $tag ) {
-			if ( $tag === '' ) {
-				continue;
-			}
 			$rows[] = [
 				'ht_wiki' => $page->wiki,
 				'ht_language' => $page->language,
 				'ht_page_id' => $page->id,
 				'ht_page_title' => $page->title,
-				'ht_tag' => $tag,
+				'ht_section' => $tag->section,
+				'ht_tag' => $tag->name,
 				'ht_order' => $order,
 			];
 		}
@@ -74,8 +72,8 @@ class TagStore {
 	 *
 	 * @return Tag[] Array of tags associated with the page, in order.
 	 */
-	private function getTagsForPage( PageInfo $page ): array {
-		$dbr = $this->getDB();
+	private static function getTagsForPage( PageInfo $page ): array {
+		$dbr = self::getDB();
 		$res = $dbr->select(
 			self::TABLE_NAME,
 			[ 'ht_tag', 'ht_order' ],
@@ -97,24 +95,39 @@ class TagStore {
 	 * @param Tag[] $tags Ordered tag fallback chain
 	 * @return TagLink[] An array of links to pages with the given tags. Key is the language.
 	 */
-	private function getLinksForTags( array $tags ): array {
-		$dbr = $this->getDB();
+	private static function getLinksForTags( array $tags ): array {
+		if ( !$tags ) {
+			return [];
+		}
 
+		$dbr = self::getDB();
+
+		// Get all matching pages, sorted by where the tag is in the order
+		$rows = $dbr->select(
+			self::TABLE_NAME,
+			'*',
+			[ 'ht_tag' => $tags ],
+			__METHOD__,
+			[ 'ORDER BY' => 'ht_order ASC' ]
+		);
+
+		// Convert rows, and sort them by tag
+		$links = [];
+		foreach ( $rows as $row ) {
+			$link = TagLink::fromRow( $row );
+			$links[ $link->tag->name ][] = $link;
+		}
+
+		// Walk tags in fallback order so earlier tags take priority; within a
+		// tag, rows are already ht_order-ascending, so the first row seen for
+		// a language is the one with the lowest ht_order.
 		$pages = [];
 		foreach ( $tags as $tag ) {
-			$rows = $dbr->select(
-				self::TABLE_NAME,
-				// [ 'ht_wiki', 'ht_language', 'ht_page_id', 'ht_page_title', 'ht_section', 'ht_tag', 'ht_order' ],
-				'*',
-				[ 'ht_tag' => $tag ],
-				__METHOD__
-			);
-			foreach ( $rows as $row ) {
-				$tagLink = TagLink::fromRow( $row );
-				$lang = $tagLink->page->language;
+			foreach ( $links[ $tag ] ?? [] as $link ) {
+				$lang = $link->page->language;
 
 				if ( !isset( $pages[ $lang ] ) ) {
-					$pages[ $lang ] = $tagLink;
+					$pages[ $lang ] = $link;
 				}
 			}
 		}
@@ -128,9 +141,9 @@ class TagStore {
 	 * @param PageInfo $page The page to get the links for
 	 * @return TagLink[] An array of links to pages with the given tags, excluding any self-link.
 	 */
-	public function getLinksForPage( PageInfo $page ): array {
-		$tags = $this->getTagsForPage( $page );
-		$links = $this->getLinksForTags( $tags );
+	public static function getLinksForPage( PageInfo $page ): array {
+		$tags = self::getTagsForPage( $page );
+		$links = self::getLinksForTags( $tags );
 
 		unset( $links[ $page->language ] );
 

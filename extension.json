@@ -14,12 +14,8 @@
 		"MediaWiki\\Extension\\Hermes\\": "src/"
 	},
 	"config": {
-		"HermesEnableFoo": {
-			"description": "Enable the Foo feature.",
-			"value": true
-		},
-		"VandalizeEachPage": {
-			"description": "Write 'Hermes was here' on each page",
+		"HermesDebug": {
+			"description": "Enable Hermes debug features.",
 			"value": false
 		}
 	},
