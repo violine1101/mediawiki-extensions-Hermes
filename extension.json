@@ -24,15 +24,17 @@
 		}
 	},
 	"Hooks": {
-		"BeforePageDisplay": "main",
-		"LinksUpdateComplete": "main",
-		"LoadExtensionSchemaUpdates": "main",
-		"PageDeleteComplete": "main",
-		"ParserFirstCallInit": "main"
+		"LoadExtensionSchemaUpdates": "init",
+		"LinksUpdateComplete": "parserfunc",
+		"PageDeleteComplete": "parserfunc",
+		"ParserFirstCallInit": "parserfunc"
 	},
 	"HookHandlers": {
-		"main": {
-			"class": "MediaWiki\\Extension\\Hermes\\Hooks"
+		"init": {
+			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\InitHooks"
+		},
+		"parserfunc": {
+			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\ParserFuncHooks"
 		}
 	},
 	"ExtensionMessagesFiles": {

@@ -1,22 +1,19 @@
-This is a blank extension template. It doesn't really do anything on its own.
-It is intended to provide a boiler template for an actual MediaWiki extension.
+# Hermes MediaWiki extension
 
-If you are checking this out from Git and intend to use it, you may use the
-following commands to make a clean directory of just this template without the
-Git meta-data and other examples.
+This is a lightweight and simple extension that automates the MediaWiki interwiki system and adds
+support for translation projects.
 
-	cd extensions
-	git clone https://gerrit.wikimedia.org/r/mediawiki/extensions/BoilerPlate.git
-	cp -r BoilerPlate ./MyExtension
-	rm -rf ./MyExtension/.git
+Unlike [Extension:Translate](https://www.mediawiki.org/wiki/Extension:Translate), this extension
+does not assume that translations match with the original exactly and does not include any in-wiki
+translation features.
 
-This automates the recommended code checkers for PHP and JavaScript code in Wikimedia projects
-(see https://www.mediawiki.org/wiki/Continuous_integration/Entry_points).
-To take advantage of this automation.
+Similarly, while Wikipedia uses [Wikibase](https://www.mediawiki.org/wiki/Wikibase) for automating
+interwikis, using Wikibase is overkill for smaller wiki families.
 
-1. install nodejs, npm, and PHP composer
-2. change to the extension's directory
-3. `npm install`
-4. `composer install`
+## Design document
+The original design document for this extension can be found at `DESIGN.md`.
 
-Once set up, running `npm test` and `composer test` will run automated code checks.
+## Name
+In Ancient Greek mythology, [Hermes](https://en.wikipedia.org/wiki/Hermes) is the god of travelers,
+language, and messaging (among others). This extension aims to bridge different languages and
+features messaging between different wikis using shared data.
