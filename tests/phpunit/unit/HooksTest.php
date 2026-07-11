@@ -14,7 +14,7 @@ use MediaWikiUnitTestCase;
 class HooksTest extends MediaWikiUnitTestCase {
 	public function testOnBeforePageDisplayVandalizeIsTrue() {
 		$config = new HashConfig( [
-			'HermesVandalizeEachPage' => true
+			'VandalizeEachPage' => true
 		] );
 		$outputPageMock = $this->getMockBuilder( OutputPage::class )
 			->disableOriginalConstructor()
@@ -38,7 +38,7 @@ class HooksTest extends MediaWikiUnitTestCase {
 
 	public function testOnBeforePageDisplayVandalizeFalse() {
 		$config = new HashConfig( [
-			'HermesVandalizeEachPage' => false
+			'VandalizeEachPage' => false
 		] );
 		$outputPageMock = $this->getMockBuilder( OutputPage::class )
 			->disableOriginalConstructor()

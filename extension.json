@@ -18,24 +18,34 @@
 			"description": "Enable the Foo feature.",
 			"value": true
 		},
-		"HermesVandalizeEachPage": {
+		"VandalizeEachPage": {
 			"description": "Write 'Hermes was here' on each page",
 			"value": false
 		}
 	},
+	"Hooks": {
+		"BeforePageDisplay": "main",
+		"LinksUpdateComplete": "main",
+		"LoadExtensionSchemaUpdates": "main",
+		"PageDeleteComplete": "main",
+		"ParserFirstCallInit": "main"
+	},
 	"HookHandlers": {
-		"HermesHooks": {
+		"main": {
 			"class": "MediaWiki\\Extension\\Hermes\\Hooks"
 		}
 	},
-	"Hooks": {
-		"BeforePageDisplay": "HermesHooks"
+	"ExtensionMessagesFiles": {
+		"HermesMagic": "Hermes.magic.php"
 	},
 	"MessagesDirs": {
 		"Hermes": [
 			"i18n"
 		]
 	},
+	"DatabaseVirtualDomains": [
+		"virtual-hermes"
+	],
 	"ResourceModules": {
 		"ext.hermes": {
 			"localBasePath": "resources/ext.hermes",
