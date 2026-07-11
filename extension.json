@@ -17,13 +17,20 @@
 		"HermesDebug": {
 			"description": "Enable Hermes debug features.",
 			"value": false
+		},
+		"HermesWikis": {
+			"description": "Map of wiki ID => URL template (with \"$1\" as the page title placeholder) for every wiki in the Hermes deployment.",
+			"value": {}
 		}
 	},
 	"Hooks": {
 		"LoadExtensionSchemaUpdates": "init",
+		"UnitTestsAfterDatabaseSetup": "init",
 		"LinksUpdateComplete": "parserfunc",
 		"PageDeleteComplete": "parserfunc",
-		"ParserFirstCallInit": "parserfunc"
+		"ParserFirstCallInit": "parserfunc",
+		"LanguageLinks": "languagelinks",
+		"MediaWikiServices": "languagelinks"
 	},
 	"HookHandlers": {
 		"init": {
@@ -31,6 +38,9 @@
 		},
 		"parserfunc": {
 			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\ParserFuncHooks"
+		},
+		"languagelinks": {
+			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\LanguageLinkHooks"
 		}
 	},
 	"ExtensionMessagesFiles": {

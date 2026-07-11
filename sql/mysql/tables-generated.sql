@@ -16,3 +16,11 @@ CREATE TABLE /*_*/hermes_tags (
   UNIQUE INDEX ht_wiki_page_tag (ht_wiki, ht_page_id, ht_tag),
   PRIMARY KEY(ht_id)
 ) /*$wgDBTableOptions*/;
+
+
+CREATE TABLE /*_*/hermes_languages (
+  hl_language VARBINARY(35) NOT NULL,
+  hl_wiki VARBINARY(64) NOT NULL,
+  INDEX hl_wiki (hl_wiki),
+  PRIMARY KEY(hl_language)
+) /*$wgDBTableOptions*/;

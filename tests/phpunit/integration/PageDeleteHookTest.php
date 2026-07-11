@@ -2,9 +2,11 @@
 
 namespace MediaWiki\Extension\Hermes\Tests;
 
+use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Extension\Hermes\TagStore;
+use MediaWiki\WikiMap\WikiMap;
 use MediaWikiIntegrationTestCase;
 
 /**
@@ -12,6 +14,11 @@ use MediaWikiIntegrationTestCase;
  * @covers \MediaWiki\Extension\Hermes\Hooks\ParserFuncHooks
  */
 class PageDeleteHookTest extends MediaWikiIntegrationTestCase {
+
+	protected function setUp(): void {
+		parent::setUp();
+		LanguageStore::setLanguage( WikiMap::getCurrentWikiId(), 'en' );
+	}
 
 	public function testTagsRemovedOnPageDelete() {
 		$page = $this->getExistingTestPage( 'DeleteHookTest' );

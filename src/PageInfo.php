@@ -21,10 +21,15 @@ class PageInfo {
 		$self->wiki = WikiMap::getCurrentWikiId();
 		$title->assertWiki( PageReference::LOCAL );
 
+		// TODO: This should depend on namespace (or start of base title) later
+		$language = LanguageStore::getLanguageForWiki( $self->wiki );
+		if ( $language === null ) {
+			throw new \RuntimeException( "Wiki \"{$self->wiki}\" is not registered in hermes_languages." );
+		}
+
 		$self->id = $title->getArticleID();
 		$self->title = $title->getPrefixedDBkey();
-		// TODO: This should depend on namespace (or start of base title) later
-		$self->language = $title->getPageLanguage()->getCode();
+		$self->language = $language;
 
 		return $self;
 	}

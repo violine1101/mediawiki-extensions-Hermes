@@ -1,6 +1,6 @@
 <?php
 
-namespace MediaWiki\Extension\Hermes;
+namespace MediaWiki\Extension\Hermes\Exceptions;
 
 use InvalidArgumentException;
 

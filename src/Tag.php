@@ -2,6 +2,8 @@
 
 namespace MediaWiki\Extension\Hermes;
 
+use MediaWiki\Extension\Hermes\Exceptions\InvalidTagNameException;
+
 class Tag {
 
 	public string $name;
@@ -38,7 +40,7 @@ class Tag {
 	 *
 	 * @param string $arg An argument passed to the {{#hermes:}} function.
 	 * @return Tag The tag.
-	 * @throws InvalidArgumentException If the argument is not a valid tag.
+	 * @throws InvalidTagNameException If the argument is not a valid tag.
 	 */
 	public static function fromArg( string $arg ): Tag {
 		$arg = trim( $arg );

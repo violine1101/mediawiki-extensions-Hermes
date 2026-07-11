@@ -1,13 +1,8 @@
 <?php
-/**
- * @license GPL-2.0-or-later
- *
- * @file
- */
 
 namespace MediaWiki\Extension\Hermes\Hooks;
 
-use MediaWiki\Extension\Hermes\InvalidTagNameException;
+use MediaWiki\Extension\Hermes\Exceptions\InvalidTagNameException;
 use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Extension\Hermes\TagStore;
@@ -35,7 +30,7 @@ class ParserFuncHooks implements LinksUpdateCompleteHook, PageDeleteCompleteHook
 	 */
 	public static function renderHermes( Parser $parser, string ...$args ): string {
 		$output = '';
-		
+
 		if ( $parser->getOutput()->getPageProperty( 'hermes_tags' ) !== null ) {
 			$parser->getOutput()->addCategory( 'Pages with duplicate Hermes calls' );
 			$output = Html::warningBox( wfMessage( 'hermes-duplicate-call' )->parse() );

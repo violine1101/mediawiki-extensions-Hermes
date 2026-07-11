@@ -19,3 +19,12 @@ CREATE INDEX ht_tag_lang ON hermes_tags (ht_tag, ht_language);
 CREATE INDEX ht_wiki_page ON hermes_tags (ht_wiki, ht_page_id);
 
 CREATE UNIQUE INDEX ht_wiki_page_tag ON hermes_tags (ht_wiki, ht_page_id, ht_tag);
+
+
+CREATE TABLE hermes_languages (
+  hl_language TEXT NOT NULL,
+  hl_wiki TEXT NOT NULL,
+  PRIMARY KEY(hl_language)
+);
+
+CREATE INDEX hl_wiki ON hermes_languages (hl_wiki);

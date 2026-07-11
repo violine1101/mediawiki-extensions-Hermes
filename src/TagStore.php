@@ -2,27 +2,15 @@
 
 namespace MediaWiki\Extension\Hermes;
 
-use MediaWiki\MediaWikiServices;
-use Wikimedia\Rdbms\IDatabase;
-
 class TagStore {
 
-	private const VIRTUAL_DOMAIN = 'virtual-hermes';
 	private const TABLE_NAME = 'hermes_tags';
-
-	private static function getDB( int $mode = DB_REPLICA ): IDatabase {
-		$lbFactory = MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
-
-		return $mode === DB_PRIMARY
-			? $lbFactory->getPrimaryDatabase( self::VIRTUAL_DOMAIN )
-			: $lbFactory->getReplicaDatabase( self::VIRTUAL_DOMAIN );
-	}
 
 	/**
 	 * Remove all tags for a page (e.g. when the page is deleted).
 	 */
 	public static function deleteTagsForPage( PageInfo $page ): void {
-		$dbw = self::getDB( DB_PRIMARY );
+		$dbw = Hermes::getDB( DB_PRIMARY );
 		$dbw->delete(
 			self::TABLE_NAME,
 			[ 'ht_wiki' => $page->wiki, 'ht_page_id' => $page->id ],
@@ -37,7 +25,7 @@ class TagStore {
 	 * @param Tag[] $tags Ordered list of tags
 	 */
 	public static function setTagsForPage( PageInfo $page, array $tags ): void {
-		$dbw = self::getDB( DB_PRIMARY );
+		$dbw = Hermes::getDB( DB_PRIMARY );
 		$dbw->startAtomic( __METHOD__ );
 
 		// Clear old tags for this page first - order/tag set may have changed.
@@ -73,7 +61,7 @@ class TagStore {
 	 * @return Tag[] Array of tags associated with the page, in order.
 	 */
 	private static function getTagsForPage( PageInfo $page ): array {
-		$dbr = self::getDB();
+		$dbr = Hermes::getDB();
 		$res = $dbr->select(
 			self::TABLE_NAME,
 			[ 'ht_tag', 'ht_order' ],
@@ -100,7 +88,7 @@ class TagStore {
 			return [];
 		}
 
-		$dbr = self::getDB();
+		$dbr = Hermes::getDB();
 
 		// Get all matching pages, sorted by where the tag is in the order
 		$rows = $dbr->select(

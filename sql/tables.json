@@ -17,5 +17,16 @@
 			{ "name": "ht_wiki_page_tag", "columns": [ "ht_wiki", "ht_page_id", "ht_tag" ], "unique": true }
 		],
 		"pk": [ "ht_id" ]
+	},
+	{
+		"name": "hermes_languages",
+		"columns": [
+			{ "name": "hl_language", "type": "binary", "options": { "length": 35, "notnull": true } },
+			{ "name": "hl_wiki", "type": "binary", "options": { "length": 64, "notnull": true } }
+		],
+		"indexes": [
+			{ "name": "hl_wiki", "columns": [ "hl_wiki" ], "unique": false }
+		],
+		"pk": [ "hl_language" ]
 	}
 ]
