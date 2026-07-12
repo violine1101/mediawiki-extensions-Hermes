@@ -1,0 +1,11 @@
+- Proper links: e.g. on `!xx:` translation project pages, `[[foo]]` should turn into `[[!xx:foo]]` and `[[!:bar]]` should turn into `[[bar]]`
+  - The current hijacking of interwiki links should also use `parseTitle` for PageInfos from `fromRow`.
+- Links should link to the main article if the linked page exist in the translation project, but does outside (and offer a link to translate)
+- Proper link display in categories (might be solved together with the two points above)
+- Restrict search to current language / translation project
+- Make logo (+ sidebar) link to pages in the project language, if they exist
+- Special pages for managing tags and languages
+- Handle conflicts (multiple pages on the same wiki/translation project with the same key in the same order) - example in dev environment: hermes_tag `golem`, Esperanto (arbitrarily resolves correctly currently).
+- Fix interwiki links to translation projects, e.g. `[[:es:Golem]]` currently links to the English page.
+- Implement section interwikis correctly - also rethink order + section
+- Normalize section values: spaces -> _ (basically, valid HTML anchors?)

@@ -17,3 +17,8 @@ The original design document for this extension can be found at `DESIGN.md`.
 In Ancient Greek mythology, [Hermes](https://en.wikipedia.org/wiki/Hermes) is the god of travelers,
 language, and messaging (among others). This extension aims to bridge different languages and
 features messaging between different wikis using shared data.
+
+## AI disclosure
+This extension is currently still in the prototyping phase. I'm using Claude for automating some tasks; in particular, most tests are fully auto-generated.
+
+For the rest of the codebase: Some parts I've written myself, and those that Claude generated I've reviewed, rewritten, and/or refactored to ensure that the code is high quality and does in fact do what it should.
