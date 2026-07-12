@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\Hermes\Hooks;
 
+use MediaWiki\Extension\Hermes\Exceptions\DuplicateTagException;
 use MediaWiki\Extension\Hermes\Exceptions\InvalidTagNameException;
 use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\Tag;
@@ -40,6 +41,8 @@ class ParserFuncHooks implements LinksUpdateCompleteHook, PageDeleteCompleteHook
 			$json = json_encode( Tag::fromArgs( $args ) );
 		} catch ( InvalidTagNameException $e ) {
 			return Html::errorBox( wfMessage( 'hermes-invalid-tag-name', $e->tagName )->parse() );
+		} catch ( DuplicateTagException $e ) {
+			return Html::errorBox( wfMessage( 'hermes-duplicate-tag-name', $e->tagName )->parse() );
 		}
 
 		$parser->getOutput()->setPageProperty( 'hermes_tags', $json );

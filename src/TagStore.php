@@ -22,7 +22,7 @@ class TagStore {
 	 * Replace the tags for a given page.
 	 *
 	 * @param PageInfo $page
-	 * @param Tag[] $tags Ordered list of tags
+	 * @param Tag[] $tags Tags, each carrying its own priority order.
 	 */
 	public static function setTagsForPage( PageInfo $page, array $tags ): void {
 		$dbw = Hermes::getDB( DB_PRIMARY );
@@ -36,7 +36,7 @@ class TagStore {
 		);
 
 		$rows = [];
-		foreach ( array_values( $tags ) as $order => $tag ) {
+		foreach ( $tags as $tag ) {
 			$rows[] = [
 				'ht_wiki' => $page->wiki,
 				'ht_language' => $page->language,
@@ -44,7 +44,7 @@ class TagStore {
 				'ht_page_title' => $page->fullTitle,
 				'ht_section' => $tag->section,
 				'ht_tag' => $tag->name,
-				'ht_order' => $order,
+				'ht_order' => $tag->order,
 			];
 		}
 
@@ -67,7 +67,7 @@ class TagStore {
 			[ 'ht_tag', 'ht_order' ],
 			[ 'ht_wiki' => $page->wiki, 'ht_page_id' => $page->id ],
 			__METHOD__,
-			[ 'ORDER BY' => 'ht_order ASC' ]
+			[ 'ORDER BY' => 'ht_order ASC, ht_tag ASC' ]
 		);
 
 		$tags = [];

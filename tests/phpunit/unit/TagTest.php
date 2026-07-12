@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\Hermes\Tests;
 
+use MediaWiki\Extension\Hermes\Exceptions\DuplicateTagException;
 use MediaWiki\Extension\Hermes\Exceptions\InvalidTagNameException;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWikiUnitTestCase;
@@ -94,6 +95,55 @@ class TagTest extends MediaWikiUnitTestCase {
 		Tag::fromArgs( [ 'valid_tag', 'invalid tag!' ] );
 	}
 
+	public function testFromArgsAssignsSequentialOrderToPageLevelTags() {
+		$tags = Tag::fromArgs( [ 'tag_a', 'tag_b', 'tag_c' ] );
+
+		$this->assertSame( 0, $tags[ 0 ]->order );
+		$this->assertSame( 1, $tags[ 1 ]->order );
+		$this->assertSame( 2, $tags[ 2 ]->order );
+	}
+
+	public function testFromArgsGivesEachSectionItsOwnOrderSequence() {
+		$tags = Tag::fromArgs( [
+			'page_level_a',
+			'detail_a#Details',
+			'page_level_b',
+			'detail_b#Details',
+			'other#Other Section',
+		] );
+
+		// Page-level tags (no section) share one sequence: page_level_a, page_level_b.
+		$this->assertSame( 0, $tags[ 0 ]->order );
+		$this->assertSame( 1, $tags[ 2 ]->order );
+
+		// Tags under the "Details" section share their own independent sequence:
+		// detail_a#Details, detail_b#Details.
+		$this->assertSame( 0, $tags[ 1 ]->order );
+		$this->assertSame( 1, $tags[ 3 ]->order );
+
+		// A different section starts its own sequence at 0 too: other#Other Section.
+		$this->assertSame( 0, $tags[ 4 ]->order );
+	}
+
+	public function testFromArgsThrowsOnDuplicateTagName() {
+		$this->expectException( DuplicateTagException::class );
+		Tag::fromArgs( [ 'shared_tag', 'other_tag', 'shared_tag' ] );
+	}
+
+	public function testFromArgsThrowsOnDuplicateTagNameAcrossSections() {
+		$this->expectException( DuplicateTagException::class );
+		Tag::fromArgs( [ 'shared_tag', 'shared_tag#Some Section' ] );
+	}
+
+	public function testDuplicateTagExceptionCarriesTagName() {
+		try {
+			Tag::fromArgs( [ 'shared_tag', 'shared_tag' ] );
+			$this->fail( 'Expected DuplicateTagException to be thrown' );
+		} catch ( DuplicateTagException $e ) {
+			$this->assertSame( 'shared tag', $e->tagName );
+		}
+	}
+
 	public function testFromJsonRoundTripsFromArg() {
 		$original = Tag::fromArg( 'some_tag#Some_Section' );
 		$decoded = json_decode( json_encode( $original ) );
@@ -109,5 +159,21 @@ class TagTest extends MediaWikiUnitTestCase {
 
 		$this->assertSame( 'some_tag', $tag->name );
 		$this->assertNull( $tag->section );
+	}
+
+	public function testFromJsonHandlesMissingOrder() {
+		$tag = Tag::fromJson( (object)[ 'name' => 'some_tag' ] );
+
+		$this->assertSame( 0, $tag->order );
+	}
+
+	public function testFromJsonRoundTripsOrderFromArgs() {
+		$originals = Tag::fromArgs( [ 'tag_a', 'tag_b' ] );
+		$decoded = json_decode( json_encode( $originals ) );
+
+		$tags = array_map( Tag::fromJson( ... ), $decoded );
+
+		$this->assertSame( $originals[ 0 ]->order, $tags[ 0 ]->order );
+		$this->assertSame( $originals[ 1 ]->order, $tags[ 1 ]->order );
 	}
 }

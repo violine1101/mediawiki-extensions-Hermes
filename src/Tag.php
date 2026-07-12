@@ -2,13 +2,26 @@
 
 namespace MediaWiki\Extension\Hermes;
 
+use MediaWiki\Extension\Hermes\Exceptions\DuplicateTagException;
 use MediaWiki\Extension\Hermes\Exceptions\InvalidTagNameException;
 use MediaWiki\Parser\Sanitizer;
 
 class Tag {
 
+	/** @var string The normalized tag name. */
 	public string $name;
+
+	/**
+	 * @var ?string The normalized name of the section this tag refers to,
+	 *   or null if the tag applies to the page as a whole.
+	 */
 	public ?string $section;
+
+	/**
+	 * @var int This tag's fallback chain priority, relative to the page's other tags
+	 *   referring to the same section (if any). Defaults to 0 if the sort order is unknown.
+	 */
+	public int $order = 0;
 
 	/**
 	 * Creates a Tag from a hermes_tags table row.
@@ -21,6 +34,7 @@ class Tag {
 
 		$self->name = $row->ht_tag;
 		$self->section = $row->ht_section;
+		$self->order = (int)$row->ht_order;
 
 		return $self;
 	}
@@ -28,19 +42,38 @@ class Tag {
 	/**
 	 * Builds a list of tags from the arguments to the {{#hermes:}} function.
 	 *
+	 * Assigns each tag's fallback chain order: tags are grouped by section,
+	 * then ordered in the order they were listed.
+	 *
 	 * @param string[] $args The arguments passed to the {{#hermes:}} function.
 	 * @return Tag[] The list of tags.
 	 * @throws InvalidTagNameException If an argument is not a valid tag.
+	 * @throws DuplicateTagException If the same tag name is used more than once.
 	 */
 	public static function fromArgs( array $args ): array {
-		return array_map( self::fromArg( ... ), $args );
+		$tags = array_map( self::fromArg( ... ), $args );
+
+		$seenNames = [];
+		$orderBySection = [];
+		foreach ( $tags as $tag ) {
+			if ( isset( $seenNames[ $tag->name ] ) ) {
+				throw new DuplicateTagException( $tag->name );
+			}
+			$seenNames[ $tag->name ] = true;
+
+			$sectionKey = $tag->section ?? '';
+			$tag->order = $orderBySection[ $sectionKey ] ?? 0;
+			$orderBySection[ $sectionKey ] = $tag->order + 1;
+		}
+
+		return $tags;
 	}
 
 	/**
 	 * Builds a tag from a singular argument to the {{#hermes:}} function.
 	 *
 	 * @param string $arg An argument passed to the {{#hermes:}} function.
-	 * @return Tag The tag.
+	 * @return Tag The tag, but without a meaningful sort order.
 	 * @throws InvalidTagNameException If the argument is not a valid tag.
 	 */
 	public static function fromArg( string $arg ): Tag {
@@ -64,6 +97,7 @@ class Tag {
 		$self = new Tag();
 		$self->name = $obj->name;
 		$self->section = $obj->section ?? null;
+		$self->order = $obj->order ?? 0;
 
 		return $self;
 	}

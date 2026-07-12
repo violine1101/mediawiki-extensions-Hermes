@@ -8,6 +8,7 @@
 	"hermes-duplicate-call": "The <code>#hermes</code> parser function was used multiple times on this page; only the last call takes effect.",
 	"hermes-duplicate-category": "Pages with duplicate Hermes calls",
 	"hermes-invalid-tag-name": "Tag name <code>$1</code> is not valid. Allowed characters are ASCII digits, letters, spaces, and the special characters <code>_</code>, <code>/</code>, <code>.</code>, and <code>:</code>.",
+	"hermes-duplicate-tag-name": "Tag <code>$1</code> was set more than once on this page. A tag may only be set once per page, even when referring different sections.",
 	"hermes-invalid-project-title": "Page titles starting with <code>!</code> are reserved for translation projects, and must be of the form <code>!xx:Title</code>, where \"xx\" is the language code for a registered translation project.",
 	"hermes-project-hatnote": "{{#language:$1}} translation project"
 }
