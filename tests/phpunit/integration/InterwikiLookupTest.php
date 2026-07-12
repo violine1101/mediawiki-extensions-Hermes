@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\Hermes\Tests;
 
 use MediaWiki\Extension\Hermes\Decorators\InterwikiLookup;
+use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Interwiki\InterwikiLookup as IInterwikiLookup;
 use MediaWikiIntegrationTestCase;
@@ -13,12 +14,30 @@ use MediaWikiIntegrationTestCase;
  */
 class InterwikiLookupTest extends MediaWikiIntegrationTestCase {
 
+	protected function setUp(): void {
+		parent::setUp();
+		LanguageStore::clearCacheForTesting();
+	}
+
+	/**
+	 * Directly inserts a base-language row, standing in for some other wiki having already
+	 * registered itself (this test isn't exercising that self-registration, just consuming it).
+	 */
+	private function registerBaseLanguage( string $wiki, string $language ): void {
+		Hermes::getDB( DB_PRIMARY )->insert(
+			'hermes_languages',
+			[ 'hl_language' => $language, 'hl_wiki' => $wiki, 'hl_base' => 1 ],
+			__METHOD__
+		);
+		LanguageStore::clearCacheForTesting();
+	}
+
 	private static function newLookup( IInterwikiLookup $inner, array $wikis ): InterwikiLookup {
 		return new InterwikiLookup( $inner, $wikis );
 	}
 
 	public function testFetchResolvesRegisteredLanguageWithoutConsultingInner() {
-		LanguageStore::setLanguage( 'dewiki', 'de' );
+		$this->registerBaseLanguage( 'dewiki', 'de' );
 
 		$inner = $this->createNoOpMock( IInterwikiLookup::class );
 		$lookup = self::newLookup( $inner, [ 'dewiki' => 'https://de.example.org/wiki/$1' ] );
@@ -40,7 +59,7 @@ class InterwikiLookupTest extends MediaWikiIntegrationTestCase {
 	}
 
 	public function testFetchDefersToInnerWhenWikiIsNotConfigured() {
-		LanguageStore::setLanguage( 'dewiki', 'de' );
+		$this->registerBaseLanguage( 'dewiki', 'de' );
 
 		$inner = $this->createMock( IInterwikiLookup::class );
 		$inner->method( 'fetch' )->with( 'de' )->willReturn( false );
@@ -52,7 +71,7 @@ class InterwikiLookupTest extends MediaWikiIntegrationTestCase {
 	}
 
 	public function testIsValidInterwikiTrueForRegisteredLanguage() {
-		LanguageStore::setLanguage( 'frwiki', 'fr' );
+		$this->registerBaseLanguage( 'frwiki', 'fr' );
 
 		$inner = $this->createNoOpMock( IInterwikiLookup::class );
 		$lookup = self::newLookup( $inner, [ 'frwiki' => 'https://fr.example.org/wiki/$1' ] );

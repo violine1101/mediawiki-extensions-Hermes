@@ -21,6 +21,7 @@ CREATE TABLE /*_*/hermes_tags (
 CREATE TABLE /*_*/hermes_languages (
   hl_language VARBINARY(35) NOT NULL,
   hl_wiki VARBINARY(64) NOT NULL,
+  hl_base TINYINT(1) DEFAULT 1 NOT NULL,
   INDEX hl_wiki (hl_wiki),
   PRIMARY KEY(hl_language)
 ) /*$wgDBTableOptions*/;

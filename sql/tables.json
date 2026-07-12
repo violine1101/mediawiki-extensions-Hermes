@@ -22,7 +22,8 @@
 		"name": "hermes_languages",
 		"columns": [
 			{ "name": "hl_language", "type": "binary", "options": { "length": 35, "notnull": true } },
-			{ "name": "hl_wiki", "type": "binary", "options": { "length": 64, "notnull": true } }
+			{ "name": "hl_wiki", "type": "binary", "options": { "length": 64, "notnull": true } },
+			{ "name": "hl_base", "type": "mwtinyint", "options": { "notnull": true, "length": 1, "default": 1 } }
 		],
 		"indexes": [
 			{ "name": "hl_wiki", "columns": [ "hl_wiki" ], "unique": false }

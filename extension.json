@@ -26,11 +26,17 @@
 	"Hooks": {
 		"LoadExtensionSchemaUpdates": "init",
 		"UnitTestsAfterDatabaseSetup": "init",
+		"BeforeInitialize": "init",
 		"LinksUpdateComplete": "parserfunc",
 		"PageDeleteComplete": "parserfunc",
 		"ParserFirstCallInit": "parserfunc",
 		"LanguageLinks": "languagelinks",
-		"MediaWikiServices": "languagelinks"
+		"MediaWikiServices": "languagelinks",
+		"getUserPermissionsErrors": "translationproject",
+		"PageContentLanguage": "translationproject",
+		"UserGetLanguageObject": "translationproject",
+		"ParserAfterParse": "translationproject",
+		"OutputPageBeforeHTML": "translationproject"
 	},
 	"HookHandlers": {
 		"init": {
@@ -41,6 +47,9 @@
 		},
 		"languagelinks": {
 			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\LanguageLinkHooks"
+		},
+		"translationproject": {
+			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\TranslationProjectHooks"
 		}
 	},
 	"ExtensionMessagesFiles": {

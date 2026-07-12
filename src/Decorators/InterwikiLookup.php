@@ -7,9 +7,8 @@ use MediaWiki\Interwiki\Interwiki;
 use MediaWiki\Interwiki\InterwikiLookup as IInterwikiLookup;
 
 /**
- * Decorates the core InterwikiLookup service, resolving prefixes registered via
- * LanguageStore::setLanguage() against the wikis configured in $wgHermesWikis,
- * before falling back to the wrapped lookup.
+ * Decorates the core InterwikiLookup service, resolving prefixes from LanguageStore
+ * against the wikis configured in $wgHermesWikis, before falling back to the wrapped lookup.
  * Registered as a service manipulator on "InterwikiLookup" by Hooks\LanguageLinksHooks.
  */
 class InterwikiLookup implements IInterwikiLookup {

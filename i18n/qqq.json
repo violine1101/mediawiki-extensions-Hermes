@@ -7,5 +7,7 @@
 	"hermes-desc": "{{desc|name=Hermes|url=https://www.mediawiki.org/wiki/Extension:Hermes}}",
 	"hermes-duplicate-call": "Warning shown on the rendered page when the <code>#hermes</code> parser function is used more than once on the same page. Refers to the wikitext parser function tag name, which is not translated.",
 	"hermes-duplicate-category": "Category added to pages with duplicate <code>#hermes</code> parser function calls.",
-	"hermes-invalid-tag-name": "Error shown when a tag passed to the <code>#hermes</code> parser function contains disallowed characters.\n* $1 - the invalid tag name, as entered by the user (not translated)"
+	"hermes-invalid-tag-name": "Error shown when a tag passed to the <code>#hermes</code> parser function contains disallowed characters.\n* $1 - the invalid tag name, as entered by the user (not translated)",
+	"hermes-invalid-project-title": "Permission error shown when trying to create/move to a page title starting with \"!\" that doesn't match the reserved \"!xx:Title\" translation-project format, with \"xx\" being a language code for a registered translation project.",
+	"hermes-project-hatnote": "Hatnote shown at the top of a translation-project page.\n* $1 - the code of the project's language"
 }

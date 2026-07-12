@@ -22,7 +22,7 @@ class TagStoreTest extends MediaWikiIntegrationTestCase {
 		$page = new PageInfo();
 		$page->wiki = 'testwiki';
 		$page->id = $id;
-		$page->title = $title ?? "Page$id";
+		$page->fullTitle = $title ?? "Page$id";
 		$page->language = $language;
 		return $page;
 	}

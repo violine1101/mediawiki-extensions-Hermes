@@ -41,7 +41,7 @@ class TagStore {
 				'ht_wiki' => $page->wiki,
 				'ht_language' => $page->language,
 				'ht_page_id' => $page->id,
-				'ht_page_title' => $page->title,
+				'ht_page_title' => $page->fullTitle,
 				'ht_section' => $tag->section,
 				'ht_tag' => $tag->name,
 				'ht_order' => $order,

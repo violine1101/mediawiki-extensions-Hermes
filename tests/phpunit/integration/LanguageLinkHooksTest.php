@@ -7,7 +7,6 @@ use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Extension\Hermes\TagStore;
-use MediaWiki\WikiMap\WikiMap;
 use MediaWikiIntegrationTestCase;
 
 /**
@@ -18,7 +17,7 @@ class LanguageLinkHooksTest extends MediaWikiIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		LanguageStore::setLanguage( WikiMap::getCurrentWikiId(), 'en' );
+		LanguageStore::clearCacheForTesting();
 	}
 
 	public function testAddsLanguageLinkForMatchingTag() {
@@ -29,7 +28,7 @@ class LanguageLinkHooksTest extends MediaWikiIntegrationTestCase {
 		$partner = new PageInfo();
 		$partner->wiki = $pageInfo->wiki;
 		$partner->id = 999002;
-		$partner->title = 'LanguageLinkHooksTest/de';
+		$partner->fullTitle = 'LanguageLinkHooksTest/de';
 		$partner->language = 'de';
 		TagStore::setTagsForPage( $partner, Tag::fromArgs( [ 'shared_tag' ] ) );
 
@@ -48,7 +47,7 @@ class LanguageLinkHooksTest extends MediaWikiIntegrationTestCase {
 		$partner = new PageInfo();
 		$partner->wiki = $pageInfo->wiki;
 		$partner->id = 999003;
-		$partner->title = 'LanguageLinkHooksClobberTest/de';
+		$partner->fullTitle = 'LanguageLinkHooksClobberTest/de';
 		$partner->language = 'de';
 		TagStore::setTagsForPage( $partner, Tag::fromArgs( [ 'shared_tag_2' ] ) );
 

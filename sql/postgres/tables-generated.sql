@@ -24,6 +24,7 @@ CREATE UNIQUE INDEX ht_wiki_page_tag ON hermes_tags (ht_wiki, ht_page_id, ht_tag
 CREATE TABLE hermes_languages (
   hl_language TEXT NOT NULL,
   hl_wiki TEXT NOT NULL,
+  hl_base SMALLINT DEFAULT 1 NOT NULL,
   PRIMARY KEY(hl_language)
 );
 

@@ -2,24 +2,33 @@
 
 namespace MediaWiki\Extension\Hermes\Hooks;
 
+use MediaWiki\Extension\Hermes\LanguageStore;
+use MediaWiki\Hook\BeforeInitializeHook;
 use MediaWiki\Hook\UnitTestsAfterDatabaseSetupHook;
 use MediaWiki\Installer\Hook\LoadExtensionSchemaUpdatesHook;
 use Wikimedia\Rdbms\IMaintainableDatabase;
 
-class InitHooks implements LoadExtensionSchemaUpdatesHook, UnitTestsAfterDatabaseSetupHook {
+class InitHooks implements LoadExtensionSchemaUpdatesHook, UnitTestsAfterDatabaseSetupHook, BeforeInitializeHook {
 
-	private const TABLES = [ 'hermes_tags', 'hermes_languages' ];
+	// Any table would do here; this only needs to detect whether Hermes has *any* schema yet.
+	private const SENTINEL_TABLE = 'hermes_tags';
+
+	/** @inheritDoc */
+	public function onBeforeInitialize( $title, $unused, $output, $user, $request, $mediaWiki ) {
+		// Ensure that language table is initialized
+		LanguageStore::loadLanguages();
+	}
 
 	/** @inheritDoc */
 	public function onLoadExtensionSchemaUpdates( $updater ) {
 		$type = $updater->getDB()->getType();
 		$sqlDir = __DIR__ . "/../../sql/{$type}";
 
-		foreach ( self::TABLES as $table ) {
-			$updater->addExtensionUpdateOnVirtualDomain(
-				[ 'virtual-hermes', 'addTable', $table, "{$sqlDir}/tables-generated.sql", true ]
-			);
-		}
+		// Register Hermes database schema on new install.
+		// Hermes isn't deployed anywhere yet, so beyond this, there's no upgrade path to worry about.
+		$updater->addExtensionUpdateOnVirtualDomain(
+			[ 'virtual-hermes', 'addTable', self::SENTINEL_TABLE, "{$sqlDir}/tables-generated.sql", true ]
+		);
 	}
 
 	/**
@@ -33,7 +42,7 @@ class InitHooks implements LoadExtensionSchemaUpdatesHook, UnitTestsAfterDatabas
 	 * @param string $prefix
 	 */
 	public function onUnitTestsAfterDatabaseSetup( $database, $prefix ) {
-		if ( $database->tableExists( self::TABLES[0], __METHOD__ ) ) {
+		if ( $database->tableExists( self::SENTINEL_TABLE, __METHOD__ ) ) {
 			return;
 		}
 

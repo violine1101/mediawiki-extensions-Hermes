@@ -6,7 +6,6 @@ use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Extension\Hermes\TagStore;
-use MediaWiki\WikiMap\WikiMap;
 use MediaWikiIntegrationTestCase;
 
 /**
@@ -17,7 +16,7 @@ class PageDeleteHookTest extends MediaWikiIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		LanguageStore::setLanguage( WikiMap::getCurrentWikiId(), 'en' );
+		LanguageStore::clearCacheForTesting();
 	}
 
 	public function testTagsRemovedOnPageDelete() {
@@ -33,7 +32,7 @@ class PageDeleteHookTest extends MediaWikiIntegrationTestCase {
 		$partner = new PageInfo();
 		$partner->wiki = $pageInfo->wiki;
 		$partner->id = 999001;
-		$partner->title = 'DeleteHookTest/de';
+		$partner->fullTitle = 'DeleteHookTest/de';
 		$partner->language = 'de';
 		TagStore::setTagsForPage( $partner, Tag::fromArgs( [ 'some_tag' ] ) );
 

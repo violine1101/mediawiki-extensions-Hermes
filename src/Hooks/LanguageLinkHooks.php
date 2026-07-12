@@ -35,14 +35,13 @@ class LanguageLinkHooks implements LanguageLinksHook, MediaWikiServicesHook {
 				// Still respect manually created [[xx:Foo]] links.
 				continue;
 			}
-			$links[] = "{$tagLink->page->language}:{$tagLink->page->title}";
+			$links[] = "{$tagLink->page->language}:{$tagLink->page->fullTitle}";
 		}
 	}
 
 	/**
-	 * Wraps the core InterwikiLookup service, so that prefixes registered via
-	 * LanguageStore::setLanguage() resolve against the wikis configured in
-	 * $wgHermesWikis.
+	 * Wraps the core InterwikiLookup service, so that prefixes registered via LanguageStore
+	 * resolve against the wikis configured in $wgHermesWikis.
 	 *
 	 * @inheritDoc
 	 */
