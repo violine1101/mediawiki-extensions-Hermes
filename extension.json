@@ -63,6 +63,10 @@
 	"DatabaseVirtualDomains": [
 		"virtual-hermes"
 	],
+	"TrackingCategories": [
+		"hermes-duplicate-call-category",
+		"hermes-tag-conflict-category"
+	],
 	"ResourceModules": {
 		"ext.hermes": {
 			"localBasePath": "resources/ext.hermes",

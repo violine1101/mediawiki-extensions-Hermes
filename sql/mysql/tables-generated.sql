@@ -3,18 +3,16 @@
 -- Do not modify this file directly.
 -- See https://www.mediawiki.org/wiki/Manual:Schema_changes
 CREATE TABLE /*_*/hermes_tags (
-  ht_id BIGINT AUTO_INCREMENT NOT NULL,
   ht_wiki VARBINARY(64) NOT NULL,
-  ht_language VARBINARY(35) NOT NULL,
   ht_page_id INT NOT NULL,
+  ht_tag VARBINARY(255) NOT NULL,
+  ht_language VARBINARY(35) NOT NULL,
   ht_page_title VARBINARY(255) NOT NULL,
   ht_section VARBINARY(255) DEFAULT NULL,
-  ht_tag VARBINARY(255) NOT NULL,
   ht_order INT DEFAULT 0 NOT NULL,
   INDEX ht_tag_lang (ht_tag, ht_language),
   INDEX ht_wiki_page (ht_wiki, ht_page_id),
-  UNIQUE INDEX ht_wiki_page_tag (ht_wiki, ht_page_id, ht_tag),
-  PRIMARY KEY(ht_id)
+  PRIMARY KEY(ht_wiki, ht_page_id, ht_tag)
 ) /*$wgDBTableOptions*/;
 
 

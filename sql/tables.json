@@ -2,7 +2,6 @@
 	{
 		"name": "hermes_tags",
 		"columns": [
-			{ "name": "ht_id", "type": "bigint", "options": { "autoincrement": true, "notnull": true } },
 			{ "name": "ht_wiki", "type": "binary", "options": { "length": 64, "notnull": true } },
 			{ "name": "ht_language", "type": "binary", "options": { "length": 35, "notnull": true } },
 			{ "name": "ht_page_id", "type": "integer", "options": { "notnull": true } },
@@ -13,10 +12,9 @@
 		],
 		"indexes": [
 			{ "name": "ht_tag_lang", "columns": [ "ht_tag", "ht_language" ], "unique": false },
-			{ "name": "ht_wiki_page", "columns": [ "ht_wiki", "ht_page_id" ], "unique": false },
-			{ "name": "ht_wiki_page_tag", "columns": [ "ht_wiki", "ht_page_id", "ht_tag" ], "unique": true }
+			{ "name": "ht_wiki_page", "columns": [ "ht_wiki", "ht_page_id" ], "unique": false }
 		],
-		"pk": [ "ht_id" ]
+		"pk": [ "ht_wiki", "ht_page_id", "ht_tag" ]
 	},
 	{
 		"name": "hermes_languages",

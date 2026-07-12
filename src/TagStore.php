@@ -78,6 +78,39 @@ class TagStore {
 	}
 
 	/**
+	 * Checks whether other pages already claim the same tag at the same order for the same
+	 * language.
+	 *
+	 * @param PageInfo $page The page introducing the tag.
+	 * @param Tag $tag The tag (with its assigned order) being checked.
+	 * @return string[] Titles of all conflicting pages; empty if there's no conflict.
+	 */
+	public static function findConflicts( PageInfo $page, Tag $tag ): array {
+		$dbr = Hermes::getDB();
+		$rows = $dbr->select(
+			self::TABLE_NAME,
+			[ 'ht_page_title' ],
+			[
+				'ht_tag' => $tag->name,
+				'ht_order' => $tag->order,
+				'ht_language' => $page->language,
+				'NOT (' . $dbr->makeList(
+					[ 'ht_wiki' => $page->wiki, 'ht_page_id' => $page->id ],
+					LIST_AND
+				) . ')',
+			],
+			__METHOD__,
+			[ 'ORDER BY' => 'ht_page_title ASC' ]
+		);
+
+		$titles = [];
+		foreach ( $rows as $row ) {
+			$titles[] = $row->ht_page_title;
+		}
+		return $titles;
+	}
+
+	/**
 	 * Find all relevant interwikis, following the given tag fallback chain.
 	 *
 	 * @param Tag[] $tags Ordered tag fallback chain
@@ -90,13 +123,14 @@ class TagStore {
 
 		$dbr = Hermes::getDB();
 
-		// Get all matching pages, sorted by where the tag is in the order
+		// Get all matching pages, sorted by where the tag is in the order.
+		// In case of a conflict, use the page title as tiebreak.
 		$rows = $dbr->select(
 			self::TABLE_NAME,
 			'*',
 			[ 'ht_tag' => $tags ],
 			__METHOD__,
-			[ 'ORDER BY' => 'ht_order ASC' ]
+			[ 'ORDER BY' => 'ht_order ASC, ht_page_title ASC' ]
 		);
 
 		// Convert rows, and sort them by tag

@@ -6,6 +6,8 @@ Phase 1a: Refine the Interwiki System
   - Should maybe throw error or add to maintenance category
 - Is there a proper way to define extension maintenance categories? If so, would need to adapt #hermes duplicate category, if so.
 
+(Cleanup Phase: Refactor tests, and make them more readable)
+
 Phase 1b: Refine current state of translation projects
 - Fix interwiki links to translation projects, e.g. `[[:es:Golem]]` currently links to the English page.
   - The current hijacking of interwiki links should also use `parseTitle` for PageInfos from `fromRow`.
@@ -16,7 +18,9 @@ Phase 2: Add features to translation projects
   - With namespaces: `[[Namespace:Foo]]` -> `[[Namespace:!xx:Foo]]`, `[[Namespace:!:Foo]]` -> `[[Namespace:Foo]]`
 - Links should link to the main article if the linked page exists in the translation project, but does outside (and offer a link to translate)
 - Similar for templates, though `{{foo}}` should always resolve to `[[Template:Foo]]` if `[[Template:!xx:Foo]]` does not exist
+- Also categories: in project `!xx:`, `[[Category:Foo]]` should become `[[Category:!xx:Foo]]`
 - Proper link display in categories (might be solved together with the two points above)
+  - Also proper ordering (sort key) within categories (without overwriting custom sortkeys in `[[Category:Foo|sotrkey]]`)
 - Restrict search to current language / translation project
 - Make logo (+ sidebar) link to pages in the project language, if they exist
 

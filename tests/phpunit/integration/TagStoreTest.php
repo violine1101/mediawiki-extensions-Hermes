@@ -145,6 +145,102 @@ class TagStoreTest extends MediaWikiIntegrationTestCase {
 		$this->assertSame( 1, $orders[ 'detail b' ] );
 	}
 
+	public function testGetLinksForPageResolvesConflictTieByPageTitle() {
+		$en = self::makePageInfo( 1, 'en' );
+		$deA = self::makePageInfo( 2, 'de', 'ZTitle' );
+		$deB = self::makePageInfo( 3, 'de', 'ATitle' );
+
+		TagStore::setTagsForPage( $en, Tag::fromArgs( [ 'shared_tag' ] ) );
+		TagStore::setTagsForPage( $deA, Tag::fromArgs( [ 'shared_tag' ] ) );
+		TagStore::setTagsForPage( $deB, Tag::fromArgs( [ 'shared_tag' ] ) );
+
+		$links = TagStore::getLinksForPage( $en );
+
+		// deA and deB tie on tag + order; the alphabetically-first title wins
+		// deterministically, rather than depending on DB scan order.
+		$this->assertSame( 'ATitle', $links[ 'de' ]->page->fullTitle );
+	}
+
+	public function testFindConflictsDetectsSameTagOrderLanguageOnDifferentPage() {
+		$existing = self::makePageInfo( 1, 'eo', 'ExistingPage' );
+		TagStore::setTagsForPage( $existing, Tag::fromArgs( [ 'golem' ] ) );
+
+		$newPage = self::makePageInfo( 2, 'eo', 'NewPage' );
+		$tag = Tag::fromArgs( [ 'golem' ] )[ 0 ];
+
+		$this->assertSame( [ 'ExistingPage' ], TagStore::findConflicts( $newPage, $tag ) );
+	}
+
+	public function testFindConflictsReturnsAllConflictingPages() {
+		$existingA = self::makePageInfo( 1, 'eo', 'ExistingPageA' );
+		$existingB = self::makePageInfo( 2, 'eo', 'ExistingPageB' );
+		TagStore::setTagsForPage( $existingA, Tag::fromArgs( [ 'golem' ] ) );
+		TagStore::setTagsForPage( $existingB, Tag::fromArgs( [ 'golem' ] ) );
+
+		$newPage = self::makePageInfo( 3, 'eo', 'NewPage' );
+		$tag = Tag::fromArgs( [ 'golem' ] )[ 0 ];
+
+		$this->assertSame(
+			[ 'ExistingPageA', 'ExistingPageB' ],
+			TagStore::findConflicts( $newPage, $tag )
+		);
+	}
+
+	public function testFindConflictsDetectsConflictAcrossDifferentWikis() {
+		// Two different wikis can both serve the same translation-project language, so a
+		// conflict isn't scoped to a single wiki.
+		$existing = new PageInfo();
+		$existing->wiki = 'otherwiki';
+		$existing->id = 1;
+		$existing->fullTitle = 'ExistingPage';
+		$existing->language = 'eo';
+		TagStore::setTagsForPage( $existing, Tag::fromArgs( [ 'golem' ] ) );
+
+		$newPage = self::makePageInfo( 2, 'eo', 'NewPage' );
+		$tag = Tag::fromArgs( [ 'golem' ] )[ 0 ];
+
+		$this->assertSame( [ 'ExistingPage' ], TagStore::findConflicts( $newPage, $tag ) );
+	}
+
+	public function testFindConflictsReturnsEmptyWithoutAnyConflict() {
+		$page = self::makePageInfo( 1, 'eo', 'SomePage' );
+		$tag = Tag::fromArgs( [ 'golem' ] )[ 0 ];
+
+		$this->assertSame( [], TagStore::findConflicts( $page, $tag ) );
+	}
+
+	public function testFindConflictsIgnoresPagesOwnPriorTags() {
+		$page = self::makePageInfo( 1, 'eo', 'SomePage' );
+		TagStore::setTagsForPage( $page, Tag::fromArgs( [ 'golem' ] ) );
+
+		// Re-saving the same page with the same tag must not conflict with itself.
+		$tag = Tag::fromArgs( [ 'golem' ] )[ 0 ];
+
+		$this->assertSame( [], TagStore::findConflicts( $page, $tag ) );
+	}
+
+	public function testFindConflictsIgnoresDifferentOrder() {
+		$existing = self::makePageInfo( 1, 'eo', 'ExistingPage' );
+		// 'golem' is existing's *second* tag (order 1).
+		TagStore::setTagsForPage( $existing, Tag::fromArgs( [ 'unrelated', 'golem' ] ) );
+
+		$newPage = self::makePageInfo( 2, 'eo', 'NewPage' );
+		// 'golem' is newPage's *first* (and only) tag (order 0) - different order.
+		$tag = Tag::fromArgs( [ 'golem' ] )[ 0 ];
+
+		$this->assertSame( [], TagStore::findConflicts( $newPage, $tag ) );
+	}
+
+	public function testFindConflictsIgnoresDifferentLanguage() {
+		$existing = self::makePageInfo( 1, 'eo', 'ExistingPage' );
+		TagStore::setTagsForPage( $existing, Tag::fromArgs( [ 'golem' ] ) );
+
+		$newPage = self::makePageInfo( 2, 'de', 'NewPage' );
+		$tag = Tag::fromArgs( [ 'golem' ] )[ 0 ];
+
+		$this->assertSame( [], TagStore::findConflicts( $newPage, $tag ) );
+	}
+
 	public function testDeleteTagsForPage() {
 		$en = self::makePageInfo( 1, 'en' );
 		$de = self::makePageInfo( 2, 'de' );

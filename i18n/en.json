@@ -6,9 +6,12 @@
 	},
 	"hermes-desc": "Simple and leightweight translation projects and interlanguage links",
 	"hermes-duplicate-call": "The <code>#hermes</code> parser function was used multiple times on this page; only the last call takes effect.",
-	"hermes-duplicate-category": "Pages with duplicate Hermes calls",
+	"hermes-duplicate-call-category": "Pages with duplicate Hermes calls",
+	"hermes-duplicate-call-category-desc": "The <code>#hermes</code> parser function was used more than once.",
 	"hermes-invalid-tag-name": "Tag name <code>$1</code> is not valid. Allowed characters are ASCII digits, letters, spaces, and the special characters <code>_</code>, <code>/</code>, <code>.</code>, and <code>:</code>.",
 	"hermes-duplicate-tag-name": "Tag <code>$1</code> was set more than once on this page. A tag may only be set once per page, even when referring different sections.",
+	"hermes-tag-conflict-category": "Pages with conflicting Hermes tags",
+	"hermes-tag-conflict-category-desc": "A Hermes tag set on this page is also set on another page at the same fallback priority and for the same language. Interlanguage links from this tag may resolve to the wrong page until the conflict is fixed.",
 	"hermes-invalid-project-title": "Page titles starting with <code>!</code> are reserved for translation projects, and must be of the form <code>!xx:Title</code>, where \"xx\" is the language code for a registered translation project.",
 	"hermes-project-hatnote": "{{#language:$1}} translation project"
 }

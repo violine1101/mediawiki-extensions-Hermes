@@ -33,18 +33,27 @@ class ParserFuncHooks implements LinksUpdateCompleteHook, PageDeleteCompleteHook
 		$output = '';
 
 		if ( $parser->getOutput()->getPageProperty( 'hermes_tags' ) !== null ) {
-			$parser->getOutput()->addCategory( 'Pages with duplicate Hermes calls' );
+			$parser->addTrackingCategory( 'hermes-duplicate-call-category' );
 			$output = Html::warningBox( wfMessage( 'hermes-duplicate-call' )->parse() );
 		}
 
 		try {
-			$json = json_encode( Tag::fromArgs( $args ) );
+			$tags = Tag::fromArgs( $args );
 		} catch ( InvalidTagNameException $e ) {
 			return Html::errorBox( wfMessage( 'hermes-invalid-tag-name', $e->tagName )->parse() );
 		} catch ( DuplicateTagException $e ) {
 			return Html::errorBox( wfMessage( 'hermes-duplicate-tag-name', $e->tagName )->parse() );
 		}
 
+		$page = PageInfo::fromLocalPage( $parser->getPage() );
+		foreach ( $tags as $tag ) {
+			if ( TagStore::findConflicts( $page, $tag ) ) {
+				$parser->addTrackingCategory( 'hermes-tag-conflict-category' );
+				break;
+			}
+		}
+
+		$json = json_encode( $tags );
 		$parser->getOutput()->setPageProperty( 'hermes_tags', $json );
 
 		$debug = MediaWikiServices::getInstance()->getMainConfig()->get( 'HermesDebug' );
