@@ -12,7 +12,8 @@ Phase 1b: Refine current state of translation projects
 - If `$wgCapitalLinks` is true, Hermes should also force the title after the project prefix to start with a capital letter.
 
 Phase 2: Add features to translation projects
-- Proper links: e.g. on `!xx:` translation project pages, `[[foo]]` should turn into `[[!xx:foo]]` and `[[!:bar]]` should turn into `[[bar]]`
+- Project-internal links: e.g. on `!xx:` translation project pages, `[[foo]]` should turn into `[[!xx:foo]]` and `[[!:bar]]` should turn into `[[bar]]`
+  - With namespaces: `[[Namespace:Foo]]` -> `[[Namespace:!xx:Foo]]`, `[[Namespace:!:Foo]]` -> `[[Namespace:Foo]]`
 - Links should link to the main article if the linked page exists in the translation project, but does outside (and offer a link to translate)
 - Similar for templates, though `{{foo}}` should always resolve to `[[Template:Foo]]` if `[[Template:!xx:Foo]]` does not exist
 - Proper link display in categories (might be solved together with the two points above)

@@ -110,7 +110,7 @@ class TagStoreTest extends MediaWikiIntegrationTestCase {
 
 		$links = TagStore::getLinksForPage( $en );
 
-		$this->assertSame( 'Some_Section', $links[ 'de' ]->tag->section );
+		$this->assertSame( 'Some Section', $links[ 'de' ]->tag->section );
 	}
 
 	public function testDeleteTagsForPage() {

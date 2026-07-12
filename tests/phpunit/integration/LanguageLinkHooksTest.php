@@ -39,6 +39,25 @@ class LanguageLinkHooksTest extends MediaWikiIntegrationTestCase {
 		$this->assertContains( 'de:LanguageLinkHooksTest/de', $links );
 	}
 
+	public function testAddsLanguageLinkWithSectionForMatchingTag() {
+		$page = $this->getExistingTestPage( 'LanguageLinkHooksSectionTest' );
+		$this->editPage( $page, '{{#hermes:shared_tag_section}}' );
+
+		$pageInfo = PageInfo::fromLocalPage( $page->getTitle() );
+		$partner = new PageInfo();
+		$partner->wiki = $pageInfo->wiki;
+		$partner->id = 999004;
+		$partner->fullTitle = 'LanguageLinkHooksSectionTest/de';
+		$partner->language = 'de';
+		TagStore::setTagsForPage( $partner, Tag::fromArgs( [ 'shared_tag_section#Some Section' ] ) );
+
+		$links = [];
+		$linkFlags = [];
+		( new LanguageLinkHooks() )->onLanguageLinks( $page->getTitle(), $links, $linkFlags );
+
+		$this->assertContains( 'de:LanguageLinkHooksSectionTest/de#Some Section', $links );
+	}
+
 	public function testDoesNotClobberExistingLanguageLink() {
 		$page = $this->getExistingTestPage( 'LanguageLinkHooksClobberTest' );
 		$this->editPage( $page, '{{#hermes:shared_tag_2}}' );

@@ -35,7 +35,8 @@ class LanguageLinkHooks implements LanguageLinksHook, MediaWikiServicesHook {
 				// Still respect manually created [[xx:Foo]] links.
 				continue;
 			}
-			$links[] = "{$tagLink->page->language}:{$tagLink->page->fullTitle}";
+			$section = $tagLink->tag->section !== null ? '#' . $tagLink->tag->section : '';
+			$links[] = "{$tagLink->page->language}:{$tagLink->page->fullTitle}{$section}";
 		}
 	}
 

@@ -14,27 +14,33 @@ class TagTest extends MediaWikiUnitTestCase {
 	public function testFromArgParsesNameWithoutSection() {
 		$tag = Tag::fromArg( 'Some_Tag' );
 
-		$this->assertSame( 'some_tag', $tag->name );
+		$this->assertSame( 'some tag', $tag->name );
 		$this->assertNull( $tag->section );
 	}
 
 	public function testFromArgParsesNameWithSection() {
 		$tag = Tag::fromArg( 'some_tag#Some_Section' );
 
-		$this->assertSame( 'some_tag', $tag->name );
-		$this->assertSame( 'Some_Section', $tag->section );
+		$this->assertSame( 'some tag', $tag->name );
+		$this->assertSame( 'Some Section', $tag->section );
 	}
 
 	public function testFromArgNormalizesCaseAndWhitespace() {
 		$tag = Tag::fromArg( '  Some Tag  ' );
 
-		$this->assertSame( 'some_tag', $tag->name );
+		$this->assertSame( 'some tag', $tag->name );
 	}
 
-	public function testFromArgAllowsSpecialCharacters() {
+	public function testFromArgCollapsesRepeatedWhitespaceAndUnderscoresInName() {
+		$tag = Tag::fromArg( 'foo   bar___baz' );
+
+		$this->assertSame( 'foo bar baz', $tag->name );
+	}
+
+	public function testFromArgTreatsUnderscoreAsSpaceInName() {
 		$tag = Tag::fromArg( 'a/b.c:d_e' );
 
-		$this->assertSame( 'a/b.c:d_e', $tag->name );
+		$this->assertSame( 'a/b.c:d e', $tag->name );
 	}
 
 	public function testFromArgRejectsInvalidCharacters() {
@@ -56,12 +62,30 @@ class TagTest extends MediaWikiUnitTestCase {
 		}
 	}
 
+	public function testFromArgCollapsesRepeatedWhitespaceInSection() {
+		$tag = Tag::fromArg( 'tag#Some   Section___Name' );
+
+		$this->assertSame( 'Some Section Name', $tag->section );
+	}
+
+	public function testFromArgSectionPreservesCase() {
+		$tag = Tag::fromArg( 'tag#SOME SECTION' );
+
+		$this->assertSame( 'SOME SECTION', $tag->section );
+	}
+
+	public function testFromArgTreatsWhitespaceOnlySectionAsNoSection() {
+		$tag = Tag::fromArg( 'tag#   ' );
+
+		$this->assertNull( $tag->section );
+	}
+
 	public function testFromArgsMapsAllArguments() {
 		$tags = Tag::fromArgs( [ 'tag_a', 'tag_b#section' ] );
 
 		$this->assertCount( 2, $tags );
-		$this->assertSame( 'tag_a', $tags[ 0 ]->name );
-		$this->assertSame( 'tag_b', $tags[ 1 ]->name );
+		$this->assertSame( 'tag a', $tags[ 0 ]->name );
+		$this->assertSame( 'tag b', $tags[ 1 ]->name );
 		$this->assertSame( 'section', $tags[ 1 ]->section );
 	}
 
