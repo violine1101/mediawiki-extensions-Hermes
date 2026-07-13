@@ -6,7 +6,6 @@ use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\WikiStore;
-use MediaWiki\WikiMap\WikiMap;
 use MediaWikiIntegrationTestCase;
 
 /**
@@ -25,21 +24,20 @@ abstract class HermesIntegrationTestCase extends MediaWikiIntegrationTestCase {
 
 	/**
 	 * Builds a synthetic PageInfo without going through Title/PageReference, so tests
-	 * can freely control the language (which normally follows the current request/wiki and
-	 * can't easily be varied for real pages in a single test wiki), and don't need to invent
-	 * their own unique page ids.
+	 * don't need to invent their own unique page ids.
 	 *
-	 * Always on the current wiki: a language is only ever served by one wiki in the family
+	 * $wiki must already be registered (via registerBaseLanguage() for a foreign-wiki partner
+	 * page, or the current wiki id for a same-wiki page, possibly a project page after
+	 * registerProjectLanguage()) - a language is only ever served by one wiki in the family
 	 * (see LanguageStore::validateLanguages()), so a page's wiki isn't independently
-	 * choosable from its language - tests needing a specific other wiki should register it
-	 * via registerBaseLanguage()/LanguageStore::addProjectLanguage() instead.
+	 * choosable from its language.
 	 */
-	protected function makePageInfo( string $language, ?string $title = null ): PageInfo {
+	protected function makePageInfo( string $wiki, ?string $title = null ): PageInfo {
 		$page = new PageInfo();
-		$page->wiki = WikiMap::getCurrentWikiId();
+		$page->wiki = $wiki;
 		$page->id = $this->nextPageId++;
-		$page->fullTitle = $title ?? "Page{$page->id}";
-		$page->language = $language;
+		$title ??= "Page{$page->id}";
+		[ $page->translationProject, $page->title ] = PageInfo::parseTitle( $title );
 		return $page;
 	}
 

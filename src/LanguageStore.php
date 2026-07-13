@@ -64,6 +64,32 @@ class LanguageStore {
 	}
 
 	/**
+	 * Look up the full registration entry for a given language (base or project).
+	 *
+	 * @param string $language
+	 * @return array{wiki: string, isBase: bool}|null
+	 */
+	public static function getLanguageEntry( string $language ): ?array {
+		return self::getLanguages()[ $language ] ?? null;
+	}
+
+	/**
+	 * Look up the base language registered for a given wiki.
+	 *
+	 * @param string $wiki
+	 * @return string|null The wiki's base language code, or null if it isn't registered.
+	 */
+	public static function getBaseLanguageForWiki( string $wiki ): ?string {
+		foreach ( self::getLanguages() as $language => $row ) {
+			if ( $row[ 'isBase' ] && $row[ 'wiki' ] === $wiki ) {
+				return $language;
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * Ensures this wiki's base language is registered, populating the cache in the process.
 	 *
 	 * @throws LanguageConflictException If this language is already registered on a different

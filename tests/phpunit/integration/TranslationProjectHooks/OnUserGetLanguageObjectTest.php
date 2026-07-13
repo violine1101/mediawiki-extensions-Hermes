@@ -18,6 +18,9 @@ class OnUserGetLanguageObjectTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
+		// Simulates InitHooks::onBeforeInitialize()'s real-request self-registration, which
+		// addProjectLanguage() alone doesn't trigger for the *current* wiki's base language.
+		LanguageStore::init();
 		LanguageStore::addProjectLanguage( WikiMap::getCurrentWikiId(), 'eo' );
 	}
 

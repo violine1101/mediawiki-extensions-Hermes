@@ -39,9 +39,11 @@ class TagStore {
 		foreach ( $tags as $tag ) {
 			$rows[] = [
 				'ht_wiki' => $page->wiki,
-				'ht_language' => $page->language,
 				'ht_page_id' => $page->id,
-				'ht_page_title' => $page->fullTitle,
+				'ht_namespace_id' => $page->namespace,
+				'ht_namespace_text' => $page->namespaceText,
+				'ht_translation_project' => $page->translationProject,
+				'ht_base_title' => $page->title,
 				'ht_section' => $tag->section,
 				'ht_tag' => $tag->name,
 				'ht_order' => $tag->order,
@@ -113,15 +115,16 @@ class TagStore {
 				) . ')',
 			],
 			__METHOD__,
-			[ 'ORDER BY' => 'ht_page_title ASC' ]
+			[ 'ORDER BY' => 'ht_namespace_id ASC, ht_base_title ASC' ]
 		);
 
 		$conflicts = [];
 		foreach ( $tags as $tag ) {
-			$conflicts[ $page->language ][ $tag->name ][] = $page;
+			$conflicts[ $page->getLanguageCode() ][ $tag->name ][] = $page;
 		}
 		foreach ( $rows as $row ) {
-			$conflicts[ $row->ht_language ][ $row->ht_tag ][] = PageInfo::fromRow( $row );
+			$rowPage = PageInfo::fromRow( $row );
+			$conflicts[ $rowPage->getLanguageCode() ][ $row->ht_tag ][] = $rowPage;
 		}
 
 		foreach ( $conflicts as $lang => $langConflicts ) {
@@ -158,7 +161,7 @@ class TagStore {
 			'*',
 			[ 'ht_tag' => $tags ],
 			__METHOD__,
-			[ 'ORDER BY' => 'ht_order ASC, ht_page_title ASC' ]
+			[ 'ORDER BY' => 'ht_order ASC, ht_namespace_id ASC, ht_base_title ASC' ]
 		);
 
 		// Convert rows, and sort them by tag
@@ -174,7 +177,7 @@ class TagStore {
 		$pages = [];
 		foreach ( $tags as $tag ) {
 			foreach ( $links[ $tag ] ?? [] as $link ) {
-				$lang = $link->page->language;
+				$lang = $link->page->getLanguageCode();
 
 				if ( !isset( $pages[ $lang ] ) ) {
 					$pages[ $lang ] = $link;
@@ -195,7 +198,7 @@ class TagStore {
 		$tags = self::getTagsForPage( $page );
 		$links = self::getLinksForTags( $tags );
 
-		unset( $links[ $page->language ] );
+		unset( $links[ $page->getLanguageCode() ] );
 
 		return $links;
 	}

@@ -13,8 +13,7 @@ class BuildLinkTest extends HermesIntegrationTestCase {
 
 	public function testValidTarget() {
 		$page = new PageInfo();
-		$page->language = 'de';
-		$page->fullTitle = 'BuildLinkValidTarget';
+		$page->translationProject = 'de';
 		$page->title = 'BuildLinkValidTarget';
 
 		$this->assertMatchesRegularExpression(
@@ -25,12 +24,42 @@ class BuildLinkTest extends HermesIntegrationTestCase {
 
 	public function testInvalidTarget() {
 		$page = new PageInfo();
-		$page->language = 'de';
+		$page->translationProject = 'de';
 		// "|" is not a legal title character, so Title::newFromText() returns null for
 		// this; buildLink() must fall back to plain (escaped) text rather than erroring.
-		$page->fullTitle = 'Invalid|Title';
 		$page->title = 'Invalid|Title';
 
 		$this->assertSame( 'Invalid|Title', $page->buildLink() );
+	}
+
+	public function testProjectPageTarget() {
+		$this->registerProjectLanguage( 'trwiki', 'eo' );
+		$this->registerWiki( 'trwiki', 'https://translate.example.org/wiki/$1' );
+
+		$page = new PageInfo();
+		$page->translationProject = 'eo';
+		$page->title = 'BuildLinkProjectTarget';
+
+		$this->assertSame(
+			'<a href="https://translate.example.org/wiki/!eo:BuildLinkProjectTarget">BuildLinkProjectTarget</a>',
+			$page->buildLink()
+		);
+	}
+
+	public function testNamespacedProjectPageTarget() {
+		$this->registerProjectLanguage( 'trwiki', 'eo' );
+		$this->registerWiki( 'trwiki', 'https://translate.example.org/wiki/$1' );
+
+		$page = new PageInfo();
+		$page->translationProject = 'eo';
+		$page->namespaceText = 'Category';
+		$page->title = 'BuildLinkNamespacedProjectTarget';
+
+		// The "!xx:" prefix must land after the namespace, not before it.
+		$this->assertSame(
+			'<a href="https://translate.example.org/wiki/Category:!eo:BuildLinkNamespacedProjectTarget">'
+				. 'Category:BuildLinkNamespacedProjectTarget</a>',
+			$page->buildLink()
+		);
 	}
 }

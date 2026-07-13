@@ -81,9 +81,9 @@ class ParserFuncHooks implements
 		$page = PageInfo::fromLocalPage( $parser->getPage() );
 
 		$conflicts = TagStore::findConflicts( $page, $tags );
-		$localConflicts = $conflicts[ $page->language ] ?? [];
+		$localConflicts = $conflicts[ $page->getLanguageCode() ] ?? [];
 		$foreignConflicts = $conflicts;
-		unset( $foreignConflicts[ $page->language ] );
+		unset( $foreignConflicts[ $page->getLanguageCode() ] );
 
 		if ( $localConflicts ) {
 			$parser->addTrackingCategory( 'hermes-tag-conflict-category' );

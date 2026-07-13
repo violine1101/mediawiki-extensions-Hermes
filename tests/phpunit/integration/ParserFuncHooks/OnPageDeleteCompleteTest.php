@@ -14,6 +14,7 @@ use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 class OnPageDeleteCompleteTest extends HermesIntegrationTestCase {
 
 	public function testRemovesTags() {
+		$this->registerBaseLanguage( 'dewiki', 'de' );
 		$page = $this->getExistingTestPage( 'OnPageDeleteCompleteTest' );
 		$this->editPage( $page, '{{#hermes:some_tag}}' );
 
@@ -23,7 +24,7 @@ class OnPageDeleteCompleteTest extends HermesIntegrationTestCase {
 		// a synthetic partner in another language sharing the same tag; that way a
 		// non-empty result actually demonstrates the tag was written by
 		// LinksUpdateComplete, rather than passing vacuously.
-		$partner = $this->makePageInfo( 'de', 'OnPageDeleteCompleteTest/de' );
+		$partner = $this->makePageInfo( 'dewiki', 'OnPageDeleteCompleteTest/de' );
 		TagStore::setTagsForPage( $partner, Tag::fromArgs( [ 'some_tag' ] ) );
 
 		// sanity check it was written by LinksUpdateComplete

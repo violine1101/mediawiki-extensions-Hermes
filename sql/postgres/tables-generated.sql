@@ -6,14 +6,14 @@ CREATE TABLE hermes_tags (
   ht_wiki TEXT NOT NULL,
   ht_page_id INT NOT NULL,
   ht_tag TEXT NOT NULL,
-  ht_language TEXT NOT NULL,
-  ht_page_title TEXT NOT NULL,
+  ht_namespace_id INT DEFAULT 0 NOT NULL,
+  ht_namespace_text TEXT DEFAULT '' NOT NULL,
+  ht_translation_project TEXT DEFAULT NULL,
+  ht_base_title TEXT NOT NULL,
   ht_section TEXT DEFAULT NULL,
   ht_order INT DEFAULT 0 NOT NULL,
   PRIMARY KEY(ht_wiki, ht_page_id, ht_tag)
 );
-
-CREATE INDEX ht_tag_lang ON hermes_tags (ht_tag, ht_language);
 
 CREATE INDEX ht_wiki_page ON hermes_tags (ht_wiki, ht_page_id);
 

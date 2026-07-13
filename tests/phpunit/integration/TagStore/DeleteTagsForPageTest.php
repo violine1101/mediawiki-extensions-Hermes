@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\Hermes\Tests\TagStore;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
+use MediaWiki\WikiMap\WikiMap;
 
 /**
  * @group Database
@@ -13,8 +14,9 @@ use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 class DeleteTagsForPageTest extends HermesIntegrationTestCase {
 
 	public function testRemovesTags() {
-		$en = $this->makePageInfo( 'en' );
-		$de = $this->makePageInfo( 'de' );
+		$this->registerBaseLanguage( 'dewiki', 'de' );
+		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
+		$de = $this->makePageInfo( 'dewiki' );
 
 		TagStore::setTagsForPage( $de, Tag::fromArgs( [ 'shared_tag' ] ) );
 		TagStore::setTagsForPage( $en, Tag::fromArgs( [ 'shared_tag' ] ) );

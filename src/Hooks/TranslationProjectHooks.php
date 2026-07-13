@@ -59,7 +59,7 @@ class TranslationProjectHooks implements
 
 		$page = PageInfo::fromLocalPage( $title );
 		if ( $page->translationProject !== null ) {
-			$code = $page->language;
+			$code = $page->translationProject;
 		}
 	}
 

@@ -20,10 +20,22 @@ class InterwikiLookup implements IInterwikiLookup {
 		$this->inner = $inner;
 	}
 
-	private function getUrlTemplate( string $prefix ): ?string {
-		$wiki = LanguageStore::getWikiForLanguage( $prefix );
+	/**
+	 * @param string $prefix
+	 * @return array{wiki: string, isBase: bool, url: string}|null
+	 */
+	private function resolve( string $prefix ): ?array {
+		$entry = LanguageStore::getLanguageEntry( $prefix );
+		if ( $entry === null ) {
+			return null;
+		}
 
-		return $wiki === null ? null : WikiStore::getUrlTemplate( $wiki );
+		$url = WikiStore::getUrlTemplate( $entry[ 'wiki' ] );
+		if ( $url === null ) {
+			return null;
+		}
+
+		return $entry + [ 'url' => $url ];
 	}
 
 	/** @inheritDoc */
@@ -32,7 +44,7 @@ class InterwikiLookup implements IInterwikiLookup {
 			return false;
 		}
 
-		return $this->getUrlTemplate( $prefix ) !== null || $this->inner->isValidInterwiki( $prefix );
+		return $this->resolve( $prefix ) !== null || $this->inner->isValidInterwiki( $prefix );
 	}
 
 	/** @inheritDoc */
@@ -43,12 +55,16 @@ class InterwikiLookup implements IInterwikiLookup {
 			return null;
 		}
 
-		$url = $this->getUrlTemplate( $prefix );
-		if ( $url === null ) {
+		$resolved = $this->resolve( $prefix );
+		if ( $resolved === null ) {
 			return $this->inner->fetch( $prefix );
 		}
 
-		return new Interwiki( $prefix, $url, '', '', 1 );
+		if ( $resolved[ 'isBase' ] ) {
+			return new Interwiki( $prefix, $resolved[ 'url' ], '', '', 1 );
+		}
+
+		return new ProjectPageInterwiki( $prefix, $resolved[ 'url' ] );
 	}
 
 	/** @inheritDoc */

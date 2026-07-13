@@ -3,15 +3,16 @@
 		"name": "hermes_tags",
 		"columns": [
 			{ "name": "ht_wiki", "type": "binary", "options": { "length": 64, "notnull": true } },
-			{ "name": "ht_language", "type": "binary", "options": { "length": 35, "notnull": true } },
 			{ "name": "ht_page_id", "type": "integer", "options": { "notnull": true } },
-			{ "name": "ht_page_title", "type": "binary", "options": { "length": 255, "notnull": true } },
+			{ "name": "ht_namespace_id", "type": "integer", "options": { "notnull": true, "default": 0 } },
+			{ "name": "ht_namespace_text", "type": "binary", "options": { "length": 255, "notnull": true, "default": "" } },
+			{ "name": "ht_translation_project", "type": "binary", "options": { "length": 35, "notnull": false } },
+			{ "name": "ht_base_title", "type": "binary", "options": { "length": 255, "notnull": true } },
 			{ "name": "ht_section", "type": "binary", "options": { "length": 255, "notnull": false } },
 			{ "name": "ht_tag", "type": "binary", "options": { "length": 255, "notnull": true } },
 			{ "name": "ht_order", "type": "integer", "options": { "notnull": true, "default": 0 } }
 		],
 		"indexes": [
-			{ "name": "ht_tag_lang", "columns": [ "ht_tag", "ht_language" ], "unique": false },
 			{ "name": "ht_wiki_page", "columns": [ "ht_wiki", "ht_page_id" ], "unique": false }
 		],
 		"pk": [ "ht_wiki", "ht_page_id", "ht_tag" ]

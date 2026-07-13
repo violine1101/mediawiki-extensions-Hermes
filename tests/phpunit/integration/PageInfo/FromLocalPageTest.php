@@ -16,6 +16,9 @@ class FromLocalPageTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
+		// Simulates InitHooks::onBeforeInitialize()'s real-request self-registration, which
+		// addProjectLanguage() alone doesn't trigger for the *current* wiki's base language.
+		LanguageStore::init();
 		LanguageStore::addProjectLanguage( WikiMap::getCurrentWikiId(), 'eo' );
 	}
 
@@ -23,32 +26,32 @@ class FromLocalPageTest extends HermesIntegrationTestCase {
 		$page = $this->getExistingTestPage( 'PageInfoFromLocalPageOrdinary' );
 		$info = PageInfo::fromLocalPage( $page->getTitle() );
 
-		$this->assertSame( 'en', $info->language );
 		$this->assertNull( $info->translationProject );
 		$this->assertSame( NS_MAIN, $info->namespace );
+		$this->assertSame( '', $info->namespaceText );
 		$this->assertSame( 'PageInfoFromLocalPageOrdinary', $info->title );
-		$this->assertSame( 'PageInfoFromLocalPageOrdinary', $info->fullTitle );
+		$this->assertSame( 'en', $info->getLanguageCode() );
 	}
 
 	public function testMainNamespaceProjectPage() {
 		$title = Title::newFromText( '!eo:PageInfoFromLocalPageProject' );
 		$info = PageInfo::fromLocalPage( $title );
 
-		$this->assertSame( 'eo', $info->language );
 		$this->assertSame( 'eo', $info->translationProject );
 		$this->assertSame( NS_MAIN, $info->namespace );
+		$this->assertSame( '', $info->namespaceText );
 		$this->assertSame( 'PageInfoFromLocalPageProject', $info->title );
-		$this->assertSame( '!eo:PageInfoFromLocalPageProject', $info->fullTitle );
+		$this->assertSame( 'eo', $info->getLanguageCode() );
 	}
 
 	public function testNamespacedProjectPage() {
 		$title = Title::newFromText( 'Category:!eo:PageInfoFromLocalPageProject' );
 		$info = PageInfo::fromLocalPage( $title );
 
-		$this->assertSame( 'eo', $info->language );
 		$this->assertSame( 'eo', $info->translationProject );
 		$this->assertSame( NS_CATEGORY, $info->namespace );
+		$this->assertSame( 'Category', $info->namespaceText );
 		$this->assertSame( 'PageInfoFromLocalPageProject', $info->title );
-		$this->assertSame( 'Category:!eo:PageInfoFromLocalPageProject', $info->fullTitle );
+		$this->assertSame( 'eo', $info->getLanguageCode() );
 	}
 }

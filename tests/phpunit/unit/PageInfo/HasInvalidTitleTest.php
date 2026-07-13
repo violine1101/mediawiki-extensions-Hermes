@@ -10,7 +10,7 @@ use MediaWikiUnitTestCase;
  */
 class HasInvalidTitleTest extends MediaWikiUnitTestCase {
 
-	private static function makePageInfo( ?string $translationProject, ?string $title ): PageInfo {
+	private static function makePageInfo( ?string $translationProject, string $title ): PageInfo {
 		$page = new PageInfo();
 		$page->translationProject = $translationProject;
 		$page->title = $title;
@@ -34,13 +34,6 @@ class HasInvalidTitleTest extends MediaWikiUnitTestCase {
 
 	public function testOrdinaryTitle() {
 		$page = self::makePageInfo( null, 'Foo' );
-
-		$this->assertFalse( $page->hasInvalidTitle() );
-	}
-
-	public function testTitleUnavailable() {
-		// $title is unavailable (null) for PageInfo objects loaded from the database.
-		$page = self::makePageInfo( null, null );
 
 		$this->assertFalse( $page->hasInvalidTitle() );
 	}

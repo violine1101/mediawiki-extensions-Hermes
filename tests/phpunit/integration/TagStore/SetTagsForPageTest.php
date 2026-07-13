@@ -6,6 +6,7 @@ use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
+use MediaWiki\WikiMap\WikiMap;
 
 /**
  * @group Database
@@ -13,9 +14,14 @@ use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
  */
 class SetTagsForPageTest extends HermesIntegrationTestCase {
 
+	protected function setUp(): void {
+		parent::setUp();
+		$this->registerBaseLanguage( 'dewiki', 'de' );
+	}
+
 	public function testOverwritesPreviousTags() {
-		$en = $this->makePageInfo( 'en' );
-		$de = $this->makePageInfo( 'de' );
+		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
+		$de = $this->makePageInfo( 'dewiki' );
 
 		TagStore::setTagsForPage( $de, Tag::fromArgs( [ 'old_tag' ] ) );
 		TagStore::setTagsForPage( $en, Tag::fromArgs( [ 'old_tag' ] ) );
@@ -27,8 +33,8 @@ class SetTagsForPageTest extends HermesIntegrationTestCase {
 	}
 
 	public function testPersistsSection() {
-		$en = $this->makePageInfo( 'en' );
-		$de = $this->makePageInfo( 'de' );
+		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
+		$de = $this->makePageInfo( 'dewiki' );
 
 		TagStore::setTagsForPage( $de, Tag::fromArgs( [ 'shared_tag#Some_Section' ] ) );
 		TagStore::setTagsForPage( $en, Tag::fromArgs( [ 'shared_tag' ] ) );
@@ -39,7 +45,7 @@ class SetTagsForPageTest extends HermesIntegrationTestCase {
 	}
 
 	public function testOrderScopedPerSection() {
-		$page = $this->makePageInfo( 'en' );
+		$page = $this->makePageInfo( WikiMap::getCurrentWikiId() );
 
 		TagStore::setTagsForPage( $page, Tag::fromArgs( [
 			'page_level_a',
