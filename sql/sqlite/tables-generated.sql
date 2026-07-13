@@ -26,3 +26,10 @@ CREATE TABLE /*_*/hermes_languages (
 );
 
 CREATE INDEX hl_wiki ON /*_*/hermes_languages (hl_wiki);
+
+
+CREATE TABLE /*_*/hermes_wikis (
+  hw_wiki BLOB NOT NULL,
+  hw_url BLOB NOT NULL,
+  PRIMARY KEY(hw_wiki)
+);

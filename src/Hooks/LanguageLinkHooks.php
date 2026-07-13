@@ -42,7 +42,7 @@ class LanguageLinkHooks implements LanguageLinksHook, MediaWikiServicesHook {
 
 	/**
 	 * Wraps the core InterwikiLookup service, so that prefixes registered via LanguageStore
-	 * resolve against the wikis configured in $wgHermesWikis.
+	 * resolve against the wikis registered in WikiStore.
 	 *
 	 * @inheritDoc
 	 */
@@ -50,7 +50,7 @@ class LanguageLinkHooks implements LanguageLinksHook, MediaWikiServicesHook {
 		$services->addServiceManipulator(
 			'InterwikiLookup',
 			static function ( IInterwikiLookup $service, MediaWikiServices $services ) {
-				return new InterwikiLookup( $service, $services->getMainConfig()->get( 'HermesWikis' ) );
+				return new InterwikiLookup( $service );
 			}
 		);
 	}

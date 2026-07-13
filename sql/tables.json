@@ -27,5 +27,14 @@
 			{ "name": "hl_wiki", "columns": [ "hl_wiki" ], "unique": false }
 		],
 		"pk": [ "hl_language" ]
+	},
+	{
+		"name": "hermes_wikis",
+		"columns": [
+			{ "name": "hw_wiki", "type": "binary", "options": { "length": 64, "notnull": true } },
+			{ "name": "hw_url", "type": "binary", "options": { "length": 255, "notnull": true } }
+		],
+		"indexes": [],
+		"pk": [ "hw_wiki" ]
 	}
 ]

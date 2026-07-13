@@ -3,34 +3,27 @@
 namespace MediaWiki\Extension\Hermes\Decorators;
 
 use MediaWiki\Extension\Hermes\LanguageStore;
+use MediaWiki\Extension\Hermes\WikiStore;
 use MediaWiki\Interwiki\Interwiki;
 use MediaWiki\Interwiki\InterwikiLookup as IInterwikiLookup;
 
 /**
- * Decorates the core InterwikiLookup service, resolving prefixes from LanguageStore
- * against the wikis configured in $wgHermesWikis, before falling back to the wrapped lookup.
+ * Decorates the core InterwikiLookup service, resolving prefixes from LanguageStore against
+ * the wikis registered in WikiStore, before falling back to the wrapped lookup.
  * Registered as a service manipulator on "InterwikiLookup" by Hooks\LanguageLinksHooks.
  */
 class InterwikiLookup implements IInterwikiLookup {
 
 	private IInterwikiLookup $inner;
 
-	/** @var array<string,string> Map of wiki ID => URL template, from $wgHermesWikis. */
-	private array $wikis;
-
-	/**
-	 * @param IInterwikiLookup $inner
-	 * @param array<string,string> $wikis Map of wiki ID => URL template, from $wgHermesWikis.
-	 */
-	public function __construct( IInterwikiLookup $inner, array $wikis ) {
+	public function __construct( IInterwikiLookup $inner ) {
 		$this->inner = $inner;
-		$this->wikis = $wikis;
 	}
 
 	private function getUrlTemplate( string $prefix ): ?string {
 		$wiki = LanguageStore::getWikiForLanguage( $prefix );
 
-		return $wiki === null ? null : ( $this->wikis[ $wiki ] ?? null );
+		return $wiki === null ? null : WikiStore::getUrlTemplate( $wiki );
 	}
 
 	/** @inheritDoc */

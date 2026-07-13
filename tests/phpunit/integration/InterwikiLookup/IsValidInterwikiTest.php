@@ -14,9 +14,10 @@ class IsValidInterwikiTest extends HermesIntegrationTestCase {
 
 	public function testTrueForRegisteredLanguage() {
 		$this->registerBaseLanguage( 'frwiki', 'fr' );
+		$this->registerWiki( 'frwiki', 'https://fr.example.org/wiki/$1' );
 
 		$inner = $this->createNoOpMock( IInterwikiLookup::class );
-		$lookup = new InterwikiLookup( $inner, [ 'frwiki' => 'https://fr.example.org/wiki/$1' ] );
+		$lookup = new InterwikiLookup( $inner );
 
 		$this->assertTrue( $lookup->isValidInterwiki( 'fr' ) );
 	}

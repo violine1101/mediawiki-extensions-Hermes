@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\Hermes\Tests;
 use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\WikiStore;
 use MediaWiki\WikiMap\WikiMap;
 use MediaWikiIntegrationTestCase;
 
@@ -19,6 +20,7 @@ abstract class HermesIntegrationTestCase extends MediaWikiIntegrationTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		LanguageStore::clearCacheForTesting();
+		WikiStore::clearCacheForTesting();
 	}
 
 	/**
@@ -67,5 +69,19 @@ abstract class HermesIntegrationTestCase extends MediaWikiIntegrationTestCase {
 			__METHOD__
 		);
 		LanguageStore::clearCacheForTesting();
+	}
+
+	/**
+	 * Directly inserts a wiki's URL template, standing in for that wiki having already
+	 * registered itself via WikiStore::init() (this doesn't exercise that registration, just
+	 * consumes its result).
+	 */
+	protected function registerWiki( string $wiki, string $url ): void {
+		Hermes::getDB( DB_PRIMARY )->insert(
+			'hermes_wikis',
+			[ 'hw_wiki' => $wiki, 'hw_url' => $url ],
+			__METHOD__
+		);
+		WikiStore::clearCacheForTesting();
 	}
 }

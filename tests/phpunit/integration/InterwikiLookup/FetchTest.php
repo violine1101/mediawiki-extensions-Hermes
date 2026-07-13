@@ -12,15 +12,12 @@ use MediaWiki\Interwiki\InterwikiLookup as IInterwikiLookup;
  */
 class FetchTest extends HermesIntegrationTestCase {
 
-	private static function newLookup( IInterwikiLookup $inner, array $wikis ): InterwikiLookup {
-		return new InterwikiLookup( $inner, $wikis );
-	}
-
 	public function testResolvesRegisteredLanguage() {
 		$this->registerBaseLanguage( 'dewiki', 'de' );
+		$this->registerWiki( 'dewiki', 'https://de.example.org/wiki/$1' );
 
 		$inner = $this->createNoOpMock( IInterwikiLookup::class );
-		$lookup = self::newLookup( $inner, [ 'dewiki' => 'https://de.example.org/wiki/$1' ] );
+		$lookup = new InterwikiLookup( $inner );
 
 		$iw = $lookup->fetch( 'de' );
 
@@ -33,7 +30,7 @@ class FetchTest extends HermesIntegrationTestCase {
 		$inner = $this->createMock( IInterwikiLookup::class );
 		$inner->method( 'fetch' )->with( 'unregistered_prefix' )->willReturn( false );
 
-		$lookup = self::newLookup( $inner, [] );
+		$lookup = new InterwikiLookup( $inner );
 
 		$this->assertFalse( $lookup->fetch( 'unregistered_prefix' ) );
 	}
@@ -44,8 +41,8 @@ class FetchTest extends HermesIntegrationTestCase {
 		$inner = $this->createMock( IInterwikiLookup::class );
 		$inner->method( 'fetch' )->with( 'de' )->willReturn( false );
 
-		// "dewiki" is registered for "de", but not present in $wgHermesWikis.
-		$lookup = self::newLookup( $inner, [] );
+		// "dewiki" is registered for "de", but not present in hermes_wikis.
+		$lookup = new InterwikiLookup( $inner );
 
 		$this->assertFalse( $lookup->fetch( 'de' ) );
 	}
