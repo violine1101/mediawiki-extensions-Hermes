@@ -97,7 +97,7 @@ class PageInfo {
 		if ( preg_match( '/^!([a-z0-9-]+):(.+)$/', $baseTitle, $match ) ) {
 			$lang = $match[ 1 ];
 			$title = $match[ 2 ];
-			if ( LanguageStore::isProjectLanguage( $lang ) ) {
+			if ( LanguageStore::isLocalProjectLanguage( $lang ) ) {
 				return [ $lang, $title ];
 			}
 		}

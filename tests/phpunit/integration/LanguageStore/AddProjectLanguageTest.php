@@ -46,7 +46,7 @@ class AddProjectLanguageTest extends HermesIntegrationTestCase {
 		}
 	}
 
-	public function testThrowsOnConflictWithAnotherWikisProjectLanguage() {
+	public function testThrowsOnConflictWithAnotherWikisLocalProjectLanguage() {
 		$this->registerProjectLanguage( 'dewiki', 'eo' );
 
 		try {

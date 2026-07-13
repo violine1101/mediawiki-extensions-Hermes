@@ -8,30 +8,30 @@ use MediaWiki\WikiMap\WikiMap;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\Hermes\LanguageStore::isProjectLanguage
+ * @covers \MediaWiki\Extension\Hermes\LanguageStore::isLocalProjectLanguage
  */
-class IsProjectLanguageTest extends HermesIntegrationTestCase {
+class IsLocalProjectLanguageTest extends HermesIntegrationTestCase {
 
 	public function testTrueForRegisteredProject() {
 		$wiki = WikiMap::getCurrentWikiId();
 		LanguageStore::addProjectLanguage( $wiki, 'eo' );
 
-		$this->assertTrue( LanguageStore::isProjectLanguage( 'eo' ) );
+		$this->assertTrue( LanguageStore::isLocalProjectLanguage( 'eo' ) );
 	}
 
 	public function testFalseForBaseLanguage() {
 		$this->overrideConfigValue( 'LanguageCode', 'en' );
 
-		$this->assertFalse( LanguageStore::isProjectLanguage( 'en' ) );
+		$this->assertFalse( LanguageStore::isLocalProjectLanguage( 'en' ) );
 	}
 
 	public function testFalseForUnregistered() {
-		$this->assertFalse( LanguageStore::isProjectLanguage( 'zz' ) );
+		$this->assertFalse( LanguageStore::isLocalProjectLanguage( 'zz' ) );
 	}
 
 	public function testFalseWhenRegisteredElsewhere() {
 		LanguageStore::addProjectLanguage( 'otherwiki', 'eo' );
 
-		$this->assertFalse( LanguageStore::isProjectLanguage( 'eo' ) );
+		$this->assertFalse( LanguageStore::isLocalProjectLanguage( 'eo' ) );
 	}
 }

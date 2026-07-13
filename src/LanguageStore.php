@@ -57,7 +57,7 @@ class LanguageStore {
 	 * @param string $language
 	 * @return bool
 	 */
-	public static function isProjectLanguage( string $language ): bool {
+	public static function isLocalProjectLanguage( string $language ): bool {
 		$row = self::getLanguages()[ $language ] ?? null;
 
 		return $row !== null && !$row[ 'isBase' ] && $row[ 'wiki' ] === WikiMap::getCurrentWikiId();
