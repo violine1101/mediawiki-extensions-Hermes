@@ -54,4 +54,18 @@ abstract class HermesIntegrationTestCase extends MediaWikiIntegrationTestCase {
 		);
 		LanguageStore::clearCacheForTesting();
 	}
+
+	/**
+	 * Directly inserts a project-language row, standing in for some other wiki having already
+	 * registered itself via LanguageStore::addProjectLanguage() (this doesn't exercise that
+	 * registration, just consumes its result).
+	 */
+	protected function registerProjectLanguage( string $wiki, string $language ): void {
+		Hermes::getDB( DB_PRIMARY )->insert(
+			'hermes_languages',
+			[ 'hl_language' => $language, 'hl_wiki' => $wiki, 'hl_base' => 0 ],
+			__METHOD__
+		);
+		LanguageStore::clearCacheForTesting();
+	}
 }

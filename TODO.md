@@ -6,7 +6,7 @@ Phase 1a: Refine the Interwiki System [DONE]
   - Should maybe throw error or add to maintenance category
 - Is there a proper way to define extension maintenance categories? If so, would need to adapt #hermes duplicate category, if so.
 
-Cleanup Phase: Refactor tests, and make them more readable
+Cleanup Phase: Refactor tests, and make them more readable [DONE]
 
 Phase 1b: Refine current state of translation projects
 - A language may only be defined once across the entire wiki family. Ensure that this is the case.

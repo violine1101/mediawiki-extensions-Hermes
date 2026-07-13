@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\Hermes\Maintenance;
 
 use Maintenance;
+use MediaWiki\Extension\Hermes\Exceptions\LanguageConflictException;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\WikiMap\WikiMap;
 
@@ -23,7 +24,7 @@ class AddProjectLanguage extends Maintenance {
 		parent::__construct();
 		$this->requireExtension( 'Hermes' );
 		$this->addDescription(
-			'Registers an additional translation project language for this wiki in the shared ' .
+			'Registers an additional translation project language on this wiki in the shared ' .
 				'hermes_languages table.'
 		);
 		$this->addOption( 'language', 'Language code for this translation project.', true, true );
@@ -33,8 +34,17 @@ class AddProjectLanguage extends Maintenance {
 		$language = $this->getOption( 'language' );
 		$wiki = WikiMap::getCurrentWikiId();
 
-		LanguageStore::addProjectLanguage( $wiki, $language );
-		$this->output( "Registered this wiki ($wiki) for translation project \"$language\".\n" );
+		try {
+			$isNew = LanguageStore::addProjectLanguage( $wiki, $language );
+		} catch ( LanguageConflictException $e ) {
+			$this->fatalError( $e->getMessage() );
+		}
+
+		if ( $isNew ) {
+			$this->output( "Registered translation project \"$language\" on this wiki ($wiki).\n" );
+		} else {
+			$this->output( "Translation project \"$language\" is already registered on this wiki ($wiki).\n" );
+		}
 	}
 }
 

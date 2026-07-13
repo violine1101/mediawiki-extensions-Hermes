@@ -15,8 +15,8 @@ class InitHooks implements LoadExtensionSchemaUpdatesHook, UnitTestsAfterDatabas
 
 	/** @inheritDoc */
 	public function onBeforeInitialize( $title, $unused, $output, $user, $request, $mediaWiki ) {
-		// Ensure that language table is initialized
-		LanguageStore::loadLanguages();
+		// Ensure this wiki's base language is registered.
+		LanguageStore::init();
 	}
 
 	/** @inheritDoc */

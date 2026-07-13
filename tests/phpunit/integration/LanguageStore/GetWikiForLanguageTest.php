@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\Hermes\Tests\LanguageStore;
 
+use MediaWiki\Extension\Hermes\Exceptions\LanguageConflictException;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 use MediaWiki\WikiMap\WikiMap;
@@ -45,7 +46,7 @@ class GetWikiForLanguageTest extends HermesIntegrationTestCase {
 		$this->registerBaseLanguage( 'otherwiki', 'de' );
 		$this->overrideConfigValue( 'LanguageCode', 'de' );
 
-		$this->expectException( \RuntimeException::class );
+		$this->expectException( LanguageConflictException::class );
 		LanguageStore::getWikiForLanguage( 'de' );
 	}
 }
