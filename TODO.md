@@ -1,4 +1,4 @@
-Phase 1a: Refine the Interwiki System
+Phase 1a: Refine the Interwiki System [DONE]
 - Implement section interwikis correctly - also rethink order + section
   - Normalize section values: spaces -> _ (basically, valid HTML anchors?)
 - Handle conflicts (multiple pages on the same wiki/translation project with the same key in the same order)
@@ -6,11 +6,13 @@ Phase 1a: Refine the Interwiki System
   - Should maybe throw error or add to maintenance category
 - Is there a proper way to define extension maintenance categories? If so, would need to adapt #hermes duplicate category, if so.
 
-(Cleanup Phase: Refactor tests, and make them more readable)
+Cleanup Phase: Refactor tests, and make them more readable
 
 Phase 1b: Refine current state of translation projects
+- A language may only be defined once across the entire wiki family. Ensure that this is the case.
 - Fix interwiki links to translation projects, e.g. `[[:es:Golem]]` currently links to the English page.
   - The current hijacking of interwiki links should also use `parseTitle` for PageInfos from `fromRow`.
+- Add Hermes-generated interlanguage links to `Special:Interwiki` (read-only, best with a note that they're provided by Hermes)
 - If `$wgCapitalLinks` is true, Hermes should also force the title after the project prefix to start with a capital letter.
 
 Phase 2: Add features to translation projects

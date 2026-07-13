@@ -82,7 +82,7 @@ class TagStore {
 	 *
 	 * Two or more pages are in conflict if they have set the same tag with the same order
 	 * (fallback priority) and are in the same language.
-	 * 
+	 *
 	 * @param PageInfo $page The page $tags is being set on.
 	 * @param Tag[] $tags The tags to check, each with its assigned order.
 	 * @return array<string, array<string, PageInfo[]>> language => tag name => conflicted pages

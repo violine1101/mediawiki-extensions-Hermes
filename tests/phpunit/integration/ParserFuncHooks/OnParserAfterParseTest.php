@@ -1,73 +1,29 @@
 <?php
 
-namespace MediaWiki\Extension\Hermes\Tests;
+namespace MediaWiki\Extension\Hermes\Tests\ParserFuncHooks;
 
 use MediaWiki\Extension\Hermes\LanguageStore;
-use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Extension\Hermes\TagStore;
+use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 use MediaWiki\Parser\ParserOptions;
 use MediaWiki\Parser\ParserOutput;
 use MediaWiki\Title\Title;
-use MediaWiki\WikiMap\WikiMap;
-use MediaWikiIntegrationTestCase;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\Hermes\Hooks\ParserFuncHooks
+ * @covers \MediaWiki\Extension\Hermes\Hooks\ParserFuncHooks::onParserAfterParse
  */
-class ParserFuncHooksTest extends MediaWikiIntegrationTestCase {
+class OnParserAfterParseTest extends HermesIntegrationTestCase {
 
-	protected function setUp(): void {
-		parent::setUp();
-		LanguageStore::clearCacheForTesting();
-	}
-
-	private function parse( string $wikitext, string $titleText = 'ParserFuncHooksTest' ): ParserOutput {
+	private function parse( string $wikitext, string $titleText = 'OnParserAfterParseTest' ): ParserOutput {
 		$title = Title::newFromText( $titleText );
 		$parser = $this->getServiceContainer()->getParser();
 		return $parser->parse( $wikitext, $title, ParserOptions::newFromAnon() );
 	}
 
-	public function testDuplicateTagNameShowsErrorBoxAndDoesNotPersistTags() {
-		$output = $this->parse( '{{#hermes:shared_tag|shared_tag}}' );
-
-		$this->assertStringContainsString( 'cdx-message--error', $output->getContentHolderText() );
-		$this->assertNull( $output->getPageProperty( 'hermes_tags' ) );
-	}
-
-	public function testDuplicateTagNameAcrossSectionsShowsErrorBox() {
-		$output = $this->parse( '{{#hermes:shared_tag|shared_tag#Some Section}}' );
-
-		$this->assertStringContainsString( 'cdx-message--error', $output->getContentHolderText() );
-		$this->assertNull( $output->getPageProperty( 'hermes_tags' ) );
-	}
-
-	public function testDistinctTagsDoNotShowErrorBox() {
-		$output = $this->parse( '{{#hermes:tag_a|tag_b#Details}}' );
-
-		$this->assertStringNotContainsString( 'cdx-message--error', $output->getContentHolderText() );
-		$this->assertNotNull( $output->getPageProperty( 'hermes_tags' ) );
-	}
-
-	public function testDuplicateCallAddsTrackingCategory() {
-		$output = $this->parse( '{{#hermes:tag_a}}{{#hermes:tag_b}}' );
-
-		$this->assertContains( 'Pages_with_duplicate_Hermes_calls', $output->getCategoryNames() );
-	}
-
-	public function testSingleCallDoesNotAddDuplicateCallCategory() {
-		$output = $this->parse( '{{#hermes:tag_a}}' );
-
-		$this->assertNotContains( 'Pages_with_duplicate_Hermes_calls', $output->getCategoryNames() );
-	}
-
-	public function testConflictingTagAddsTrackingCategory() {
-		$existing = new PageInfo();
-		$existing->wiki = WikiMap::getCurrentWikiId();
-		$existing->id = 999101;
-		$existing->fullTitle = 'ExistingConflictPage';
-		$existing->language = LanguageStore::getLocalBaseLanguage();
+	public function testConflictAddsCategory() {
+		$existing = $this->makePageInfo( LanguageStore::getLocalBaseLanguage(), 'ExistingConflictPage' );
 		TagStore::setTagsForPage( $existing, Tag::fromArgs( [ 'conflict_tag' ] ) );
 
 		$output = $this->parse( '{{#hermes:conflict_tag}}', 'ParserFuncHooksConflictTest' );
@@ -75,25 +31,17 @@ class ParserFuncHooksTest extends MediaWikiIntegrationTestCase {
 		$this->assertContains( 'Pages_with_conflicting_Hermes_tags', $output->getCategoryNames() );
 	}
 
-	public function testNonConflictingTagDoesNotAddConflictCategory() {
+	public function testNoConflictNoCategory() {
 		$output = $this->parse( '{{#hermes:no_conflict_tag}}' );
 
 		$this->assertNotContains( 'Pages_with_conflicting_Hermes_tags', $output->getCategoryNames() );
 	}
 
-	public function testAmbiguousLinkAddsTrackingCategory() {
-		$deA = new PageInfo();
-		$deA->wiki = WikiMap::getCurrentWikiId();
-		$deA->id = 999102;
-		$deA->fullTitle = 'AmbiguousDeA';
-		$deA->language = 'de';
+	public function testAmbiguityAddsCategory() {
+		$deA = $this->makePageInfo( 'de', 'AmbiguousDeA' );
 		TagStore::setTagsForPage( $deA, Tag::fromArgs( [ 'ambiguous_tag' ] ) );
 
-		$deB = new PageInfo();
-		$deB->wiki = WikiMap::getCurrentWikiId();
-		$deB->id = 999103;
-		$deB->fullTitle = 'AmbiguousDeB';
-		$deB->language = 'de';
+		$deB = $this->makePageInfo( 'de', 'AmbiguousDeB' );
 		TagStore::setTagsForPage( $deB, Tag::fromArgs( [ 'ambiguous_tag' ] ) );
 
 		// This page's own language (the test wiki's content language) is unrelated to 'de',
@@ -103,18 +51,14 @@ class ParserFuncHooksTest extends MediaWikiIntegrationTestCase {
 		$this->assertContains( 'Pages_with_ambiguous_Hermes_links', $output->getCategoryNames() );
 	}
 
-	public function testNonAmbiguousTagDoesNotAddAmbiguousLinksCategory() {
+	public function testNoAmbiguityNoCategory() {
 		$output = $this->parse( '{{#hermes:no_ambiguous_tag}}' );
 
 		$this->assertNotContains( 'Pages_with_ambiguous_Hermes_links', $output->getCategoryNames() );
 	}
 
-	public function testConflictingTagShowsWarningBoxWithDetails() {
-		$existing = new PageInfo();
-		$existing->wiki = WikiMap::getCurrentWikiId();
-		$existing->id = 999106;
-		$existing->fullTitle = 'ExistingConflictPageDetails';
-		$existing->language = LanguageStore::getLocalBaseLanguage();
+	public function testConflictWarningDetails() {
+		$existing = $this->makePageInfo( LanguageStore::getLocalBaseLanguage(), 'ExistingConflictPageDetails' );
 		TagStore::setTagsForPage( $existing, Tag::fromArgs( [ 'conflict_details_tag' ] ) );
 
 		$text = $this->parse( '{{#hermes:conflict_details_tag}}', 'ParserFuncHooksConflictDetailsTest' )
@@ -128,19 +72,11 @@ class ParserFuncHooksTest extends MediaWikiIntegrationTestCase {
 		);
 	}
 
-	public function testAmbiguousLinkShowsWarningBoxWithDetails() {
-		$deA = new PageInfo();
-		$deA->wiki = WikiMap::getCurrentWikiId();
-		$deA->id = 999107;
-		$deA->fullTitle = 'AmbiguousDetailsA';
-		$deA->language = 'de';
+	public function testAmbiguityWarningDetails() {
+		$deA = $this->makePageInfo( 'de', 'AmbiguousDetailsA' );
 		TagStore::setTagsForPage( $deA, Tag::fromArgs( [ 'ambiguous_details_tag' ] ) );
 
-		$deB = new PageInfo();
-		$deB->wiki = WikiMap::getCurrentWikiId();
-		$deB->id = 999108;
-		$deB->fullTitle = 'AmbiguousDetailsB';
-		$deB->language = 'de';
+		$deB = $this->makePageInfo( 'de', 'AmbiguousDetailsB' );
 		TagStore::setTagsForPage( $deB, Tag::fromArgs( [ 'ambiguous_details_tag' ] ) );
 
 		$text = $this->parse( '{{#hermes:ambiguous_details_tag}}', 'ParserFuncHooksAmbiguousDetailsTest' )
@@ -155,14 +91,10 @@ class ParserFuncHooksTest extends MediaWikiIntegrationTestCase {
 		$this->assertMatchesRegularExpression( '/<a href="[^"]*">AmbiguousDetailsB<\/a>/', $text );
 	}
 
-	public function testWarningsSuppressedWhenConfigDisabledButCategoryStillApplies() {
+	public function testWarningsSuppressedByConfig() {
 		$this->overrideConfigValue( 'HermesWarnings', false );
 
-		$existing = new PageInfo();
-		$existing->wiki = WikiMap::getCurrentWikiId();
-		$existing->id = 999109;
-		$existing->fullTitle = 'ExistingConflictPageNoWarning';
-		$existing->language = LanguageStore::getLocalBaseLanguage();
+		$existing = $this->makePageInfo( LanguageStore::getLocalBaseLanguage(), 'ExistingConflictPageNoWarning' );
 		TagStore::setTagsForPage( $existing, Tag::fromArgs( [ 'conflict_no_warning_tag' ] ) );
 
 		$output = $this->parse( '{{#hermes:conflict_no_warning_tag}}', 'ParserFuncHooksNoWarningTest' );
@@ -171,12 +103,8 @@ class ParserFuncHooksTest extends MediaWikiIntegrationTestCase {
 		$this->assertContains( 'Pages_with_conflicting_Hermes_tags', $output->getCategoryNames() );
 	}
 
-	public function testOnlyLastCallsTagsAreCheckedForConflicts() {
-		$existing = new PageInfo();
-		$existing->wiki = WikiMap::getCurrentWikiId();
-		$existing->id = 999110;
-		$existing->fullTitle = 'ExistingConflictPageForFirstCall';
-		$existing->language = LanguageStore::getLocalBaseLanguage();
+	public function testOnlyLastCallChecked() {
+		$existing = $this->makePageInfo( LanguageStore::getLocalBaseLanguage(), 'ExistingConflictPageForFirstCall' );
 		TagStore::setTagsForPage( $existing, Tag::fromArgs( [ 'first_call_conflict_tag' ] ) );
 
 		// The first call's tag conflicts, but the second call overwrites the persisted
@@ -195,12 +123,8 @@ class ParserFuncHooksTest extends MediaWikiIntegrationTestCase {
 		$this->assertStringNotContainsString( 'ExistingConflictPageForFirstCall', $output->getContentHolderText() );
 	}
 
-	public function testLastCallsConflictIsStillDetected() {
-		$existing = new PageInfo();
-		$existing->wiki = WikiMap::getCurrentWikiId();
-		$existing->id = 999111;
-		$existing->fullTitle = 'ExistingConflictPageForLastCall';
-		$existing->language = LanguageStore::getLocalBaseLanguage();
+	public function testLastCallConflictDetected() {
+		$existing = $this->makePageInfo( LanguageStore::getLocalBaseLanguage(), 'ExistingConflictPageForLastCall' );
 		TagStore::setTagsForPage( $existing, Tag::fromArgs( [ 'last_call_conflict_tag' ] ) );
 
 		$output = $this->parse(

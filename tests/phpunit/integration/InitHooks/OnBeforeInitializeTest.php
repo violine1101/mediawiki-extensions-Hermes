@@ -1,26 +1,21 @@
 <?php
 
-namespace MediaWiki\Extension\Hermes\Tests;
+namespace MediaWiki\Extension\Hermes\Tests\InitHooks;
 
 use MediaWiki\Context\RequestContext;
 use MediaWiki\Extension\Hermes\Hooks\InitHooks;
 use MediaWiki\Extension\Hermes\LanguageStore;
+use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 use MediaWiki\Title\Title;
 use MediaWiki\WikiMap\WikiMap;
-use MediaWikiIntegrationTestCase;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\Hermes\Hooks\InitHooks
+ * @covers \MediaWiki\Extension\Hermes\Hooks\InitHooks::onBeforeInitialize
  */
-class InitHooksTest extends MediaWikiIntegrationTestCase {
+class OnBeforeInitializeTest extends HermesIntegrationTestCase {
 
-	protected function setUp(): void {
-		parent::setUp();
-		LanguageStore::clearCacheForTesting();
-	}
-
-	public function testOnBeforeInitializeRegistersCurrentWiki() {
+	public function testRegistersCurrentWiki() {
 		$this->overrideConfigValue( 'LanguageCode', 'de' );
 
 		$context = new RequestContext();

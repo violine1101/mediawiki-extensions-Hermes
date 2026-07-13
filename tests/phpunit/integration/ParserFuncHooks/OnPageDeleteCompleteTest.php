@@ -1,26 +1,20 @@
 <?php
 
-namespace MediaWiki\Extension\Hermes\Tests;
+namespace MediaWiki\Extension\Hermes\Tests\ParserFuncHooks;
 
-use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Extension\Hermes\TagStore;
-use MediaWikiIntegrationTestCase;
+use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\Hermes\Hooks\ParserFuncHooks
+ * @covers \MediaWiki\Extension\Hermes\Hooks\ParserFuncHooks::onPageDeleteComplete
  */
-class PageDeleteHookTest extends MediaWikiIntegrationTestCase {
+class OnPageDeleteCompleteTest extends HermesIntegrationTestCase {
 
-	protected function setUp(): void {
-		parent::setUp();
-		LanguageStore::clearCacheForTesting();
-	}
-
-	public function testTagsRemovedOnPageDelete() {
-		$page = $this->getExistingTestPage( 'DeleteHookTest' );
+	public function testRemovesTags() {
+		$page = $this->getExistingTestPage( 'OnPageDeleteCompleteTest' );
 		$this->editPage( $page, '{{#hermes:some_tag}}' );
 
 		$pageInfo = PageInfo::fromLocalPage( $page->getTitle() );
@@ -29,11 +23,7 @@ class PageDeleteHookTest extends MediaWikiIntegrationTestCase {
 		// a synthetic partner in another language sharing the same tag; that way a
 		// non-empty result actually demonstrates the tag was written by
 		// LinksUpdateComplete, rather than passing vacuously.
-		$partner = new PageInfo();
-		$partner->wiki = $pageInfo->wiki;
-		$partner->id = 999001;
-		$partner->fullTitle = 'DeleteHookTest/de';
-		$partner->language = 'de';
+		$partner = $this->makePageInfo( 'de', 'OnPageDeleteCompleteTest/de' );
 		TagStore::setTagsForPage( $partner, Tag::fromArgs( [ 'some_tag' ] ) );
 
 		// sanity check it was written by LinksUpdateComplete
