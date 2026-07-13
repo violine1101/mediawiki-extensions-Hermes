@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\Hermes;
 
+use MediaWiki\Html\Html;
 use MediaWiki\Language\Language;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Page\PageReference;
@@ -61,6 +62,29 @@ class PageInfo {
 	}
 
 	/**
+	 * Creates a PageInfo from a hermes_tags table row.
+	 *
+	 * @param \stdClass $row Database row object. Assumed to have the relevant ht_ properties.
+	 * @return PageInfo The resulting page info object.
+	 */
+	public static function fromRow( $row ): PageInfo {
+		$self = new PageInfo();
+
+		$self->wiki = $row->ht_wiki;
+		$self->id = $row->ht_page_id;
+		$self->fullTitle = $row->ht_page_title;
+		$self->language = $row->ht_language;
+		$self->section = $row->ht_section;
+
+		// FIXME: This only works properly for pages without a namespace.
+		[ $self->translationProject, $self->title ] = self::parseTitle( $self->fullTitle );
+		// TODO: Populate the remaining properties.
+		// May require more columns to be added to the table (e.g. namespace ID + text)
+
+		return $self;
+	}
+
+	/**
 	 * Extracts the translation project prefix from a title (without namespace).
 	 *
 	 * @param string $baseTitle The title to be parsed, without namespace
@@ -104,20 +128,15 @@ class PageInfo {
 	}
 
 	/**
-	 * Creates a PageInfo from a hermes_tags table row.
-	 *
-	 * @param \stdClass $row Database row object. Assumed to have the relevant ht_ properties.
-	 * @return PageInfo The resulting page info object.
+	 * Builds a link to the page, using the language codes for interlanguage links.
+	 * Falls back to plain (escaped) text if that doesn't resolve to a valid title.
 	 */
-	public static function fromRow( $row ): PageInfo {
-		$self = new PageInfo();
+	public function buildLink(): string {
+		$target = Title::newFromText( "{$this->language}:{$this->fullTitle}" );
+		if ( $target === null ) {
+			return htmlspecialchars( $this->fullTitle );
+		}
 
-		$self->wiki = $row->ht_wiki;
-		$self->id = $row->ht_page_id;
-		$self->fullTitle = $row->ht_page_title;
-		$self->language = $row->ht_language;
-		$self->section = $row->ht_section;
-
-		return $self;
+		return Html::element( 'a', [ 'href' => $target->getFullURL() ], $this->title );
 	}
 }

@@ -21,6 +21,10 @@
 		"HermesWikis": {
 			"description": "Map of wiki ID => URL template (with \"$1\" as the page title placeholder) for every wiki in the Hermes deployment.",
 			"value": {}
+		},
+		"HermesWarnings": {
+			"description": "Show on-page warning boxes for non-fatal issues resulting from the extension, such as Hermes tag ambiguities, conflicts, or duplicate {{#hermes:}} calls. When disabled, the relevant tracking categories are still applied, but no on-page warnings are shown.",
+			"value": true
 		}
 	},
 	"Hooks": {
@@ -35,7 +39,7 @@
 		"getUserPermissionsErrors": "translationproject",
 		"PageContentLanguage": "translationproject",
 		"UserGetLanguageObject": "translationproject",
-		"ParserAfterParse": "translationproject",
+		"ParserAfterParse": [ "parserfunc", "translationproject" ],
 		"OutputPageBeforeHTML": "translationproject"
 	},
 	"HookHandlers": {
@@ -65,7 +69,8 @@
 	],
 	"TrackingCategories": [
 		"hermes-duplicate-call-category",
-		"hermes-tag-conflict-category"
+		"hermes-tag-conflict-category",
+		"hermes-ambiguous-links-category"
 	],
 	"ResourceModules": {
 		"ext.hermes": {

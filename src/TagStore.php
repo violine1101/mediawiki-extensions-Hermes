@@ -78,22 +78,35 @@ class TagStore {
 	}
 
 	/**
-	 * Checks whether other pages already claim the same tag at the same order for the same
-	 * language.
+	 * Finds all conflicts and ambiguities caused by $page's own tag set.
 	 *
-	 * @param PageInfo $page The page introducing the tag.
-	 * @param Tag $tag The tag (with its assigned order) being checked.
-	 * @return string[] Titles of all conflicting pages; empty if there's no conflict.
+	 * Two or more pages are in conflict if they have set the same tag with the same order
+	 * (fallback priority) and are in the same language.
+	 * 
+	 * @param PageInfo $page The page $tags is being set on.
+	 * @param Tag[] $tags The tags to check, each with its assigned order.
+	 * @return array<string, array<string, PageInfo[]>> language => tag name => conflicted pages
 	 */
-	public static function findConflicts( PageInfo $page, Tag $tag ): array {
+	public static function findConflicts( PageInfo $page, array $tags ): array {
+		if ( !$tags ) {
+			return [];
+		}
+
 		$dbr = Hermes::getDB();
+
+		$queryConditions = [];
+		foreach ( $tags as $tag ) {
+			$queryConditions[] = $dbr->makeList(
+				[ 'ht_tag' => $tag->name, 'ht_order' => $tag->order ],
+				LIST_AND
+			);
+		}
+
 		$rows = $dbr->select(
 			self::TABLE_NAME,
-			[ 'ht_page_title' ],
+			'*',
 			[
-				'ht_tag' => $tag->name,
-				'ht_order' => $tag->order,
-				'ht_language' => $page->language,
+				$dbr->makeList( $queryConditions, LIST_OR ),
 				'NOT (' . $dbr->makeList(
 					[ 'ht_wiki' => $page->wiki, 'ht_page_id' => $page->id ],
 					LIST_AND
@@ -103,18 +116,32 @@ class TagStore {
 			[ 'ORDER BY' => 'ht_page_title ASC' ]
 		);
 
-		$titles = [];
-		foreach ( $rows as $row ) {
-			$titles[] = $row->ht_page_title;
+		$conflicts = [];
+		foreach ( $tags as $tag ) {
+			$conflicts[ $page->language ][ $tag->name ][] = $page;
 		}
-		return $titles;
+		foreach ( $rows as $row ) {
+			$conflicts[ $row->ht_language ][ $row->ht_tag ][] = PageInfo::fromRow( $row );
+		}
+
+		foreach ( $conflicts as $lang => $langConflicts ) {
+			foreach ( $langConflicts as $tag => $pages ) {
+				if ( count( $pages ) <= 1 ) {
+					unset( $conflicts[ $lang ][ $tag ] );
+				}
+			}
+			if ( !count( $conflicts[ $lang ] ) ) {
+				unset( $conflicts[ $lang ] );
+			}
+		}
+		return $conflicts;
 	}
 
 	/**
 	 * Find all relevant interwikis, following the given tag fallback chain.
 	 *
 	 * @param Tag[] $tags Ordered tag fallback chain
-	 * @return TagLink[] An array of links to pages with the given tags. Key is the language.
+	 * @return TagLink[] Links to pages with the given tags, keyed by language.
 	 */
 	private static function getLinksForTags( array $tags ): array {
 		if ( !$tags ) {
@@ -124,7 +151,8 @@ class TagStore {
 		$dbr = Hermes::getDB();
 
 		// Get all matching pages, sorted by where the tag is in the order.
-		// In case of a conflict, use the page title as tiebreak.
+		// In case of a conflict, use the page title as a tiebreak,
+		// so that it's deterministic which link gets displayed.
 		$rows = $dbr->select(
 			self::TABLE_NAME,
 			'*',
@@ -161,7 +189,7 @@ class TagStore {
 	 * Find all relevant interwikis for the given page on the current wiki.
 	 *
 	 * @param PageInfo $page The page to get the links for
-	 * @return TagLink[] An array of links to pages with the given tags, excluding any self-link.
+	 * @return TagLink[] Links to pages with the given tags, excluding any self-link.
 	 */
 	public static function getLinksForPage( PageInfo $page ): array {
 		$tags = self::getTagsForPage( $page );

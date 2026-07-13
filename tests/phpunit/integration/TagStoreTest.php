@@ -28,6 +28,14 @@ class TagStoreTest extends MediaWikiIntegrationTestCase {
 		return $page;
 	}
 
+	/**
+	 * @param PageInfo[] $pages
+	 * @return string[]
+	 */
+	private static function titlesOf( array $pages ): array {
+		return array_map( static fn ( PageInfo $page ) => $page->fullTitle, $pages );
+	}
+
 	public function testGetLinksForPageFindsMatchingTagInOtherLanguage() {
 		$en = self::makePageInfo( 1, 'en' );
 		$de = self::makePageInfo( 2, 'de' );
@@ -165,10 +173,14 @@ class TagStoreTest extends MediaWikiIntegrationTestCase {
 		$existing = self::makePageInfo( 1, 'eo', 'ExistingPage' );
 		TagStore::setTagsForPage( $existing, Tag::fromArgs( [ 'golem' ] ) );
 
+		// newPage is brand new - it has no row of its own in hermes_tags yet - but still
+		// conflicts with an already-saved page claiming the same tag+order+language.
 		$newPage = self::makePageInfo( 2, 'eo', 'NewPage' );
-		$tag = Tag::fromArgs( [ 'golem' ] )[ 0 ];
+		$tags = Tag::fromArgs( [ 'golem' ] );
 
-		$this->assertSame( [ 'ExistingPage' ], TagStore::findConflicts( $newPage, $tag ) );
+		// $newPage itself is included as a claimant too, alongside the page it conflicts with.
+		$conflicts = TagStore::findConflicts( $newPage, $tags );
+		$this->assertSame( [ 'NewPage', 'ExistingPage' ], self::titlesOf( $conflicts[ 'eo' ][ 'golem' ] ) );
 	}
 
 	public function testFindConflictsReturnsAllConflictingPages() {
@@ -178,11 +190,12 @@ class TagStoreTest extends MediaWikiIntegrationTestCase {
 		TagStore::setTagsForPage( $existingB, Tag::fromArgs( [ 'golem' ] ) );
 
 		$newPage = self::makePageInfo( 3, 'eo', 'NewPage' );
-		$tag = Tag::fromArgs( [ 'golem' ] )[ 0 ];
+		$tags = Tag::fromArgs( [ 'golem' ] );
 
+		$conflicts = TagStore::findConflicts( $newPage, $tags );
 		$this->assertSame(
-			[ 'ExistingPageA', 'ExistingPageB' ],
-			TagStore::findConflicts( $newPage, $tag )
+			[ 'NewPage', 'ExistingPageA', 'ExistingPageB' ],
+			self::titlesOf( $conflicts[ 'eo' ][ 'golem' ] )
 		);
 	}
 
@@ -197,16 +210,17 @@ class TagStoreTest extends MediaWikiIntegrationTestCase {
 		TagStore::setTagsForPage( $existing, Tag::fromArgs( [ 'golem' ] ) );
 
 		$newPage = self::makePageInfo( 2, 'eo', 'NewPage' );
-		$tag = Tag::fromArgs( [ 'golem' ] )[ 0 ];
+		$tags = Tag::fromArgs( [ 'golem' ] );
 
-		$this->assertSame( [ 'ExistingPage' ], TagStore::findConflicts( $newPage, $tag ) );
+		$conflicts = TagStore::findConflicts( $newPage, $tags );
+		$this->assertSame( [ 'NewPage', 'ExistingPage' ], self::titlesOf( $conflicts[ 'eo' ][ 'golem' ] ) );
 	}
 
 	public function testFindConflictsReturnsEmptyWithoutAnyConflict() {
 		$page = self::makePageInfo( 1, 'eo', 'SomePage' );
-		$tag = Tag::fromArgs( [ 'golem' ] )[ 0 ];
+		$tags = Tag::fromArgs( [ 'golem' ] );
 
-		$this->assertSame( [], TagStore::findConflicts( $page, $tag ) );
+		$this->assertSame( [], TagStore::findConflicts( $page, $tags ) );
 	}
 
 	public function testFindConflictsIgnoresPagesOwnPriorTags() {
@@ -214,9 +228,9 @@ class TagStoreTest extends MediaWikiIntegrationTestCase {
 		TagStore::setTagsForPage( $page, Tag::fromArgs( [ 'golem' ] ) );
 
 		// Re-saving the same page with the same tag must not conflict with itself.
-		$tag = Tag::fromArgs( [ 'golem' ] )[ 0 ];
+		$tags = Tag::fromArgs( [ 'golem' ] );
 
-		$this->assertSame( [], TagStore::findConflicts( $page, $tag ) );
+		$this->assertSame( [], TagStore::findConflicts( $page, $tags ) );
 	}
 
 	public function testFindConflictsIgnoresDifferentOrder() {
@@ -226,19 +240,46 @@ class TagStoreTest extends MediaWikiIntegrationTestCase {
 
 		$newPage = self::makePageInfo( 2, 'eo', 'NewPage' );
 		// 'golem' is newPage's *first* (and only) tag (order 0) - different order.
-		$tag = Tag::fromArgs( [ 'golem' ] )[ 0 ];
+		$tags = Tag::fromArgs( [ 'golem' ] );
 
-		$this->assertSame( [], TagStore::findConflicts( $newPage, $tag ) );
+		$this->assertSame( [], TagStore::findConflicts( $newPage, $tags ) );
 	}
 
-	public function testFindConflictsIgnoresDifferentLanguage() {
+	public function testFindConflictsIgnoresDifferentLanguageBelowAmbiguityThreshold() {
 		$existing = self::makePageInfo( 1, 'eo', 'ExistingPage' );
 		TagStore::setTagsForPage( $existing, Tag::fromArgs( [ 'golem' ] ) );
 
+		// A single other-language claimant isn't a direct conflict for newPage (wrong
+		// language) and isn't yet an ambiguity either (needs 2+ *other* claimants).
 		$newPage = self::makePageInfo( 2, 'de', 'NewPage' );
-		$tag = Tag::fromArgs( [ 'golem' ] )[ 0 ];
+		$tags = Tag::fromArgs( [ 'golem' ] );
 
-		$this->assertSame( [], TagStore::findConflicts( $newPage, $tag ) );
+		$this->assertSame( [], TagStore::findConflicts( $newPage, $tags ) );
+	}
+
+	public function testFindConflictsDetectsAmbiguityInOtherLanguage() {
+		$dePrimary = self::makePageInfo( 1, 'de', 'DePrimary' );
+		$deSecondary = self::makePageInfo( 2, 'de', 'DeSecondary' );
+		TagStore::setTagsForPage( $dePrimary, Tag::fromArgs( [ 'golem' ] ) );
+		TagStore::setTagsForPage( $deSecondary, Tag::fromArgs( [ 'golem' ] ) );
+
+		// page's own language ('en') isn't involved in the 'de' tie at all.
+		$page = self::makePageInfo( 3, 'en', 'SomePage' );
+		$tags = Tag::fromArgs( [ 'golem' ] );
+
+		$conflicts = TagStore::findConflicts( $page, $tags );
+		$this->assertSame(
+			[ 'DePrimary', 'DeSecondary' ],
+			self::titlesOf( $conflicts[ 'de' ][ 'golem' ] )
+		);
+		$this->assertArrayNotHasKey( 'en', $conflicts );
+	}
+
+	public function testFindConflictsReturnsEmptyWithoutAnyClaimant() {
+		$page = self::makePageInfo( 1, 'de', 'SomePage' );
+		$tags = Tag::fromArgs( [ 'golem' ] );
+
+		$this->assertSame( [], TagStore::findConflicts( $page, $tags ) );
 	}
 
 	public function testDeleteTagsForPage() {

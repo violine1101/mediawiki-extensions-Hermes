@@ -12,6 +12,10 @@
 	"hermes-duplicate-tag-name": "Error shown when the same tag is passed to the <code>#hermes</code> parser function more than once in a single call.\n* $1 - the duplicated tag name, normalized (not translated)",
 	"hermes-tag-conflict-category": "{{tracking category name}}\nTracking category for pages whose Hermes tag is also set by another page at the same fallback priority and for the same language.\n\nSee also:\n* {{msg-mw|hermes-tag-conflict-category-desc}}",
 	"hermes-tag-conflict-category-desc": "Description on [[Special:TrackingCategories]] for the {{msg-mw|hermes-tag-conflict-category}} tracking category.",
+	"hermes-tag-conflict-warning": "Intro line of the warning box shown, at the bottom of the page, on a page that is itself (one of) the cause(s) of a Hermes tag conflict (see {{msg-mw|hermes-tag-conflict-category}}). Followed by a dynamically-built, untranslated list of \"tag name: conflicting page titles\". Only shown if $wgHermesWarnings is enabled.",
+	"hermes-ambiguous-links-category": "{{tracking category name}}\nTracking category for pages whose own outgoing interlanguage links could not be resolved unambiguously.\n\nSee also:\n* {{msg-mw|hermes-ambiguous-links-category-desc}}",
+	"hermes-ambiguous-links-category-desc": "Description on [[Special:TrackingCategories]] for the {{msg-mw|hermes-ambiguous-links-category}} tracking category.",
+	"hermes-ambiguous-links-warning": "Intro line of the warning box shown, at the bottom of the page, when this page's outgoing interlanguage links are ambiguous (see {{msg-mw|hermes-ambiguous-links-category}}). Followed by a dynamically-built, untranslated list of \"tag name (language): candidate page titles\". Only shown if $wgHermesWarnings is enabled.",
 	"hermes-invalid-project-title": "Permission error shown when trying to create/move to a page title starting with \"!\" that doesn't match the reserved \"!xx:Title\" translation-project format, with \"xx\" being a language code for a registered translation project.",
 	"hermes-project-hatnote": "Hatnote shown at the top of a translation-project page.\n* $1 - the code of the project's language"
 }

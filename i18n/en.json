@@ -11,7 +11,11 @@
 	"hermes-invalid-tag-name": "Tag name <code>$1</code> is not valid. Allowed characters are ASCII digits, letters, spaces, and the special characters <code>_</code>, <code>/</code>, <code>.</code>, and <code>:</code>.",
 	"hermes-duplicate-tag-name": "Tag <code>$1</code> was set more than once on this page. A tag may only be set once per page, even when referring different sections.",
 	"hermes-tag-conflict-category": "Pages with conflicting Hermes tags",
-	"hermes-tag-conflict-category-desc": "A Hermes tag set on this page is also set on another page at the same fallback priority and for the same language. Interlanguage links from this tag may resolve to the wrong page until the conflict is fixed.",
+	"hermes-tag-conflict-category-desc": "A Hermes tag set on this page is also set on another page for the same language with the same fallback priority. Interlanguage links from this tag may resolve to the wrong page until the conflict is fixed.",
+	"hermes-tag-conflict-warning": "Some tags on this page are also set on another page for the same language with the same fallback priority, making interlanguage links to this page ambiguous:",
+	"hermes-ambiguous-links-category": "Pages with ambiguous Hermes links",
+	"hermes-ambiguous-links-category-desc": "Some interlanguage links could not be resolved unambiguously, because more than one page sets the same Hermes tag for the same language with the same fallback priority. These links may resolve to the wrong page until the conflict is fixed.",
+	"hermes-ambiguous-links-warning": "Some interlanguage links on this page could not be resolved unambiguously:",
 	"hermes-invalid-project-title": "Page titles starting with <code>!</code> are reserved for translation projects, and must be of the form <code>!xx:Title</code>, where \"xx\" is the language code for a registered translation project.",
 	"hermes-project-hatnote": "{{#language:$1}} translation project"
 }

@@ -26,8 +26,9 @@ Phase 2: Add features to translation projects
 
 Phase 3: User Interface
 - Special pages for managing tags and languages
+- Maybe something like {{#hermes-link:tag|lang=es}} / {{#hermes-query:}} for generating hermes links to an article with a specific tag?
 
-Phase 4: Improved Caching
+Phase 4: Improved Cache Handling
 - Currently caching doesn't cause issues in my dev environment
 - In prod, this _will_ be an issue
 - I'd like to add an extra table that adds all potentially affected pages on all wikis whenever a hermes tag changes
