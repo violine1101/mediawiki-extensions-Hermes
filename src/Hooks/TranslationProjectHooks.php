@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\Hermes\Hooks;
 use MediaWiki\Content\Hook\PageContentLanguageHook;
 use MediaWiki\Context\Hook\UserGetLanguageObjectHook;
 use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Hook\BeforeInitializeHook;
 use MediaWiki\Html\Html;
 use MediaWiki\Output\Hook\OutputPageBeforeHTMLHook;
 use MediaWiki\Parser\Hook\ParserAfterParseHook;
@@ -16,7 +17,8 @@ class TranslationProjectHooks implements
 	PageContentLanguageHook,
 	UserGetLanguageObjectHook,
 	ParserAfterParseHook,
-	OutputPageBeforeHTMLHook
+	OutputPageBeforeHTMLHook,
+	BeforeInitializeHook
 {
 
 	private const CHECKED_ACTIONS = [ 'create', 'move-target', 'upload' ];
@@ -34,7 +36,31 @@ class TranslationProjectHooks implements
 			return false;
 		}
 
+		if ( $page->hasCapitalizationError() ) {
+			$result = 'hermes-title-not-capitalized';
+			return false;
+		}
+
 		return true;
+	}
+
+	/** @inheritDoc */
+	public function onBeforeInitialize( $title, $unused, $output, $user, $request, $mediaWikiEntryPoint ) {
+		// A pre-existing miscapitalized page must stay directly accessible at its actual title,
+		// not get redirected away to a likely-nonexistent "corrected" one.
+		if ( $title->exists() ) {
+			return;
+		}
+
+		$page = PageInfo::fromLocalPage( $title );
+		if ( !$page->hasCapitalizationError() ) {
+			return;
+		}
+
+		$query = $request->getQueryValues();
+		unset( $query[ 'title' ] );
+		$output->redirect( $page->getCapitalizedTitle()->getFullURL( $query ) );
+		return false;
 	}
 
 	/** @inheritDoc */

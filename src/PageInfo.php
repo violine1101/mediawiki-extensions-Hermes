@@ -204,6 +204,20 @@ class PageInfo {
 	}
 
 	/**
+	 * Checks if this page's title violates $wgCapitalLinks or $wgCapitalLinkOverrides,
+	 * ignoring the "!xx:" translation project prefix.
+	 *
+	 * @return bool True if the title requires but doesn't have a capitalized first letter.
+	 */
+	public function hasCapitalizationError(): bool {
+		if ( $this->translationProject === null ) {
+			return false;
+		}
+
+		return Title::capitalize( $this->title, $this->namespace ) !== $this->title;
+	}
+
+	/**
 	 * Builds the page's title without any translation prefix, i.e. the title used internally
 	 * in a translation project.
 	 * If the page is not in a translation project, this is identical to the full page title.
@@ -226,6 +240,22 @@ class PageInfo {
 		$prefix = $this->namespaceText !== '' ? "{$this->namespaceText}:" : '';
 		$suffix = $this->section !== null ? "#{$this->section}" : '';
 		return self::normalizeTitle( "{$prefix}!{$this->translationProject}:{$this->title}{$suffix}" );
+	}
+
+	/**
+	 * Capitalizes the title correctly, even for a translation project page.
+	 */
+	public function getCapitalizedTitle(): Title {
+		if ( !$this->hasCapitalizationError() ) {
+			return Title::makeTitle( $this->title, $this->namespace );
+		}
+
+		$capitalizedTitle = Title::capitalize( $this->title, $this->namespace );
+		return Title::makeTitle(
+			$this->namespace,
+			"!{$this->translationProject}:{$capitalizedTitle}",
+			$this->section ?? ''
+		);
 	}
 
 	/**

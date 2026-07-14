@@ -29,7 +29,7 @@
 	"Hooks": {
 		"LoadExtensionSchemaUpdates": "init",
 		"UnitTestsAfterDatabaseSetup": "init",
-		"BeforeInitialize": "init",
+		"BeforeInitialize": [ "init", "translationproject" ],
 		"LinksUpdateComplete": "parserfunc",
 		"PageDeleteComplete": "parserfunc",
 		"ParserFirstCallInit": "parserfunc",

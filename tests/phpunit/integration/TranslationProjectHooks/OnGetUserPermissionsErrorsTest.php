@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\Hermes\Tests\TranslationProjectHooks;
 use MediaWiki\Extension\Hermes\Hooks\TranslationProjectHooks;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
+use MediaWiki\MainConfigNames;
 use MediaWiki\Title\Title;
 use MediaWiki\WikiMap\WikiMap;
 
@@ -72,6 +73,19 @@ class OnGetUserPermissionsErrorsTest extends HermesIntegrationTestCase {
 
 	public function testDeniesMoveTargetAction() {
 		$this->assertFalse( $this->isAllowed( '!zz:Foo', 'move-target' ) );
+	}
+
+	public function testDeniesLowercaseAfterPrefix() {
+		$this->overrideConfigValue( MainConfigNames::CapitalLinks, true );
+
+		$this->assertFalse( $this->isAllowed( '!eo:foo' ) );
+		$this->assertSame( 'hermes-title-not-capitalized', $this->checkResult( '!eo:foo' ) );
+	}
+
+	public function testAllowsLowercaseAfterPrefixWhenCapitalLinksDisabled() {
+		$this->overrideConfigValue( MainConfigNames::CapitalLinks, false );
+
+		$this->assertTrue( $this->isAllowed( '!eo:foo' ) );
 	}
 
 	public function testAllowsEditAction() {

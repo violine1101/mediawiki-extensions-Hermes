@@ -5,8 +5,6 @@ namespace MediaWiki\Extension\Hermes\Decorators;
 use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Interwiki\Interwiki;
 
-// TODO: update doc
-
 /**
  * An Interwiki entry for a translation project language prefix.
  *

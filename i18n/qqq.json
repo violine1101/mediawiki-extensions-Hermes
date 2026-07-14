@@ -17,5 +17,6 @@
 	"hermes-ambiguous-links-category-desc": "Description on [[Special:TrackingCategories]] for the {{msg-mw|hermes-ambiguous-links-category}} tracking category.",
 	"hermes-ambiguous-links-warning": "Intro line of the warning box shown, at the bottom of the page, when this page's outgoing interlanguage links are ambiguous (see {{msg-mw|hermes-ambiguous-links-category}}). Followed by a dynamically-built, untranslated list of \"tag name (language): candidate page titles\". Only shown if $wgHermesWarnings is enabled.",
 	"hermes-invalid-project-title": "Permission error shown when trying to create/move to a page title starting with \"!\" that doesn't match the reserved \"!xx:Title\" translation-project format, with \"xx\" being a language code for a registered translation project.",
+	"hermes-title-not-capitalized": "Permission error shown when trying to create/move to/upload a translation-project page title whose first letter after the \"!xx:\" prefix isn't capitalized as required by $wgCapitalLinks (or a per-namespace $wgCapitalLinkOverrides).",
 	"hermes-project-hatnote": "Hatnote shown at the top of a translation-project page.\n* $1 - the code of the project's language"
 }

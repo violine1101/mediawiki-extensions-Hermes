@@ -17,5 +17,6 @@
 	"hermes-ambiguous-links-category-desc": "Some interlanguage links could not be resolved unambiguously, because more than one page sets the same Hermes tag for the same language with the same fallback priority. These links may resolve to the wrong page until the conflict is fixed.",
 	"hermes-ambiguous-links-warning": "Some interlanguage links on this page could not be resolved unambiguously:",
 	"hermes-invalid-project-title": "Page titles starting with <code>!</code> are reserved for translation projects, and must be of the form <code>!xx:Title</code>, where \"xx\" is the language code for a registered translation project.",
+	"hermes-title-not-capitalized": "The title of a translation project page must start with a capital letter after the <code>!xx:</code> prefix.",
 	"hermes-project-hatnote": "{{#language:$1}} translation project"
 }
