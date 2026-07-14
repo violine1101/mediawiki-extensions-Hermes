@@ -44,20 +44,20 @@ class FromInterwikiTest extends HermesIntegrationTestCase {
 	public function testNormalizesUnderscoreRunsInTitle() {
 		$info = PageInfo::fromInterwiki( 'xx', 'Foo___Bar' );
 
-		$this->assertSame( 'Foo Bar', $info->title );
+		$this->assertSame( 'Foo_Bar', $info->title );
 	}
 
 	public function testNormalizesUnderscoreRunsInUnparseableTitle() {
 		$info = PageInfo::fromInterwiki( 'xx', 'Invalid__|__Title' );
 
-		$this->assertSame( 'Invalid | Title', $info->title );
+		$this->assertSame( 'Invalid_|_Title', $info->title );
 	}
 
 	public function testExtractsSection() {
 		$info = PageInfo::fromInterwiki( 'xx', 'Category:Foo#Some_Section' );
 
 		$this->assertSame( 'Foo', $info->title );
-		$this->assertSame( 'Some Section', $info->section );
+		$this->assertSame( 'Some_Section', $info->section );
 	}
 
 	public function testWithoutSectionIsNull() {

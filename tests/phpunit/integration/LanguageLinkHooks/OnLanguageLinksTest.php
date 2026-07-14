@@ -45,7 +45,7 @@ class OnLanguageLinksTest extends HermesIntegrationTestCase {
 		$linkFlags = [];
 		( new LanguageLinkHooks() )->onLanguageLinks( $page->getTitle(), $links, $linkFlags );
 
-		$this->assertContains( 'de:OnLanguageLinksSectionTest/de#Some Section', $links );
+		$this->assertContains( 'de:OnLanguageLinksSectionTest/de#Some_Section', $links );
 	}
 
 	public function testDoesNotClobberExisting() {

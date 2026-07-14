@@ -16,8 +16,8 @@ class FromArgsTest extends MediaWikiUnitTestCase {
 		$tags = Tag::fromArgs( [ 'tag_a', 'tag_b#section' ] );
 
 		$this->assertCount( 2, $tags );
-		$this->assertSame( 'tag a', $tags[ 0 ]->name );
-		$this->assertSame( 'tag b', $tags[ 1 ]->name );
+		$this->assertSame( 'tag_a', $tags[ 0 ]->name );
+		$this->assertSame( 'tag_b', $tags[ 1 ]->name );
 		$this->assertSame( 'section', $tags[ 1 ]->section );
 	}
 
@@ -71,7 +71,7 @@ class FromArgsTest extends MediaWikiUnitTestCase {
 			Tag::fromArgs( [ 'shared_tag', 'shared_tag' ] );
 			$this->fail( 'Expected DuplicateTagException to be thrown' );
 		} catch ( DuplicateTagException $e ) {
-			$this->assertSame( 'shared tag', $e->tagName );
+			$this->assertSame( 'shared_tag', $e->tagName );
 		}
 	}
 }

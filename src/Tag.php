@@ -4,7 +4,6 @@ namespace MediaWiki\Extension\Hermes;
 
 use MediaWiki\Extension\Hermes\Exceptions\DuplicateTagException;
 use MediaWiki\Extension\Hermes\Exceptions\InvalidTagNameException;
-use MediaWiki\Parser\Sanitizer;
 
 class Tag {
 
@@ -82,7 +81,7 @@ class Tag {
 
 		$self = new Tag();
 		$self->name = self::normalizeName( $arg[ 0 ] );
-		$self->section = self::normalizeSection( $arg[ 1 ] ?? null );
+		$self->section = Hermes::normalizeSection( $arg[ 1 ] ?? null );
 
 		return $self;
 	}
@@ -106,35 +105,19 @@ class Tag {
 	 * Normalizes a tag name.
 	 *
 	 * @param string $name The non-normalized name
-	 * @return string The normalized name: lowercase, trimmed, and
-	 *   whitespace/underscore runs collapsed to a single space.
+	 * @return string The normalized name: lowercase, trimmed, and underscores for whitespace.
 	 * @throws InvalidTagNameException If the argument is not a valid tag.
 	 */
 	private static function normalizeName( string $name ): string {
 		$name = strtolower( trim( $name ) );
-		$name = Sanitizer::normalizeSectionNameWhitespace( $name );
+		$name = Hermes::normalizeWhitespace( $name );
 
-		// allowed chars: digits, ascii chars, spaces, and the special chars / . :
-		$nameRegex = "/^[\w\d\/.: ]+$/";
+		// allowed chars: digits, ascii chars, and the special chars _ / . :
+		$nameRegex = "/^[\w\d\/.:]+$/";
 
 		if ( preg_match( $nameRegex, $name ) ) {
 			return $name;
 		}
 		throw new InvalidTagNameException( $name );
-	}
-
-	/**
-	 * Normalizes a tag's section value.
-	 *
-	 * @param ?string $section The non-normalized section, or null if there is none.
-	 * @return ?string The normalized section: trimmed, whitespace/underscore runs collapsed
-	 *   to a single space. Case is preserved, since HTML anchors are case-sensitive.
-	 */
-	private static function normalizeSection( ?string $section ): ?string {
-		if ( $section === null ) {
-			return null;
-		}
-		$section = Sanitizer::normalizeSectionNameWhitespace( $section );
-		return $section === '' ? null : $section;
 	}
 }

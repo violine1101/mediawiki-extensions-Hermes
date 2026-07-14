@@ -14,33 +14,33 @@ class FromArgTest extends MediaWikiUnitTestCase {
 	public function testWithoutSection() {
 		$tag = Tag::fromArg( 'Some_Tag' );
 
-		$this->assertSame( 'some tag', $tag->name );
+		$this->assertSame( 'some_tag', $tag->name );
 		$this->assertNull( $tag->section );
 	}
 
 	public function testWithSection() {
 		$tag = Tag::fromArg( 'some_tag#Some_Section' );
 
-		$this->assertSame( 'some tag', $tag->name );
-		$this->assertSame( 'Some Section', $tag->section );
+		$this->assertSame( 'some_tag', $tag->name );
+		$this->assertSame( 'Some_Section', $tag->section );
 	}
 
 	public function testNormalizesCaseAndWhitespace() {
 		$tag = Tag::fromArg( '  Some Tag  ' );
 
-		$this->assertSame( 'some tag', $tag->name );
+		$this->assertSame( 'some_tag', $tag->name );
 	}
 
 	public function testCollapsesWhitespaceAndUnderscores() {
 		$tag = Tag::fromArg( 'foo   bar___baz' );
 
-		$this->assertSame( 'foo bar baz', $tag->name );
+		$this->assertSame( 'foo_bar_baz', $tag->name );
 	}
 
-	public function testTreatsUnderscoreAsSpace() {
+	public function testPreservesUnderscoreSeparator() {
 		$tag = Tag::fromArg( 'a/b.c:d_e' );
 
-		$this->assertSame( 'a/b.c:d e', $tag->name );
+		$this->assertSame( 'a/b.c:d_e', $tag->name );
 	}
 
 	public function testRejectsInvalidCharacters() {
@@ -65,13 +65,13 @@ class FromArgTest extends MediaWikiUnitTestCase {
 	public function testCollapsesWhitespaceInSection() {
 		$tag = Tag::fromArg( 'tag#Some   Section___Name' );
 
-		$this->assertSame( 'Some Section Name', $tag->section );
+		$this->assertSame( 'Some_Section_Name', $tag->section );
 	}
 
 	public function testSectionPreservesCase() {
 		$tag = Tag::fromArg( 'tag#SOME SECTION' );
 
-		$this->assertSame( 'SOME SECTION', $tag->section );
+		$this->assertSame( 'SOME_SECTION', $tag->section );
 	}
 
 	public function testWhitespaceOnlySection() {

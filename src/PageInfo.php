@@ -7,7 +7,6 @@ use MediaWiki\Language\Language;
 use MediaWiki\MainConfigNames;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Page\PageReference;
-use MediaWiki\Parser\Sanitizer;
 use MediaWiki\Title\MalformedTitleException;
 use MediaWiki\Title\Title;
 use MediaWiki\Title\TitleParser;
@@ -93,11 +92,11 @@ class PageInfo {
 			$self->namespaceText = $language->getFormattedNsText( $self->namespace );
 
 			$fragment = $parsedTitle->getFragment() !== '' ? $parsedTitle->getFragment() : null;
-			$self->section = self::normalizeSection( $fragment );
+			$self->section = Hermes::normalizeSection( $fragment );
 
-			$self->title = self::normalizeTitle( $parsedTitle->getDBkey() );
+			$self->title = Hermes::normalizeWhitespace( $parsedTitle->getDBkey() );
 		} catch ( MalformedTitleException ) {
-			$self->title = self::normalizeTitle( $title );
+			$self->title = Hermes::normalizeWhitespace( $title );
 		}
 
 		if ( $entry !== null && !$entry[ 'isBase' ] ) {
@@ -128,15 +127,17 @@ class PageInfo {
 	}
 
 	/**
-	 * Extracts the translation project prefix from a title (without namespace).
+	 * Normalizes a title (without namespace) and extracts its translation project prefix.
 	 *
-	 * @param string $baseTitle The title to be parsed, without namespace
-	 * @return array{0: ?string, 1: string} A tuple of (lang code, title).
+	 * @param string $baseTitle The non-normalized title to be parsed, without namespace
+	 * @return array{0: ?string, 1: string} A tuple of (lang code, normalized title).
 	 * 	 If the lang code is null, this article is not part of a translation project,
 	 *   either because it doesn't have a "!xx:" prefix, or because the corresponding language
 	 *   is not registered as a project language.
 	 */
 	public static function parseTitle( string $baseTitle ): array {
+		$baseTitle = Hermes::normalizeWhitespace( $baseTitle );
+
 		if ( preg_match( '/^!([a-z0-9-]+):(.+)$/', $baseTitle, $match ) ) {
 			$lang = $match[ 1 ];
 			$title = $match[ 2 ];
@@ -146,32 +147,6 @@ class PageInfo {
 		}
 
 		return [ null, $baseTitle ];
-	}
-
-	/**
-	 * Normalizes a page title (without namespace or translation project prefix).
-	 *
-	 * @param string $title The non-normalized title text.
-	 * @return string The normalized title: trimmed, whitespace/underscore runs collapsed to a
-	 *   single space.
-	 */
-	private static function normalizeTitle( string $title ): string {
-		return Sanitizer::normalizeSectionNameWhitespace( $title );
-	}
-
-	/**
-	 * Normalizes a page's section value.
-	 *
-	 * @param ?string $section The non-normalized section, or null if there is none.
-	 * @return ?string The normalized section: trimmed, whitespace/underscore runs collapsed to a
-	 *   single space. Case is preserved, since HTML anchors are case-sensitive.
-	 */
-	private static function normalizeSection( ?string $section ): ?string {
-		if ( $section === null ) {
-			return null;
-		}
-		$section = Sanitizer::normalizeSectionNameWhitespace( $section );
-		return $section === '' ? null : $section;
 	}
 
 	/**
@@ -225,7 +200,7 @@ class PageInfo {
 	public function getVirtualTitle(): string {
 		$prefix = $this->namespaceText !== '' ? "{$this->namespaceText}:" : '';
 		$suffix = $this->section !== null ? "#{$this->section}" : '';
-		return self::normalizeTitle( "{$prefix}{$this->title}{$suffix}" );
+		return Hermes::normalizeWhitespace( "{$prefix}{$this->title}{$suffix}" );
 	}
 
 	/**
@@ -239,7 +214,7 @@ class PageInfo {
 
 		$prefix = $this->namespaceText !== '' ? "{$this->namespaceText}:" : '';
 		$suffix = $this->section !== null ? "#{$this->section}" : '';
-		return self::normalizeTitle( "{$prefix}!{$this->translationProject}:{$this->title}{$suffix}" );
+		return Hermes::normalizeWhitespace( "{$prefix}!{$this->translationProject}:{$this->title}{$suffix}" );
 	}
 
 	/**
