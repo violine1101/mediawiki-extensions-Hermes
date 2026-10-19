@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\Hermes;
 
 use MediaWiki\Extension\Hermes\Exceptions\DuplicateTagException;
+use MediaWiki\Extension\Hermes\Exceptions\EmptySectionException;
 use MediaWiki\Extension\Hermes\Exceptions\InvalidTagNameException;
 
 class Tag {
@@ -39,7 +40,9 @@ class Tag {
 	}
 
 	/**
-	 * Builds a list of tags from the arguments to the {{#hermes:}} function.
+	 * Builds a list of tags from the arguments to the {{#hermes:}} function, e.g.
+	 * {{#hermes:tag1|tag2|#section=tag3|tag4}}: an argument "#section=tag" starts the tags for
+	 * that section, which continue until the next such argument.
 	 *
 	 * Assigns each tag's fallback chain order: tags are grouped by section,
 	 * then ordered in the order they were listed.
@@ -47,10 +50,23 @@ class Tag {
 	 * @param string[] $args The arguments passed to the {{#hermes:}} function.
 	 * @return Tag[] The list of tags.
 	 * @throws InvalidTagNameException If an argument is not a valid tag.
+	 * @throws EmptySectionException If a "#section=tag" argument has no section name.
 	 * @throws DuplicateTagException If the same tag name is used more than once.
 	 */
 	public static function fromArgs( array $args ): array {
-		$tags = array_map( self::fromArg( ... ), $args );
+		$tags = [];
+		$section = null;
+		foreach ( $args as $arg ) {
+			$arg = trim( $arg );
+			if ( str_starts_with( $arg, '#' ) && str_contains( $arg, '=' ) ) {
+				[ $section, $name ] = explode( '=', substr( $arg, 1 ), 2 );
+				if ( self::normalizeWhitespace( $section ) === '' ) {
+					throw new EmptySectionException( $arg );
+				}
+				$arg = $name;
+			}
+			$tags[] = self::fromArg( $arg, $section );
+		}
 
 		$seenNames = [];
 		$orderBySection = [];
@@ -69,19 +85,17 @@ class Tag {
 	}
 
 	/**
-	 * Builds a tag from a singular argument to the {{#hermes:}} function.
+	 * Builds a tag from a tag name and the section it's for, as given to the {{#hermes:}} function.
 	 *
-	 * @param string $arg An argument passed to the {{#hermes:}} function.
+	 * @param string $name The non-normalized tag name.
+	 * @param ?string $section The non-normalized section, or null for the page as a whole.
 	 * @return Tag The tag, but without a meaningful sort order.
-	 * @throws InvalidTagNameException If the argument is not a valid tag.
+	 * @throws InvalidTagNameException If the name is not a valid tag.
 	 */
-	public static function fromArg( string $arg ): Tag {
-		$arg = trim( $arg );
-		$arg = explode( '#', $arg, 2 );
-
+	public static function fromArg( string $name, ?string $section = null ): Tag {
 		$self = new Tag();
-		$self->name = self::normalizeName( $arg[ 0 ] );
-		$self->section = self::normalizeSection( $arg[ 1 ] ?? null );
+		$self->name = self::normalizeName( $name );
+		$self->section = self::normalizeSection( $section );
 
 		return $self;
 	}

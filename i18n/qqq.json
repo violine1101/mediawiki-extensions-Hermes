@@ -10,6 +10,7 @@
 	"hermes-duplicate-call-category-desc": "Description on [[Special:TrackingCategories]] for the {{msg-mw|hermes-duplicate-call-category}} tracking category.",
 	"hermes-invalid-tag-name": "Error shown when a tag passed to the <code>#hermes</code> parser function contains disallowed characters.\n* $1 - the invalid tag name, as entered by the user (not translated)",
 	"hermes-duplicate-tag-name": "Error shown when the same tag is passed to the <code>#hermes</code> parser function more than once in a single call.\n* $1 - the duplicated tag name, normalized (not translated)",
+	"hermes-empty-section": "Error shown when an argument of the form <code>#section=tag</code> to the <code>#hermes</code> parser function has an empty section name.\n* $1 - the argument, as entered by the user (not translated)",
 	"hermes-tag-conflict-category": "{{tracking category name}}\nTracking category for pages whose Hermes tag is also set by another page at the same fallback priority and for the same language.\n\nSee also:\n* {{msg-mw|hermes-tag-conflict-category-desc}}",
 	"hermes-tag-conflict-category-desc": "Description on [[Special:TrackingCategories]] for the {{msg-mw|hermes-tag-conflict-category}} tracking category.",
 	"hermes-tag-conflict-warning": "Intro line of the warning box shown, at the bottom of the page, on a page that is itself (one of) the cause(s) of a Hermes tag conflict (see {{msg-mw|hermes-tag-conflict-category}}). Followed by a dynamically-built, untranslated list of \"tag name: conflicting page titles\". Only shown if $wgHermesWarnings is enabled.",

@@ -11,7 +11,7 @@ use MediaWikiUnitTestCase;
 class FromJsonTest extends MediaWikiUnitTestCase {
 
 	public function testRoundTripsFromArg() {
-		$original = Tag::fromArg( 'some_tag#Some_Section' );
+		$original = Tag::fromArg( 'some_tag', 'Some_Section' );
 		$decoded = json_decode( json_encode( $original ) );
 
 		$tag = Tag::fromJson( $decoded );

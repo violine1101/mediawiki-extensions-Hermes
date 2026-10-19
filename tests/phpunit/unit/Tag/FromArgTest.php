@@ -19,7 +19,7 @@ class FromArgTest extends MediaWikiUnitTestCase {
 	}
 
 	public function testWithSection() {
-		$tag = Tag::fromArg( 'some_tag#Some_Section' );
+		$tag = Tag::fromArg( 'some_tag', 'Some_Section' );
 
 		$this->assertSame( 'some_tag', $tag->name );
 		$this->assertSame( 'Some_Section', $tag->section );
@@ -63,19 +63,19 @@ class FromArgTest extends MediaWikiUnitTestCase {
 	}
 
 	public function testCollapsesWhitespaceInSection() {
-		$tag = Tag::fromArg( 'tag#Some   Section___Name' );
+		$tag = Tag::fromArg( 'tag', 'Some   Section___Name' );
 
 		$this->assertSame( 'Some_Section_Name', $tag->section );
 	}
 
 	public function testSectionPreservesCase() {
-		$tag = Tag::fromArg( 'tag#SOME SECTION' );
+		$tag = Tag::fromArg( 'tag', 'SOME SECTION' );
 
 		$this->assertSame( 'SOME_SECTION', $tag->section );
 	}
 
 	public function testWhitespaceOnlySection() {
-		$tag = Tag::fromArg( 'tag#   ' );
+		$tag = Tag::fromArg( 'tag', '   ' );
 
 		$this->assertNull( $tag->section );
 	}
