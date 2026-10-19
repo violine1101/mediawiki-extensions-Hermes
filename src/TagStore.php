@@ -13,7 +13,7 @@ class TagStore {
 		$dbw = Hermes::getDB( DB_PRIMARY );
 		$dbw->delete(
 			self::TABLE_NAME,
-			[ 'ht_wiki' => $page->wiki, 'ht_page_id' => $page->getId() ],
+			[ 'ht_wiki' => $page->title->wiki, 'ht_page_id' => $page->getId() ],
 			__METHOD__
 		);
 	}
@@ -31,19 +31,19 @@ class TagStore {
 		// Clear old tags for this page first - order/tag set may have changed.
 		$dbw->delete(
 			self::TABLE_NAME,
-			[ 'ht_wiki' => $page->wiki, 'ht_page_id' => $page->getId() ],
+			[ 'ht_wiki' => $page->title->wiki, 'ht_page_id' => $page->getId() ],
 			__METHOD__
 		);
 
 		$rows = [];
 		foreach ( $tags as $tag ) {
 			$rows[] = [
-				'ht_wiki' => $page->wiki,
+				'ht_wiki' => $page->title->wiki,
 				'ht_page_id' => $page->getId(),
-				'ht_namespace_id' => $page->namespace,
-				'ht_namespace_text' => $page->namespaceText,
-				'ht_translation_project' => $page->translationProject,
-				'ht_base_title' => $page->title,
+				'ht_namespace_id' => $page->title->namespace,
+				'ht_namespace_text' => $page->title->getNamespaceText(),
+				'ht_translation_project' => $page->title->project,
+				'ht_base_title' => $page->title->baseTitle,
 				'ht_section' => $tag->section,
 				'ht_tag' => $tag->name,
 				'ht_order' => $tag->order,
@@ -67,7 +67,7 @@ class TagStore {
 		$res = $dbr->select(
 			self::TABLE_NAME,
 			[ 'ht_tag', 'ht_order' ],
-			[ 'ht_wiki' => $page->wiki, 'ht_page_id' => $page->getId() ],
+			[ 'ht_wiki' => $page->title->wiki, 'ht_page_id' => $page->getId() ],
 			__METHOD__,
 			[ 'ORDER BY' => 'ht_order ASC, ht_tag ASC' ]
 		);
@@ -110,7 +110,7 @@ class TagStore {
 			[
 				$dbr->makeList( $queryConditions, LIST_OR ),
 				'NOT (' . $dbr->makeList(
-					[ 'ht_wiki' => $page->wiki, 'ht_page_id' => $page->getId() ],
+					[ 'ht_wiki' => $page->title->wiki, 'ht_page_id' => $page->getId() ],
 					LIST_AND
 				) . ')',
 			],
@@ -120,11 +120,11 @@ class TagStore {
 
 		$conflicts = [];
 		foreach ( $tags as $tag ) {
-			$conflicts[ $page->getLanguageCode() ][ $tag->name ][] = $page;
+			$conflicts[ $page->title->getLanguageCode() ][ $tag->name ][] = $page;
 		}
 		foreach ( $rows as $row ) {
 			$rowPage = PageInfo::fromRow( $row );
-			$conflicts[ $rowPage->getLanguageCode() ][ $row->ht_tag ][] = $rowPage;
+			$conflicts[ $rowPage->title->getLanguageCode() ][ $row->ht_tag ][] = $rowPage;
 		}
 
 		foreach ( $conflicts as $lang => $langConflicts ) {
@@ -177,7 +177,7 @@ class TagStore {
 		$pages = [];
 		foreach ( $tags as $tag ) {
 			foreach ( $links[ $tag ] ?? [] as $link ) {
-				$lang = $link->page->getLanguageCode();
+				$lang = $link->page->title->getLanguageCode();
 
 				if ( !isset( $pages[ $lang ] ) ) {
 					$pages[ $lang ] = $link;
@@ -198,7 +198,7 @@ class TagStore {
 		$tags = self::getTagsForPage( $page );
 		$links = self::getLinksForTags( $tags );
 
-		unset( $links[ $page->getLanguageCode() ] );
+		unset( $links[ $page->title->getLanguageCode() ] );
 
 		return $links;
 	}

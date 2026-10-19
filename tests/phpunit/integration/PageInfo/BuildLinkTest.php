@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\Hermes\Tests\PageInfo;
 
 use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 
 /**
@@ -12,11 +13,9 @@ use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 class BuildLinkTest extends HermesIntegrationTestCase {
 
 	public function testInvalidTarget() {
-		$page = new PageInfo();
-		$page->translationProject = 'de';
 		// "|" is not a legal title character, so Title::newFromText() returns null for
 		// this; buildLink() must fall back to plain (escaped) text rather than erroring.
-		$page->title = 'Invalid|Title';
+		$page = new PageInfo( ProjectTitle::makeTitleOnWiki( 'dewiki', NS_MAIN, 'Invalid|Title', 'de', null, '' ) );
 
 		$this->assertSame( 'Invalid|Title', $page->buildLink() );
 	}
@@ -25,9 +24,8 @@ class BuildLinkTest extends HermesIntegrationTestCase {
 		$this->registerProjectLanguage( 'trwiki', 'eo' );
 		$this->registerWiki( 'trwiki', 'https://translate.example.org/wiki/$1' );
 
-		$page = new PageInfo();
-		$page->translationProject = 'eo';
-		$page->title = 'BuildLinkProjectTarget';
+		$title = ProjectTitle::makeTitleOnWiki( 'trwiki', NS_MAIN, 'BuildLinkProjectTarget', 'eo', null, '' );
+		$page = new PageInfo( $title );
 
 		$this->assertSame(
 			'<a href="https://translate.example.org/wiki/!eo:BuildLinkProjectTarget" class="extiw" '
@@ -40,11 +38,10 @@ class BuildLinkTest extends HermesIntegrationTestCase {
 		$this->registerProjectLanguage( 'trwiki', 'eo' );
 		$this->registerWiki( 'trwiki', 'https://translate.example.org/wiki/$1' );
 
-		$page = new PageInfo();
-		$page->translationProject = 'eo';
-		$page->namespace = NS_CATEGORY;
-		$page->namespaceText = 'Category';
-		$page->title = 'BuildLinkNamespacedProjectTarget';
+		$title = ProjectTitle::makeTitleOnWiki(
+			'trwiki', NS_CATEGORY, 'BuildLinkNamespacedProjectTarget', 'eo', null, 'Category'
+		);
+		$page = new PageInfo( $title );
 
 		// The "!xx:" prefix must land after the namespace, not before it. The link text uses the
 		// Esperanto namespace name, the URL the wiki's own.

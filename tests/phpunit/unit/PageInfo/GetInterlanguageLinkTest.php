@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\Hermes\Tests\PageInfo;
 
 use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWikiUnitTestCase;
 
 /**
@@ -10,22 +11,18 @@ use MediaWikiUnitTestCase;
  */
 class GetInterlanguageLinkTest extends MediaWikiUnitTestCase {
 
-	private static function makePageInfo(): PageInfo {
-		$page = new PageInfo();
-		$page->translationProject = 'de';
-		$page->title = 'Foo';
-		return $page;
+	private static function makePageInfo( string $project, ?string $section = null ): PageInfo {
+		return new PageInfo( ProjectTitle::makeTitleOnWiki( 'somewiki', NS_MAIN, 'Foo', $project, $section, '' ) );
 	}
 
 	public function testWithoutSection() {
-		$page = self::makePageInfo();
+		$page = self::makePageInfo( 'de' );
 
 		$this->assertSame( 'de:Foo', $page->getInterlanguageLink() );
 	}
 
 	public function testWithSection() {
-		$page = self::makePageInfo();
-		$page->section = 'Some_Section';
+		$page = self::makePageInfo( 'de', 'Some_Section' );
 
 		$this->assertSame( 'de:Foo#Some_Section', $page->getInterlanguageLink() );
 	}
@@ -33,9 +30,7 @@ class GetInterlanguageLinkTest extends MediaWikiUnitTestCase {
 	public function testNeverIncludesTranslationProjectPrefix() {
 		// getInterlanguageLink() is built from getVirtualTitle(), which deliberately never adds
 		// "!xx:" back - that's solely Decorators\ProjectPageInterwiki's job.
-		$page = new PageInfo();
-		$page->translationProject = 'eo';
-		$page->title = 'Foo';
+		$page = self::makePageInfo( 'eo' );
 
 		$this->assertSame( 'eo:Foo', $page->getInterlanguageLink() );
 	}

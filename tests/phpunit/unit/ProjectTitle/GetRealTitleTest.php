@@ -1,49 +1,46 @@
 <?php
 
-namespace MediaWiki\Extension\Hermes\Tests\PageInfo;
+namespace MediaWiki\Extension\Hermes\Tests\ProjectTitle;
 
-use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWikiUnitTestCase;
 
 /**
- * @covers \MediaWiki\Extension\Hermes\PageInfo::getRealTitle
+ * @covers \MediaWiki\Extension\Hermes\ProjectTitle::getRealTitle
  */
 class GetRealTitleTest extends MediaWikiUnitTestCase {
 
-	private static function makePageInfo(
+	private static function makeTitle(
 		string $namespaceText,
-		?string $translationProject,
-		string $title
-	): PageInfo {
-		$page = new PageInfo();
-		$page->namespaceText = $namespaceText;
-		$page->translationProject = $translationProject;
-		$page->title = $title;
-		return $page;
+		?string $project,
+		string $title,
+		?string $section = null
+	): ProjectTitle {
+		// The namespace ID isn't used for the real title.
+		return ProjectTitle::makeTitle( NS_MAIN, $title, $project, $section, $namespaceText );
 	}
 
 	public function testOrdinaryPage() {
-		$page = self::makePageInfo( '', null, 'Foo' );
+		$page = self::makeTitle( '', null, 'Foo' );
 
 		$this->assertSame( 'Foo', $page->getRealTitle() );
 	}
 
 	public function testMainNamespaceProjectPage() {
-		$page = self::makePageInfo( '', 'eo', 'Foo' );
+		$page = self::makeTitle( '', 'eo', 'Foo' );
 
 		$this->assertSame( '!eo:Foo', $page->getRealTitle() );
 	}
 
 	public function testNamespacedProjectPage() {
 		// The "!xx:" prefix goes after the namespace, not before it.
-		$page = self::makePageInfo( 'Category', 'eo', 'Foo' );
+		$page = self::makeTitle( 'Category', 'eo', 'Foo' );
 
 		$this->assertSame( 'Category:!eo:Foo', $page->getRealTitle() );
 	}
 
 	public function testWithSection() {
-		$page = self::makePageInfo( 'Category', 'eo', 'Foo' );
-		$page->section = 'Bar';
+		$page = self::makeTitle( 'Category', 'eo', 'Foo', 'Bar' );
 
 		$this->assertSame( 'Category:!eo:Foo#Bar', $page->getRealTitle() );
 	}
@@ -52,13 +49,13 @@ class GetRealTitleTest extends MediaWikiUnitTestCase {
 		// Fed straight to wfUrlencode() by Decorators\ProjectPageInterwiki with no
 		// Title::newFromText() normalization in between, so spaces must already be "_" here,
 		// not left for wfUrlencode() to turn into "+".
-		$page = self::makePageInfo( 'User talk', 'eo', 'Foo Bar' );
+		$page = self::makeTitle( 'User talk', 'eo', 'Foo Bar' );
 
 		$this->assertSame( 'User_talk:!eo:Foo_Bar', $page->getRealTitle() );
 	}
 
 	public function testSpacesBecomeUnderscoresWithoutTranslationProject() {
-		$page = self::makePageInfo( 'User talk', null, 'Foo Bar' );
+		$page = self::makeTitle( 'User talk', null, 'Foo Bar' );
 
 		$this->assertSame( 'User_talk:Foo_Bar', $page->getRealTitle() );
 	}

@@ -19,7 +19,7 @@ class FindConflictsTest extends HermesIntegrationTestCase {
 	 * @return string[]
 	 */
 	private static function titlesOf( array $pages ): array {
-		return array_map( static fn ( PageInfo $page ) => $page->title, $pages );
+		return array_map( static fn ( PageInfo $page ) => $page->title->baseTitle, $pages );
 	}
 
 	public function testDetectsConflict() {
@@ -117,7 +117,7 @@ class FindConflictsTest extends HermesIntegrationTestCase {
 			[ 'DePrimary', 'DeSecondary' ],
 			self::titlesOf( $conflicts[ 'de' ][ 'golem' ] )
 		);
-		$this->assertArrayNotHasKey( $page->getLanguageCode(), $conflicts );
+		$this->assertArrayNotHasKey( $page->title->getLanguageCode(), $conflicts );
 	}
 
 	public function testEmptyWithoutClaimant() {

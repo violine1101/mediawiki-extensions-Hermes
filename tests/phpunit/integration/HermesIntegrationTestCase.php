@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\Hermes\Tests;
 use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\WikiStore;
 use MediaWikiIntegrationTestCase;
 
@@ -33,12 +34,9 @@ abstract class HermesIntegrationTestCase extends MediaWikiIntegrationTestCase {
 	 * choosable from its language.
 	 */
 	protected function makePageInfo( string $wiki, ?string $title = null ): PageInfo {
-		$page = new PageInfo();
-		$page->wiki = $wiki;
-		$page->setId( $this->nextPageId++ );
-		$title ??= "Page{$page->getId()}";
-		[ $page->translationProject, $page->title ] = PageInfo::parseTitle( $title );
-		return $page;
+		$id = $this->nextPageId++;
+		[ $project, $baseTitle ] = ProjectTitle::parse( $title ?? "Page{$id}" );
+		return new PageInfo( ProjectTitle::makeTitleOnWiki( $wiki, NS_MAIN, $baseTitle, $project, null, '' ), $id );
 	}
 
 	/**

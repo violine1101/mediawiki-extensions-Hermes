@@ -25,13 +25,13 @@ class LinkRewriter {
 	 * are stripped.
 	 *
 	 * @param string $text
-	 * @param PageInfo $page The page $text belongs to.
+	 * @param ProjectTitle $page The page $text belongs to.
 	 * @return string
 	 */
-	public static function rewrite( string $text, PageInfo $page ): string {
+	public static function rewrite( string $text, ProjectTitle $page ): string {
 		if (
 			!str_contains( $text, '[[' )
-			|| ( $page->translationProject === null && !str_contains( $text, '!:' ) )
+			|| ( $page->project === null && !str_contains( $text, '!:' ) )
 		) {
 			return $text;
 		}
@@ -51,8 +51,8 @@ class LinkRewriter {
 	 * Rewrites a single link target (the part of "[[...]]" before any "|"), adding display text
 	 * if $hasPipe is false and the rendered text would otherwise change.
 	 */
-	private static function rewriteTarget( string $raw, PageInfo $page, bool $hasPipe ): string {
-		if ( $page->translationProject === null && !str_contains( $raw, '!:' ) ) {
+	private static function rewriteTarget( string $raw, ProjectTitle $page, bool $hasPipe ): string {
+		if ( $page->project === null && !str_contains( $raw, '!:' ) ) {
 			// Fast path: this runs for every link on every page.
 			return $raw;
 		}
@@ -71,7 +71,7 @@ class LinkRewriter {
 		}
 
 		$contentLang = MediaWikiServices::getInstance()->getContentLanguage();
-		$projectLang = $page->getLanguage();
+		$projectLang = $page->project !== null ? $page->getLanguage() : $contentLang;
 
 		$colonPos = strpos( $unescaped, ':' );
 		$nsPrefix = $colonPos !== false ? substr( $unescaped, 0, $colonPos ) : '';
@@ -113,7 +113,7 @@ class LinkRewriter {
 		if ( !Hermes::isProjectNamespace( $nsId ) ) {
 			// Still strip "!:" escapes, e.g. from core's "[[:Template:!:Foo]]" red link for a
 			// missing "{{!:Foo}}" transclusion.
-			$unescapedRest = PageInfo::unescapeTitle( $rest ) ?? $rest;
+			$unescapedRest = ProjectTitle::unescape( $rest ) ?? $rest;
 			if ( !$nsFromProjectLang && $unescapedRest === $rest ) {
 				return $raw;
 			}
@@ -132,12 +132,12 @@ class LinkRewriter {
 			return $raw;
 		}
 
-		if ( $page->translationProject === null && PageInfo::unescapeTitle( $bareTitle ) === null ) {
+		if ( $page->project === null && ProjectTitle::unescape( $bareTitle ) === null ) {
 			return $raw;
 		}
 
-		$insertingPrefix = !PageInfo::isReservedTitle( $bareTitle );
-		$rewrittenBareTitle = self::rewriteBareTitle( $bareTitle, $nsId, $page->translationProject );
+		$insertingPrefix = !ProjectTitle::isReserved( $bareTitle );
+		$rewrittenBareTitle = self::rewriteBareTitle( $bareTitle, $nsId, $page->project );
 
 		$result = $leadingSpace
 			. ( $hadColon ? ':' : '' )
@@ -159,16 +159,16 @@ class LinkRewriter {
 	 * $projectLanguage is null on non-project pages.
 	 */
 	private static function rewriteBareTitle( string $bareTitle, int $nsId, ?string $projectLanguage ): string {
-		$unescaped = PageInfo::unescapeTitle( $bareTitle );
+		$unescaped = ProjectTitle::unescape( $bareTitle );
 		if ( $unescaped !== null ) {
 			return $unescaped;
 		}
 
-		if ( $projectLanguage === null || PageInfo::isReservedTitle( $bareTitle ) ) {
-			// Includes "!yy:" titles. Invalid ones are left for PageInfo::hasInvalidTitle() to report.
+		if ( $projectLanguage === null || ProjectTitle::isReserved( $bareTitle ) ) {
+			// Includes "!yy:" titles. Invalid ones are left for ProjectTitle::hasInvalidTitle() to report.
 			return $bareTitle;
 		}
 
-		return PageInfo::addProjectPrefix( $bareTitle, $nsId, $projectLanguage );
+		return ProjectTitle::addPrefix( $bareTitle, $nsId, $projectLanguage );
 	}
 }

@@ -81,9 +81,9 @@ class ParserFuncHooks implements
 		$page = PageInfo::fromLocalPage( $parser->getPage() );
 
 		$conflicts = TagStore::findConflicts( $page, $tags );
-		$localConflicts = $conflicts[ $page->getLanguageCode() ] ?? [];
+		$localConflicts = $conflicts[ $page->title->getLanguageCode() ] ?? [];
 		$foreignConflicts = $conflicts;
-		unset( $foreignConflicts[ $page->getLanguageCode() ] );
+		unset( $foreignConflicts[ $page->title->getLanguageCode() ] );
 
 		if ( $localConflicts ) {
 			$parser->addTrackingCategory( 'hermes-tag-conflict-category' );
@@ -93,7 +93,7 @@ class ParserFuncHooks implements
 					$tagCode = Html::element( 'code', [], $tag );
 					$pages = array_filter(
 						$pages,
-						static fn ( PageInfo $p ) => $p->wiki !== $page->wiki || $p->getId() !== $page->getId(),
+						static fn ( PageInfo $p ) => $p->title->wiki !== $page->title->wiki || $p->getId() !== $page->getId(),
 					);
 					$links = array_map( static fn ( PageInfo $p ) => $p->buildLink(), $pages );
 					$conflictItems[] = Html::rawElement( 'li', [], "{$tagCode}: " . implode( ', ', $links ) );
@@ -148,10 +148,8 @@ class ParserFuncHooks implements
 		ManualLogEntry $logEntry,
 		int $archivedRevisionCount
 	) {
-		$page = PageInfo::fromLocalPage( $page );
 		// The page is gone by now, so its ID can't be looked up.
-		$page->setId( $pageID );
-		TagStore::deleteTagsForPage( $page );
+		TagStore::deleteTagsForPage( PageInfo::fromLocalPage( $page, $pageID ) );
 
 		return true;
 	}

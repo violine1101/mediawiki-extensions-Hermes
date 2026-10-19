@@ -5,7 +5,7 @@ namespace MediaWiki\Extension\Hermes\Hooks\TranslationProject;
 use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\LinkRewriter;
-use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Html\Html;
 use MediaWiki\Linker\Hook\HtmlPageLinkRendererBeginHook;
 use MediaWiki\Linker\Hook\HtmlPageLinkRendererEndHook;
@@ -38,7 +38,7 @@ class LinkHooks implements
 		}
 
 		// Also runs on non-project pages, where LinkRewriter only strips "!:" escapes.
-		$text = LinkRewriter::rewrite( $text, PageInfo::fromLocalPage( $parserPage ) );
+		$text = LinkRewriter::rewrite( $text, ProjectTitle::newFromLinkTarget( $parserPage ) );
 	}
 
 	/** @inheritDoc */
@@ -52,13 +52,17 @@ class LinkHooks implements
 			return true;
 		}
 
-		// Cheap prefix check first: this runs for every rendered link.
-		[ $project, $bareTitle ] = PageInfo::parseTitle( $target->getText() );
-		if ( $project === null || $target->isExternal() ) {
+		if ( $target->isExternal() ) {
 			return true;
 		}
 
-		$baseTitle = Title::makeTitle( $target->getNamespace(), $bareTitle );
+		// Cheap prefix check first: this runs for every rendered link.
+		$projectTitle = ProjectTitle::newFromLinkTarget( $target );
+		if ( $projectTitle->project === null ) {
+			return true;
+		}
+
+		$baseTitle = $projectTitle->withProject( null )->toTitle();
 		if ( Title::newFromLinkTarget( $target )->exists() ) {
 			return true;
 		}
@@ -99,9 +103,9 @@ class LinkHooks implements
 	public function onParserAfterTidy( $parser, &$text ) {
 		$output = $parser->getOutput();
 		foreach ( $output->getLinkList( ParserOutputLinkTypes::LOCAL ) as [ 'link' => $link ] ) {
-			[ $project, $baseTitle ] = PageInfo::parseTitle( $link->getText() );
-			if ( $project !== null ) {
-				$output->addExistenceDependency( Title::makeTitle( $link->getNamespace(), $baseTitle ) );
+			$projectTitle = ProjectTitle::newFromLinkTarget( $link );
+			if ( $projectTitle->project !== null ) {
+				$output->addExistenceDependency( $projectTitle->withProject( null )->toTitle() );
 			}
 		}
 	}
@@ -117,13 +121,13 @@ class LinkHooks implements
 		if (
 			$target->isExternal()
 			|| !isset( $attribs['title'] )
-			|| PageInfo::parseTitle( $target->getText() )[0] === null
+			|| ProjectTitle::newFromLinkTarget( $target )->project === null
 		) {
 			return;
 		}
 
 		$title = Title::newFromLinkTarget( $target );
-		$page = PageInfo::fromLocalPage( $title );
+		$page = ProjectTitle::newFromLinkTarget( $title );
 
 		$prefixedText = $title->getPrefixedText();
 		$displayTitle = $page->getDisplayTitle( true );
@@ -132,7 +136,8 @@ class LinkHooks implements
 			$replacement = $displayTitle;
 		} else {
 			$default = wfMessage( 'red-link-title', $prefixedText )->inContentLanguage()->text();
-			$replacement = wfMessage( 'red-link-title', $displayTitle )->inLanguage( $page->getLanguage() )->text();
+			$replacement = wfMessage( 'red-link-title', $displayTitle )
+				->inLanguage( $page->getLanguage() )->text();
 		}
 
 		// Leave hover texts set explicitly by the caller alone.

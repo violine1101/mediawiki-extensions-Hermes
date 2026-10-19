@@ -16,18 +16,18 @@ class FromInterwikiTest extends HermesIntegrationTestCase {
 	public function testUnregisteredPrefixMainNamespace() {
 		$info = PageInfo::fromInterwiki( 'xx', 'Foo' );
 
-		$this->assertSame( NS_MAIN, $info->namespace );
-		$this->assertSame( '', $info->namespaceText );
-		$this->assertSame( 'Foo', $info->title );
-		$this->assertNull( $info->translationProject );
+		$this->assertSame( NS_MAIN, $info->title->namespace );
+		$this->assertSame( '', $info->title->getNamespaceText() );
+		$this->assertSame( 'Foo', $info->title->baseTitle );
+		$this->assertNull( $info->title->project );
 	}
 
 	public function testUnregisteredPrefixNamespacedTitle() {
 		$info = PageInfo::fromInterwiki( 'xx', 'Category:Foo' );
 
-		$this->assertSame( NS_CATEGORY, $info->namespace );
-		$this->assertSame( 'Category', $info->namespaceText );
-		$this->assertSame( 'Foo', $info->title );
+		$this->assertSame( NS_CATEGORY, $info->title->namespace );
+		$this->assertSame( 'Category', $info->title->getNamespaceText() );
+		$this->assertSame( 'Foo', $info->title->baseTitle );
 	}
 
 	public function testUnparseableTitleFallsBackToLiteralText() {
@@ -35,29 +35,29 @@ class FromInterwikiTest extends HermesIntegrationTestCase {
 		// treating the whole string as the (unsplit) title rather than erroring.
 		$info = PageInfo::fromInterwiki( 'xx', 'Invalid|Title' );
 
-		$this->assertSame( NS_MAIN, $info->namespace );
-		$this->assertSame( '', $info->namespaceText );
-		$this->assertSame( 'Invalid|Title', $info->title );
-		$this->assertNull( $info->translationProject );
+		$this->assertSame( NS_MAIN, $info->title->namespace );
+		$this->assertSame( '', $info->title->getNamespaceText() );
+		$this->assertSame( 'Invalid|Title', $info->title->baseTitle );
+		$this->assertNull( $info->title->project );
 	}
 
 	public function testNormalizesUnderscoreRunsInTitle() {
 		$info = PageInfo::fromInterwiki( 'xx', 'Foo___Bar' );
 
-		$this->assertSame( 'Foo_Bar', $info->title );
+		$this->assertSame( 'Foo_Bar', $info->title->baseTitle );
 	}
 
 	public function testExtractsSection() {
 		$info = PageInfo::fromInterwiki( 'xx', 'Category:Foo#Some_Section' );
 
-		$this->assertSame( 'Foo', $info->title );
-		$this->assertSame( 'Some_Section', $info->section );
+		$this->assertSame( 'Foo', $info->title->baseTitle );
+		$this->assertSame( 'Some_Section', $info->title->section );
 	}
 
 	public function testWithoutSectionIsNull() {
 		$info = PageInfo::fromInterwiki( 'xx', 'Foo' );
 
-		$this->assertNull( $info->section );
+		$this->assertNull( $info->title->section );
 	}
 
 	public function testBaseLanguagePrefixDoesNotSetTranslationProject() {
@@ -65,7 +65,14 @@ class FromInterwikiTest extends HermesIntegrationTestCase {
 
 		$info = PageInfo::fromInterwiki( 'de', 'Foo' );
 
-		$this->assertNull( $info->translationProject );
+		$this->assertNull( $info->title->project );
+	}
+
+	public function testSetsWikiOfPrefix() {
+		$this->registerProjectLanguage( 'trwiki', 'eo' );
+
+		$this->assertSame( 'trwiki', PageInfo::fromInterwiki( 'eo', 'Foo' )->title->wiki );
+		$this->assertNull( PageInfo::fromInterwiki( 'zz', 'Foo' )->title->wiki );
 	}
 
 	public function testProjectLanguagePrefixSetsTranslationProject() {
@@ -73,7 +80,7 @@ class FromInterwikiTest extends HermesIntegrationTestCase {
 
 		$info = PageInfo::fromInterwiki( 'eo', 'Foo' );
 
-		$this->assertSame( 'eo', $info->translationProject );
+		$this->assertSame( 'eo', $info->title->project );
 	}
 
 	public function testDuplicateProjectLanguagePrefix() {
@@ -82,8 +89,8 @@ class FromInterwikiTest extends HermesIntegrationTestCase {
 
 		$info = PageInfo::fromInterwiki( 'eo', '!he:Foo' );
 
-		$this->assertSame( 'eo', $info->translationProject );
-		$this->assertSame( '!he:Foo', $info->title );
+		$this->assertSame( 'eo', $info->title->project );
+		$this->assertSame( '!he:Foo', $info->title->baseTitle );
 	}
 
 	public function testUsesHostWikisNamespaceConvention() {
@@ -95,9 +102,9 @@ class FromInterwikiTest extends HermesIntegrationTestCase {
 		// not this (English) test wiki's own.
 		$info = PageInfo::fromInterwiki( 'eo', 'Kategorie:Foo' );
 
-		$this->assertSame( NS_CATEGORY, $info->namespace );
-		$this->assertSame( 'Kategorie', $info->namespaceText );
-		$this->assertSame( 'Foo', $info->title );
+		$this->assertSame( NS_CATEGORY, $info->title->namespace );
+		$this->assertSame( 'Kategorie', $info->title->getNamespaceText() );
+		$this->assertSame( 'Foo', $info->title->baseTitle );
 	}
 
 	public function testWithoutHostBaseLanguageUsesCurrentWikiNamespaces() {
@@ -107,7 +114,7 @@ class FromInterwikiTest extends HermesIntegrationTestCase {
 
 		$info = PageInfo::fromInterwiki( 'eo', 'Category:Foo' );
 
-		$this->assertSame( NS_CATEGORY, $info->namespace );
-		$this->assertSame( 'Category', $info->namespaceText );
+		$this->assertSame( NS_CATEGORY, $info->title->namespace );
+		$this->assertSame( 'Category', $info->title->getNamespaceText() );
 	}
 }

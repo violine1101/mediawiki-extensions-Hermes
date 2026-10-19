@@ -4,7 +4,7 @@ namespace MediaWiki\Extension\Hermes\Hooks\TranslationProject;
 
 use MediaWiki\Content\Hook\PageContentLanguageHook;
 use MediaWiki\Context\Hook\UserGetLanguageObjectHook;
-use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Hook\BeforeInitializeHook;
 use MediaWiki\Html\Html;
 use MediaWiki\Output\Hook\OutputPageBeforeHTMLHook;
@@ -33,7 +33,7 @@ class PageHooks implements
 			return true;
 		}
 
-		$error = PageInfo::fromLocalPage( $title )->getTitleError();
+		$error = ProjectTitle::newFromLinkTarget( $title )->getError();
 		if ( $error !== null ) {
 			$result = $error;
 			return false;
@@ -50,22 +50,22 @@ class PageHooks implements
 			return;
 		}
 
-		$page = PageInfo::fromLocalPage( $title );
-		if ( !$page->hasCapitalizationError() ) {
+		$projectTitle = ProjectTitle::newFromLinkTarget( $title );
+		if ( !$projectTitle->hasCapitalizationError() ) {
 			return;
 		}
 
 		$query = $request->getQueryValues();
 		unset( $query[ 'title' ] );
-		$output->redirect( $page->toTitle()->getFullURL( $query ) );
+		$output->redirect( $projectTitle->toTitle()->getFullURL( $query ) );
 		return false;
 	}
 
 	/** @inheritDoc */
 	public function onPageContentLanguage( $title, &$pageLang, $userLang ) {
-		$page = PageInfo::fromLocalPage( $title );
-		if ( $page->translationProject !== null ) {
-			$pageLang = $page->getLanguage();
+		$projectTitle = ProjectTitle::newFromLinkTarget( $title );
+		if ( $projectTitle->project !== null ) {
+			$pageLang = $projectTitle->getLanguage();
 		}
 	}
 
@@ -81,10 +81,7 @@ class PageHooks implements
 			return;
 		}
 
-		$page = PageInfo::fromLocalPage( $title );
-		if ( $page->translationProject !== null ) {
-			$code = $page->translationProject;
-		}
+		$code = ProjectTitle::newFromLinkTarget( $title )->project ?? $code;
 	}
 
 	/** @inheritDoc */
@@ -94,14 +91,13 @@ class PageHooks implements
 			return;
 		}
 
-		$page = PageInfo::fromLocalPage( $parserPage );
-		if ( $page->translationProject === null ) {
+		$page = ProjectTitle::newFromLinkTarget( $parserPage );
+		if ( $page->project === null ) {
 			return;
 		}
 
-		$lang = $page->getLanguage();
 		$parser->getOutput()->setDisplayTitle( Parser::formatPageTitle(
-			$page->getLocalizedNamespaceText(), ':', $page->getDisplayTitle(), $lang
+			$page->getLocalizedNamespaceText(), ':', $page->getDisplayTitle(), $page->getLanguage()
 		) );
 	}
 
@@ -112,15 +108,15 @@ class PageHooks implements
 			return;
 		}
 
-		$page = PageInfo::fromLocalPage( $title );
-		if ( $page->translationProject === null ) {
+		$project = ProjectTitle::newFromLinkTarget( $title )->project;
+		if ( $project === null ) {
 			return;
 		}
 
 		$hatnote = Html::rawElement(
 			'div',
 			[ 'class' => 'subpages' ],
-			$out->msg( 'hermes-project-hatnote', $page->translationProject )->parse()
+			$out->msg( 'hermes-project-hatnote', $project )->parse()
 		);
 
 		$out->addSubtitle( $hatnote );

@@ -2,7 +2,7 @@
 
 namespace MediaWiki\Extension\Hermes\Hooks\TranslationProject;
 
-use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\HookContainer\HookRunner;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Output\Hook\OutputPageBeforeHTMLHook;
@@ -19,17 +19,17 @@ class TalkPageHooks implements PageSaveCompleteHook, OutputPageBeforeHTMLHook {
 	public function onPageSaveComplete(
 		$wikiPage, $user, $summary, $flags, $revisionRecord, $editResult
 	) {
-		$page = PageInfo::fromLocalPage( $wikiPage->getTitle() );
-		if ( $page->namespace !== NS_USER_TALK || $page->translationProject === null || $editResult->isNullEdit() ) {
+		$page = ProjectTitle::newFromLinkTarget( $wikiPage->getTitle() );
+		if ( $page->namespace !== NS_USER_TALK || $page->project === null || $editResult->isNullEdit() ) {
 			return;
 		}
 
 		// Mirrors ChangeTrackingEventIngress::updateNewTalkAfterPageUpdated().
 		$services = MediaWikiServices::getInstance();
 		$userNameUtils = $services->getUserNameUtils();
-		$recipientName = $userNameUtils->isIP( $page->title )
-			? $page->title
-			: $userNameUtils->getCanonical( $page->title );
+		$recipientName = $userNameUtils->isIP( $page->baseTitle )
+			? $page->baseTitle
+			: $userNameUtils->getCanonical( $page->baseTitle );
 		if (
 			$recipientName === false
 			|| $recipientName === $user->getName()
@@ -58,8 +58,8 @@ class TalkPageHooks implements PageSaveCompleteHook, OutputPageBeforeHTMLHook {
 			return;
 		}
 
-		$page = PageInfo::fromLocalPage( $title );
-		if ( $page->translationProject === null || $page->title !== strtr( $user->getName(), ' ', '_' ) ) {
+		$page = ProjectTitle::newFromLinkTarget( $title );
+		if ( $page->project === null || $page->baseTitle !== strtr( $user->getName(), ' ', '_' ) ) {
 			return;
 		}
 

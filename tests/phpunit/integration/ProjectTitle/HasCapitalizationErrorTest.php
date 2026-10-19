@@ -1,23 +1,19 @@
 <?php
 
-namespace MediaWiki\Extension\Hermes\Tests\PageInfo;
+namespace MediaWiki\Extension\Hermes\Tests\ProjectTitle;
 
-use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 use MediaWiki\MainConfigNames;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\Hermes\PageInfo::hasCapitalizationError
+ * @covers \MediaWiki\Extension\Hermes\ProjectTitle::hasCapitalizationError
  */
 class HasCapitalizationErrorTest extends HermesIntegrationTestCase {
 
-	private function makeProjectPage( string $title ): PageInfo {
-		$page = new PageInfo();
-		$page->namespace = NS_MAIN;
-		$page->translationProject = 'eo';
-		$page->title = $title;
-		return $page;
+	private function makeProjectPage( string $title ): ProjectTitle {
+		return ProjectTitle::makeTitle( NS_MAIN, $title, 'eo' );
 	}
 
 	public function testLowercaseTitle() {
@@ -41,10 +37,7 @@ class HasCapitalizationErrorTest extends HermesIntegrationTestCase {
 	public function testNonProjectPage() {
 		$this->overrideConfigValue( MainConfigNames::CapitalLinks, true );
 
-		$page = new PageInfo();
-		$page->namespace = NS_MAIN;
-		$page->translationProject = null;
-		$page->title = 'foo';
+		$page = ProjectTitle::makeTitle( NS_MAIN, 'foo' );
 
 		// Not a Hermes concern: core's own capitalization already handles this, since a
 		// non-project title's first character is at the very start of the DB key.

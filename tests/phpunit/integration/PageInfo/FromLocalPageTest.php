@@ -26,41 +26,40 @@ class FromLocalPageTest extends HermesIntegrationTestCase {
 		$page = $this->getExistingTestPage( 'PageInfoFromLocalPageOrdinary' );
 		$info = PageInfo::fromLocalPage( $page->getTitle() );
 
-		$this->assertNull( $info->translationProject );
-		$this->assertSame( NS_MAIN, $info->namespace );
-		$this->assertSame( '', $info->namespaceText );
-		$this->assertSame( 'PageInfoFromLocalPageOrdinary', $info->title );
-		$this->assertSame( 'en', $info->getLanguageCode() );
+		$this->assertNull( $info->title->project );
+		$this->assertSame( NS_MAIN, $info->title->namespace );
+		$this->assertSame( '', $info->title->getNamespaceText() );
+		$this->assertSame( 'PageInfoFromLocalPageOrdinary', $info->title->baseTitle );
+		$this->assertSame( 'en', $info->title->getLanguageCode() );
 	}
 
 	public function testMainNamespaceProjectPage() {
 		$title = Title::newFromText( '!eo:PageInfoFromLocalPageProject' );
 		$info = PageInfo::fromLocalPage( $title );
 
-		$this->assertSame( 'eo', $info->translationProject );
-		$this->assertSame( NS_MAIN, $info->namespace );
-		$this->assertSame( '', $info->namespaceText );
-		$this->assertSame( 'PageInfoFromLocalPageProject', $info->title );
-		$this->assertSame( 'eo', $info->getLanguageCode() );
+		$this->assertSame( 'eo', $info->title->project );
+		$this->assertSame( NS_MAIN, $info->title->namespace );
+		$this->assertSame( '', $info->title->getNamespaceText() );
+		$this->assertSame( 'PageInfoFromLocalPageProject', $info->title->baseTitle );
+		$this->assertSame( 'eo', $info->title->getLanguageCode() );
 	}
 
 	public function testNamespacedProjectPage() {
 		$title = Title::newFromText( 'Category:!eo:PageInfoFromLocalPageProject' );
 		$info = PageInfo::fromLocalPage( $title );
 
-		$this->assertSame( 'eo', $info->translationProject );
-		$this->assertSame( NS_CATEGORY, $info->namespace );
-		$this->assertSame( 'Category', $info->namespaceText );
-		$this->assertSame( 'PageInfoFromLocalPageProject', $info->title );
-		$this->assertSame( 'eo', $info->getLanguageCode() );
+		$this->assertSame( 'eo', $info->title->project );
+		$this->assertSame( NS_CATEGORY, $info->title->namespace );
+		$this->assertSame( 'Category', $info->title->getNamespaceText() );
+		$this->assertSame( 'PageInfoFromLocalPageProject', $info->title->baseTitle );
+		$this->assertSame( 'eo', $info->title->getLanguageCode() );
 	}
 
 	public function testNonProjectNamespaceIsNeverProject() {
 		$title = Title::newFromText( 'File:!eo:PageInfoFromLocalPageFile' );
 		$info = PageInfo::fromLocalPage( $title );
 
-		$this->assertNull( $info->translationProject );
-		$this->assertSame( '!eo:PageInfoFromLocalPageFile', $info->title );
-		$this->assertTrue( $info->hasInvalidTitle() );
+		$this->assertNull( $info->title->project );
+		$this->assertSame( '!eo:PageInfoFromLocalPageFile', $info->title->baseTitle );
 	}
 }

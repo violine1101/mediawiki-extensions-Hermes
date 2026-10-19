@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\Hermes\Tests\LinkRewriter;
 
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\LinkRewriter;
+use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 use MediaWiki\WikiMap\WikiMap;
 
@@ -23,17 +24,17 @@ class RewriteTest extends HermesIntegrationTestCase {
 		LanguageStore::addProjectLanguage( WikiMap::getCurrentWikiId(), 'de' );
 	}
 
-	private function eoPage(): \MediaWiki\Extension\Hermes\PageInfo {
-		return $this->makePageInfo( WikiMap::getCurrentWikiId(), '!eo:Some Page' );
+	private function eoPage(): ProjectTitle {
+		return ProjectTitle::makeTitle( NS_MAIN, 'Some_Page', 'eo' );
 	}
 
 	public function testNonProjectPageIsUntouched() {
-		$page = $this->makePageInfo( WikiMap::getCurrentWikiId(), 'Some Page' );
+		$page = ProjectTitle::makeTitle( NS_MAIN, 'Some_Page' );
 		$this->assertSame( '[[Foo]]', LinkRewriter::rewrite( '[[Foo]]', $page ) );
 	}
 
 	public function testEscapeIsStrippedOnNonProjectPage() {
-		$page = $this->makePageInfo( WikiMap::getCurrentWikiId(), 'Some Page' );
+		$page = ProjectTitle::makeTitle( NS_MAIN, 'Some_Page' );
 		$this->assertSame(
 			'[[Foo]] [[Talk:Bar|x]] [[:Template:Baz]] [[Qux]]',
 			LinkRewriter::rewrite( '[[!:Foo]] [[Talk:!:Bar|x]] [[:Template:!:Baz]] [[Qux]]', $page )

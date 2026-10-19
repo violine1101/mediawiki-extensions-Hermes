@@ -2,7 +2,7 @@
 
 namespace MediaWiki\Extension\Hermes\Hooks\TranslationProject;
 
-use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Parser\Hook\BeforeParserFetchTemplateRevisionRecordHook;
 use MediaWiki\Parser\Hook\ParserAfterParseHook;
@@ -25,7 +25,7 @@ class TemplateHooks implements
 		$ns = $title->getNamespace();
 
 		// Make sure that {{!:Foo}} always resolves to {{Template:Foo}}
-		$unescaped = PageInfo::unescapeTitle( $title->getText() );
+		$unescaped = ProjectTitle::unescape( $title->getText() );
 		if ( $unescaped !== null ) {
 			$baseTitle = Title::makeTitleSafe( $ns, $unescaped );
 			if ( $baseTitle ) {
@@ -34,16 +34,16 @@ class TemplateHooks implements
 			return;
 		}
 
-		if ( $contextTitle === null || PageInfo::isReservedTitle( $title->getText() ) ) {
+		if ( $contextTitle === null || ProjectTitle::isReserved( $title->getText() ) ) {
 			return;
 		}
 
-		$context = PageInfo::fromLocalPage( Title::newFromLinkTarget( $contextTitle ) );
-		if ( $context->translationProject === null ) {
+		$project = ProjectTitle::newFromLinkTarget( $contextTitle )->project;
+		if ( $project === null ) {
 			return;
 		}
 
-		$projectTitle = PageInfo::fromLocalPage( $title )->withProject( $context->translationProject )->toTitle();
+		$projectTitle = ProjectTitle::newFromLinkTarget( $title )->withProject( $project )->toTitle();
 		if ( $projectTitle->exists() ) {
 			$revRecord = MediaWikiServices::getInstance()->getRevisionLookup()->getRevisionByTitle( $projectTitle );
 		}
@@ -61,15 +61,15 @@ class TemplateHooks implements
 			return;
 		}
 
-		$context = PageInfo::fromLocalPage( $page );
-		if ( $context->translationProject === null ) {
+		$project = ProjectTitle::newFromLinkTarget( $page )->project;
+		if ( $project === null ) {
 			return;
 		}
 
 		$output = $parser->getOutput();
 		foreach ( $output->getLinkList( ParserOutputLinkTypes::TEMPLATE ) as [ 'link' => $link ] ) {
-			if ( !PageInfo::isReservedTitle( $link->getText() ) ) {
-				$projectTitle = PageInfo::fromLocalPage( $link )->withProject( $context->translationProject )->toTitle();
+			if ( !ProjectTitle::isReserved( $link->getText() ) ) {
+				$projectTitle = ProjectTitle::newFromLinkTarget( $link )->withProject( $project )->toTitle();
 				$output->addExistenceDependency( $projectTitle );
 			}
 		}

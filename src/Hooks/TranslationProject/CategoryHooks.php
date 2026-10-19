@@ -3,7 +3,7 @@
 namespace MediaWiki\Extension\Hermes\Hooks\TranslationProject;
 
 use MediaWiki\Context\RequestContext;
-use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Hook\CategoryViewer__generateLinkHook;
 use MediaWiki\Hook\GetDefaultSortkeyHook;
 use MediaWiki\Html\Html;
@@ -29,8 +29,8 @@ class CategoryHooks implements
 	public function onOutputPageRenderCategoryLink(
 		OutputPage $outputPage, ProperPageIdentity $categoryTitle, string $text, ?string &$link
 	): void {
-		$category = PageInfo::fromLocalPage( $categoryTitle );
-		if ( $category->translationProject === null ) {
+		$category = ProjectTitle::newFromLinkTarget( $categoryTitle );
+		if ( $category->project === null ) {
 			return;
 		}
 
@@ -40,8 +40,8 @@ class CategoryHooks implements
 
 	/** @inheritDoc */
 	public function onGetDefaultSortkey( $title, &$sortkey ) {
-		$page = PageInfo::fromLocalPage( $title );
-		if ( $page->translationProject === null ) {
+		$page = ProjectTitle::newFromLinkTarget( $title );
+		if ( $page->project === null ) {
 			return;
 		}
 
@@ -55,22 +55,22 @@ class CategoryHooks implements
 			return;
 		}
 
-		$this->viewedCategoryLanguage ??= PageInfo::fromLocalPage( $categoryTitle )->getLanguageCode();
-		$page = PageInfo::fromLocalPage( $title );
+		$this->viewedCategoryLanguage ??= ProjectTitle::newFromLinkTarget( $categoryTitle )->getLanguageCode();
+		$page = ProjectTitle::newFromLinkTarget( $title );
+		$languageCode = $page->getLanguageCode();
 
 		$suffix = '';
-		if ( $page->getLanguageCode() !== $this->viewedCategoryLanguage ) {
-			$suffix = Html::rawElement( 'sup', [ 'class' => 'hermes-category-language' ],
-				'(' . $page->getLanguageCode() . ')' );
+		if ( $languageCode !== $this->viewedCategoryLanguage ) {
+			$suffix = Html::rawElement( 'sup', [ 'class' => 'hermes-category-language' ], "({$languageCode})" );
 		}
 
-		if ( $page->translationProject === null && $suffix === '' ) {
+		if ( $page->project === null && $suffix === '' ) {
 			return;
 		}
 
-		if ( $page->translationProject !== null ) {
+		if ( $page->project !== null ) {
 			// Like core: subcategories are shown without namespace, other members with it.
-			$text = $type === 'subcat' ? $page->getDisplayTitle() : $page->getDisplayTitle( true );
+			$text = $page->getDisplayTitle( $type !== 'subcat' );
 		} else {
 			$text = $html !== null ? new HtmlArmor( $html ) : null;
 		}

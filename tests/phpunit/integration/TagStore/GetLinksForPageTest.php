@@ -92,6 +92,6 @@ class GetLinksForPageTest extends HermesIntegrationTestCase {
 
 		// deA and deB tie on tag + order; the alphabetically-first title wins
 		// deterministically, rather than depending on DB scan order.
-		$this->assertSame( 'ATitle', $links[ 'de' ]->page->title );
+		$this->assertSame( 'ATitle', $links[ 'de' ]->page->title->baseTitle );
 	}
 }

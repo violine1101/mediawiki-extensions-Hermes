@@ -29,6 +29,6 @@ class ProjectPageInterwiki extends Interwiki {
 
 		$page = PageInfo::fromInterwiki( $this->mPrefix, $title );
 
-		return parent::getURL( $page->getRealTitle() );
+		return parent::getURL( $page->title->getRealTitle() );
 	}
 }

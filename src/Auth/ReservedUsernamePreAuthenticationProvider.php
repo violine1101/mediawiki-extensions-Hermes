@@ -3,7 +3,7 @@
 namespace MediaWiki\Extension\Hermes\Auth;
 
 use MediaWiki\Auth\AbstractPreAuthenticationProvider;
-use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\ProjectTitle;
 use StatusValue;
 
 /** Rejects account names with the "!...:" shape reserved for translation projects (like page titles). */
@@ -17,6 +17,6 @@ class ReservedUsernamePreAuthenticationProvider extends AbstractPreAuthenticatio
 	}
 
 	public static function isReserved( string $username ): bool {
-		return PageInfo::isReservedTitle( $username );
+		return ProjectTitle::isReserved( $username );
 	}
 }
