@@ -87,8 +87,19 @@
 			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\TranslationProject\\TemplateHooks"
 		}
 	},
+	"SpecialPages": {
+		"HermesTags": {
+			"class": "MediaWiki\\Extension\\Hermes\\Special\\SpecialHermesTags",
+			"services": [ "LanguageNameUtils" ]
+		},
+		"HermesPages": {
+			"class": "MediaWiki\\Extension\\Hermes\\Special\\SpecialHermesPages",
+			"services": [ "LanguageNameUtils" ]
+		}
+	},
 	"ExtensionMessagesFiles": {
-		"HermesMagic": "Hermes.magic.php"
+		"HermesMagic": "Hermes.magic.php",
+		"HermesAlias": "Hermes.alias.php"
 	},
 	"MessagesDirs": {
 		"Hermes": [
@@ -113,6 +124,11 @@
 				"init.js"
 			],
 			"messages": []
+		},
+		"ext.hermes.special.styles": {
+			"localBasePath": "resources/ext.hermes.special.styles",
+			"remoteExtPath": "Hermes/resources/ext.hermes.special.styles",
+			"styles": [ "special.less" ]
 		}
 	},
 	"manifest_version": 2

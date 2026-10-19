@@ -14,7 +14,7 @@ use MediaWiki\Skin\Skin;
 
 /**
  * Adds Hermes links to the skin's "In other languages" box, where no manual [[xx:Foo]] link exists
- * for that language. Links to translation projects get the hermes-translation-project-link class.
+ * for that language. Links to translation projects get the ext-hermes-translation-project-link class.
  * Disabled by $wgHermesLanguageLinksInSidebar.
  */
 class LanguageLinkHooks implements SidebarBeforeOutputHook {
@@ -63,7 +63,7 @@ class LanguageLinkHooks implements SidebarBeforeOutputHook {
 		$title = $link->getDisplayTitle();
 		$class = "interlanguage-link interwiki-$code";
 		if ( $link->isProject() ) {
-			$class .= ' hermes-translation-project-link';
+			$class .= ' ext-hermes-translation-project-link';
 		}
 
 		return [

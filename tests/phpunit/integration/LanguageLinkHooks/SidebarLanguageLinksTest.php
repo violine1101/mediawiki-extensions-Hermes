@@ -73,7 +73,7 @@ class SidebarLanguageLinksTest extends HermesIntegrationTestCase {
 
 		$this->assertSame( 'https://translate.example.org/wiki/!eo:%C5%9Ctono', $eo['href'] );
 		$this->assertSame( 'Esperanto', $eo['text'] );
-		$this->assertSame( 'interlanguage-link interwiki-eo hermes-translation-project-link', $eo['class'] );
+		$this->assertSame( 'interlanguage-link interwiki-eo ext-hermes-translation-project-link', $eo['class'] );
 	}
 
 	public function testManualLinkWinsAndOrderIsByLanguage() {

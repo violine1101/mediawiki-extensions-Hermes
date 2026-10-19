@@ -84,6 +84,13 @@ final class ProjectTitle {
 		);
 	}
 
+	/** This title's section $section, or the page as a whole if null. */
+	public function withSection( ?string $section ): self {
+		return new self(
+			$this->wiki, $this->namespace, $this->baseTitle, $this->project, $section, $this->namespaceText
+		);
+	}
+
 	public function isLocal(): bool {
 		return $this->wiki === WikiMap::getCurrentWikiId();
 	}

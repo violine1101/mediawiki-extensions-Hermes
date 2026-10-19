@@ -114,9 +114,11 @@ class LanguageStore {
 	}
 
 	/**
-	 * @return array<string, array{wiki: string, isBase: bool}>
+	 * All registered languages, base and project.
+	 *
+	 * @return array<string, array{wiki: string, isBase: bool}> Keyed by language code.
 	 */
-	private static function getLanguages(): array {
+	public static function getLanguages(): array {
 		if ( self::$languages === null ) {
 			self::init();
 		}

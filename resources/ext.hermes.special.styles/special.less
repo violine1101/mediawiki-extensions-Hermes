@@ -1,0 +1,25 @@
+@import 'mediawiki.skin.variables.less';
+
+.ext-hermes-details td.ext-hermes-link-target {
+	background-color: @background-color-success-subtle;
+}
+
+.ext-hermes-details td.ext-hermes-own-language {
+	background-color: @background-color-progressive-subtle;
+}
+
+// Some tricks for CSS specificity needed to override hover
+.ext-hermes-details td.ext-hermes-tag-conflict,
+.mw-datatable tr:not( div ) td.ext-hermes-tag-conflict {
+	background-color: @background-color-error-subtle;
+}
+
+.ext-hermes-tag-pages {
+	list-style: none;
+	margin: 0;
+	text-wrap: nowrap;
+}
+
+.ext-hermes-details-link {
+	.cdx-mixin-css-icon( @cdx-icon-search, @color-subtle, @size-icon-small );
+}
