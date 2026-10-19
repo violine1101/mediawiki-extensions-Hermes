@@ -190,8 +190,19 @@ class RewriteTest extends HermesIntegrationTestCase {
 	}
 
 	public function testInterlanguageLinkIsUntouched() {
-		$this->registerBaseLanguage( 'fr_wiki', 'fr' );
-		$this->registerWiki( 'fr_wiki', 'https://fr.example.org/wiki/$1' );
+		$this->getDb()->newInsertQueryBuilder()
+			->insertInto( 'interwiki' )
+			->row( [
+				'iw_prefix' => 'fr',
+				'iw_url' => 'https://fr.example.org/wiki/$1',
+				'iw_api' => '',
+				'iw_wikiid' => '',
+				'iw_local' => 0,
+				'iw_trans' => 0,
+			] )
+			->caller( __METHOD__ )
+			->execute();
+
 		$this->assertSame( '[[fr:Foo]]', LinkRewriter::rewrite( '[[fr:Foo]]', $this->eoPage() ) );
 	}
 

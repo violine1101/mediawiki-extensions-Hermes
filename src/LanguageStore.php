@@ -64,16 +64,6 @@ class LanguageStore {
 	}
 
 	/**
-	 * Look up the full registration entry for a given language (base or project).
-	 *
-	 * @param string $language
-	 * @return array{wiki: string, isBase: bool}|null
-	 */
-	public static function getLanguageEntry( string $language ): ?array {
-		return self::getLanguages()[ $language ] ?? null;
-	}
-
-	/**
 	 * Look up the base language registered for a given wiki.
 	 *
 	 * @param string $wiki

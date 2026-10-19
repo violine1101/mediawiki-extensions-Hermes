@@ -23,7 +23,6 @@ class GetDisplayTitleTest extends HermesIntegrationTestCase {
 
 		// "Diskuto" is Esperanto for "Talk".
 		$this->assertSame( 'Diskuto:Foo Bar', $title->getDisplayTitle( true ) );
-		$this->assertSame( 'Talk:Foo_Bar', $title->getVirtualTitle() );
 	}
 
 	public function testWithoutNamespace() {

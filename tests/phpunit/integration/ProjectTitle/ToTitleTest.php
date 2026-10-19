@@ -38,7 +38,9 @@ class ToTitleTest extends HermesIntegrationTestCase {
 	}
 
 	public function testStoredTitleKeepsCapitalization() {
-		$this->assertSame( '!eo:foo', ProjectTitle::makeTitle( NS_MAIN, 'foo', 'eo' )->toStoredTitle()->getPrefixedText() );
+		$title = ProjectTitle::makeTitle( NS_MAIN, 'foo', 'eo' );
+
+		$this->assertSame( '!eo:foo', $title->toStoredTitle()->getPrefixedText() );
 	}
 
 	public function testWithProjectOfTemplateTarget() {

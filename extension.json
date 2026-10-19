@@ -21,6 +21,10 @@
 			"description": "Enable Hermes debug features.",
 			"value": false
 		},
+		"HermesLanguageLinksInSidebar": {
+			"description": "Add links to other-language versions of a page to the skin's \"In other languages\" box. Disable to show them some other way, e.g. from a skin using LanguageLink::forPage().",
+			"value": true
+		},
 		"HermesWarnings": {
 			"description": "Show on-page warning boxes for non-fatal issues resulting from the extension, such as Hermes tag ambiguities, conflicts, or duplicate {{#hermes:}} calls. When disabled, the relevant tracking categories are still applied, but no on-page warnings are shown.",
 			"value": true
@@ -33,8 +37,7 @@
 		"LinksUpdateComplete": "parserfunc",
 		"PageDeleteComplete": "parserfunc",
 		"ParserFirstCallInit": "parserfunc",
-		"LanguageLinks": "languagelinks",
-		"MediaWikiServices": "languagelinks",
+		"SidebarBeforeOutput": "languagelinks",
 		"InternalParseBeforeLinks": "translationproject-link",
 		"OutputPageRenderCategoryLink": "translationproject-category",
 		"GetDefaultSortkey": "translationproject-category",
@@ -65,7 +68,8 @@
 			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\ParserFuncHooks"
 		},
 		"languagelinks": {
-			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\LanguageLinkHooks"
+			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\LanguageLinkHooks",
+			"services": [ "MainConfig", "LanguageNameUtils", "LanguageFactory" ]
 		},
 		"translationproject-page": {
 			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\TranslationProject\\PageHooks"

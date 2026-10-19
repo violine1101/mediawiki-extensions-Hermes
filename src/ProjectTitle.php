@@ -7,6 +7,7 @@ use MediaWiki\Language\Language;
 use MediaWiki\Linker\LinkTarget;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Page\PageReference;
+use MediaWiki\Parser\Sanitizer;
 use MediaWiki\Title\Title;
 use MediaWiki\WikiMap\WikiMap;
 
@@ -154,7 +155,8 @@ final class ProjectTitle {
 
 		$services = MediaWikiServices::getInstance();
 		$lang = $services->getLanguageFactory()->getLanguage( $this->project );
-		if ( ( $this->namespace === NS_USER || $this->namespace === NS_USER_TALK ) && $lang->needsGenderDistinction() ) {
+		$isUserNamespace = $this->namespace === NS_USER || $this->namespace === NS_USER_TALK;
+		if ( $isUserNamespace && $lang->needsGenderDistinction() ) {
 			$userName = strtok( $this->baseTitle, '/' );
 			$gender = $services->getGenderCache()->getGenderOf( $userName, __METHOD__ );
 			$nsText = $lang->getGenderNsText( $this->namespace, $gender );
@@ -179,19 +181,26 @@ final class ProjectTitle {
 	}
 
 	/**
-	 * The title without any translation prefix, i.e. the title used internally in a translation
-	 * project, in DB key form. Identical to getRealTitle() if this isn't a project page.
-	 */
-	public function getVirtualTitle(): string {
-		return strtr( $this->joinTitle( $this->getNamespaceText() ), ' ', '_' );
-	}
-
-	/**
 	 * The real, physical title as it's actually stored on its own wiki: namespace, "!xx:"
 	 * translation project prefix, and "#section", all included.
 	 */
 	public function getRealTitle(): string {
 		return strtr( $this->joinTitle( $this->getNamespaceText(), $this->getProjectPrefix() ), ' ', '_' );
+	}
+
+	/**
+	 * The URL of this title on its own wiki, as registered in WikiStore (so possibly
+	 * protocol-relative), or null if that wiki has none.
+	 */
+	public function getUrl(): ?string {
+		$template = $this->wiki !== null ? WikiStore::getUrlTemplate( $this->wiki ) : null;
+		if ( $template === null ) {
+			return null;
+		}
+
+		$path = strtr( $this->joinTitle( $this->getNamespaceText(), $this->getProjectPrefix(), false ), ' ', '_' );
+		$fragment = $this->section !== null ? '#' . Sanitizer::escapeIdForLink( $this->section ) : '';
+		return str_replace( '$1', wfUrlencode( $path ), $template ) . $fragment;
 	}
 
 	private function assertLocal(): void {
@@ -206,9 +215,9 @@ final class ProjectTitle {
 	}
 
 	/** "ns:", $projectPrefix, the base title and "#section", with empty parts left out. */
-	private function joinTitle( string $nsText, string $projectPrefix = '' ): string {
+	private function joinTitle( string $nsText, string $projectPrefix = '', bool $withSection = true ): string {
 		$prefix = $nsText !== '' ? "{$nsText}:" : '';
-		$suffix = $this->section !== null ? "#{$this->section}" : '';
+		$suffix = $withSection && $this->section !== null ? "#{$this->section}" : '';
 		return "{$prefix}{$projectPrefix}{$this->baseTitle}{$suffix}";
 	}
 

@@ -141,7 +141,7 @@ class TagStore {
 	}
 
 	/**
-	 * Find all relevant interwikis, following the given tag fallback chain.
+	 * Find the pages linked to by the given tag fallback chain, one per language.
 	 *
 	 * @param Tag[] $tags Ordered tag fallback chain
 	 * @return TagLink[] Links to pages with the given tags, keyed by language.
@@ -189,7 +189,7 @@ class TagStore {
 	}
 
 	/**
-	 * Find all relevant interwikis for the given page on the current wiki.
+	 * Find the other-language versions of the given page on the current wiki.
 	 *
 	 * @param PageInfo $page The page to get the links for
 	 * @return TagLink[] Links to pages with the given tags, excluding any self-link.

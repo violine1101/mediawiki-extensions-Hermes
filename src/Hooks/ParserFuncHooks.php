@@ -93,7 +93,8 @@ class ParserFuncHooks implements
 					$tagCode = Html::element( 'code', [], $tag );
 					$pages = array_filter(
 						$pages,
-						static fn ( PageInfo $p ) => $p->title->wiki !== $page->title->wiki || $p->getId() !== $page->getId(),
+						static fn ( PageInfo $p ) => $p->title->wiki !== $page->title->wiki
+							|| $p->getId() !== $page->getId(),
 					);
 					$links = array_map( static fn ( PageInfo $p ) => $p->buildLink(), $pages );
 					$conflictItems[] = Html::rawElement( 'li', [], "{$tagCode}: " . implode( ', ', $links ) );

@@ -46,9 +46,6 @@ class GetRealTitleTest extends MediaWikiUnitTestCase {
 	}
 
 	public function testSpacesBecomeUnderscores() {
-		// Fed straight to wfUrlencode() by Decorators\ProjectPageInterwiki with no
-		// Title::newFromText() normalization in between, so spaces must already be "_" here,
-		// not left for wfUrlencode() to turn into "+".
 		$page = self::makeTitle( 'User talk', 'eo', 'Foo Bar' );
 
 		$this->assertSame( 'User_talk:!eo:Foo_Bar', $page->getRealTitle() );

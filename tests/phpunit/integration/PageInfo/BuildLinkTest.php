@@ -12,12 +12,10 @@ use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
  */
 class BuildLinkTest extends HermesIntegrationTestCase {
 
-	public function testInvalidTarget() {
-		// "|" is not a legal title character, so Title::newFromText() returns null for
-		// this; buildLink() must fall back to plain (escaped) text rather than erroring.
-		$page = new PageInfo( ProjectTitle::makeTitleOnWiki( 'dewiki', NS_MAIN, 'Invalid|Title', 'de', null, '' ) );
+	public function testUnregisteredWikiGivesPlainText() {
+		$page = new PageInfo( ProjectTitle::makeTitleOnWiki( 'dewiki', NS_MAIN, 'Foo_<b>', 'de', null, '' ) );
 
-		$this->assertSame( 'Invalid|Title', $page->buildLink() );
+		$this->assertSame( 'Foo &lt;b&gt;', $page->buildLink() );
 	}
 
 	public function testProjectPageTarget() {
@@ -29,7 +27,7 @@ class BuildLinkTest extends HermesIntegrationTestCase {
 
 		$this->assertSame(
 			'<a href="https://translate.example.org/wiki/!eo:BuildLinkProjectTarget" class="extiw" '
-				. 'title="eo:BuildLinkProjectTarget">BuildLinkProjectTarget</a>',
+				. 'title="BuildLinkProjectTarget – Esperanto">BuildLinkProjectTarget</a>',
 			$page->buildLink()
 		);
 	}
@@ -47,7 +45,7 @@ class BuildLinkTest extends HermesIntegrationTestCase {
 		// Esperanto namespace name, the URL the wiki's own.
 		$this->assertSame(
 			'<a href="https://translate.example.org/wiki/Category:!eo:BuildLinkNamespacedProjectTarget" '
-				. 'class="extiw" title="eo:Category:BuildLinkNamespacedProjectTarget">'
+				. 'class="extiw" title="Kategorio:BuildLinkNamespacedProjectTarget – Esperanto">'
 				. 'Kategorio:BuildLinkNamespacedProjectTarget</a>',
 			$page->buildLink()
 		);

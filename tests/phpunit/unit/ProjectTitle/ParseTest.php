@@ -2,8 +2,8 @@
 
 namespace MediaWiki\Extension\Hermes\Tests\ProjectTitle;
 
-use MediaWikiUnitTestCase;
 use MediaWiki\Extension\Hermes\ProjectTitle;
+use MediaWikiUnitTestCase;
 
 /**
  * @covers \MediaWiki\Extension\Hermes\ProjectTitle::parse

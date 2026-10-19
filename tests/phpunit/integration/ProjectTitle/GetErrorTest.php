@@ -24,6 +24,8 @@ class GetErrorTest extends HermesIntegrationTestCase {
 	public function testCapitalizationError() {
 		$this->overrideConfigValue( MainConfigNames::CapitalLinks, true );
 
-		$this->assertSame( 'hermes-title-not-capitalized', ProjectTitle::makeTitle( NS_MAIN, 'foo', 'eo' )->getError() );
+		$title = ProjectTitle::makeTitle( NS_MAIN, 'foo', 'eo' );
+
+		$this->assertSame( 'hermes-title-not-capitalized', $title->getError() );
 	}
 }

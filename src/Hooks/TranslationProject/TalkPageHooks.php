@@ -30,11 +30,9 @@ class TalkPageHooks implements PageSaveCompleteHook, OutputPageBeforeHTMLHook {
 		$recipientName = $userNameUtils->isIP( $page->baseTitle )
 			? $page->baseTitle
 			: $userNameUtils->getCanonical( $page->baseTitle );
-		if (
-			$recipientName === false
-			|| $recipientName === $user->getName()
-			|| ( $revisionRecord->isMinor() && $services->getPermissionManager()->userHasRight( $user, 'nominornewtalk' ) )
-		) {
+		$isQuietMinorEdit = $revisionRecord->isMinor()
+			&& $services->getPermissionManager()->userHasRight( $user, 'nominornewtalk' );
+		if ( $recipientName === false || $recipientName === $user->getName() || $isQuietMinorEdit ) {
 			return;
 		}
 

@@ -7,7 +7,7 @@ use MediaWiki\MediaWikiServices;
 use MediaWiki\WikiMap\WikiMap;
 
 /**
- * Tracks the interwiki URL template each wiki in the family uses to link to the others.
+ * Tracks the URL template each wiki in the family uses for its pages, for linking to them.
  * Each wiki registers its own URL template, derived from its own $wgServer/$wgArticlePath
  * (no separate Hermes-specific config needed) into the shared hermes_wikis table on first use.
  * Unlike a language, a wiki's own ID is inherently unique to it - no cross-wiki conflict is possible.
