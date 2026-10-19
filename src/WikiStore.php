@@ -42,6 +42,13 @@ class WikiStore {
 	}
 
 	/**
+	 * @return string[] IDs of all registered wikis.
+	 */
+	public static function getWikiIds(): array {
+		return array_keys( self::getWikis() );
+	}
+
+	/**
 	 * Ensures this wiki's URL template is registered, populating the cache in the process.
 	 */
 	public static function init(): void {

@@ -51,6 +51,16 @@ class LanguageStore {
 	}
 
 	/**
+	 * All registered base languages.
+	 *
+	 * @return array<string, string> Wiki IDs, keyed by language code.
+	 */
+	public static function getBaseLanguages(): array {
+		$languages = array_filter( self::getLanguages(), static fn ( $entry ) => $entry['isBase'] );
+		return array_map( static fn ( $entry ) => $entry['wiki'], $languages );
+	}
+
+	/**
 	 * Whether the given language is registered as a translation project language for the
 	 * current wiki.
 	 *
