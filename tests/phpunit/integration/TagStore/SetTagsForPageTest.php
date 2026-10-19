@@ -36,7 +36,7 @@ class SetTagsForPageTest extends HermesIntegrationTestCase {
 		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
 		$de = $this->makePageInfo( 'dewiki' );
 
-		TagStore::setTagsForPage( $de, Tag::fromArgs( [ '#Some_Section=shared_tag' ] ) );
+		TagStore::setTagsForPage( $de, Tag::fromArgs( [ 'shared_tag=#Some_Section' ] ) );
 		TagStore::setTagsForPage( $en, Tag::fromArgs( [ 'shared_tag' ] ) );
 
 		$links = TagStore::getLinksForPage( $en );
@@ -50,8 +50,8 @@ class SetTagsForPageTest extends HermesIntegrationTestCase {
 		TagStore::setTagsForPage( $page, Tag::fromArgs( [
 			'page_level_a',
 			'page_level_b',
-			'#Details=detail_a',
-			'detail_b',
+			'detail_a=#Details',
+			'detail_b=#Details',
 		] ) );
 
 		$rows = Hermes::getDB()->select(

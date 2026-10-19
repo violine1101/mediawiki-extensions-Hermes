@@ -3,7 +3,7 @@
 namespace MediaWiki\Extension\Hermes\Hooks;
 
 use MediaWiki\Extension\Hermes\Exceptions\DuplicateTagException;
-use MediaWiki\Extension\Hermes\Exceptions\EmptySectionException;
+use MediaWiki\Extension\Hermes\Exceptions\InvalidSectionException;
 use MediaWiki\Extension\Hermes\Exceptions\InvalidTagNameException;
 use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\Tag;
@@ -35,7 +35,7 @@ class ParserFuncHooks implements
 	}
 
 	/**
-	 * {{#hermes:tag1|tag2|...|#section=tag3|tag4|...}}
+	 * {{#hermes:tag1|tag2|...|tag3=#section|tag4=#section|...}}
 	 */
 	public static function renderHermes( Parser $parser, string ...$args ): string {
 		$config = MediaWikiServices::getInstance()->getMainConfig();
@@ -56,8 +56,8 @@ class ParserFuncHooks implements
 			$tags = Tag::fromArgs( $args );
 		} catch ( InvalidTagNameException $e ) {
 			return Html::errorBox( wfMessage( 'hermes-invalid-tag-name', $e->tagName )->parse() );
-		} catch ( EmptySectionException $e ) {
-			return Html::errorBox( wfMessage( 'hermes-empty-section' )->plaintextParams( $e->arg )->parse() );
+		} catch ( InvalidSectionException $e ) {
+			return Html::errorBox( wfMessage( 'hermes-invalid-section' )->plaintextParams( $e->arg )->parse() );
 		} catch ( DuplicateTagException $e ) {
 			return Html::errorBox( wfMessage( 'hermes-duplicate-tag-name', $e->tagName )->parse() );
 		}

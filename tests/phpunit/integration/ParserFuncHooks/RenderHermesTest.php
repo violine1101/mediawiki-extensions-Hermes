@@ -27,22 +27,22 @@ class RenderHermesTest extends HermesIntegrationTestCase {
 	}
 
 	public function testDuplicateAcrossSectionsShowsError() {
-		$output = $this->parse( '{{#hermes:shared_tag|#Some Section=shared_tag}}' );
+		$output = $this->parse( '{{#hermes:shared_tag|shared_tag=#Some Section}}' );
 
 		$this->assertStringContainsString( 'cdx-message--error', $output->getContentHolderText() );
 		$this->assertNull( $output->getPageProperty( 'hermes_tags' ) );
 	}
 
-	public function testEmptySectionShowsError() {
-		$output = $this->parse( '{{#hermes:tag_a|#=tag_b}}' );
+	public function testInvalidSectionShowsError() {
+		$output = $this->parse( '{{#hermes:tag_a|tag_b=#}}' );
 
 		$this->assertStringContainsString( 'cdx-message--error', $output->getContentHolderText() );
-		$this->assertStringContainsString( '<code>#=tag_b</code>', $output->getContentHolderText() );
+		$this->assertStringContainsString( '<code>tag_b=#</code>', $output->getContentHolderText() );
 		$this->assertNull( $output->getPageProperty( 'hermes_tags' ) );
 	}
 
 	public function testDistinctTagsNoError() {
-		$output = $this->parse( '{{#hermes:tag_a|#Details=tag_b}}' );
+		$output = $this->parse( '{{#hermes:tag_a|tag_b=#Details}}' );
 
 		$this->assertStringNotContainsString( 'cdx-message--error', $output->getContentHolderText() );
 		$this->assertNotNull( $output->getPageProperty( 'hermes_tags' ) );
