@@ -81,7 +81,7 @@ class Tag {
 
 		$self = new Tag();
 		$self->name = self::normalizeName( $arg[ 0 ] );
-		$self->section = Hermes::normalizeSection( $arg[ 1 ] ?? null );
+		$self->section = self::normalizeSection( $arg[ 1 ] ?? null );
 
 		return $self;
 	}
@@ -110,7 +110,7 @@ class Tag {
 	 */
 	private static function normalizeName( string $name ): string {
 		$name = strtolower( trim( $name ) );
-		$name = Hermes::normalizeWhitespace( $name );
+		$name = self::normalizeWhitespace( $name );
 
 		// allowed chars: digits, ascii chars, and the special chars _ / . :
 		$nameRegex = "/^[\w\d\/.:]+$/";
@@ -119,5 +119,29 @@ class Tag {
 			return $name;
 		}
 		throw new InvalidTagNameException( $name );
+	}
+
+	/**
+	 * Normalizes a section name.
+	 *
+	 * @param ?string $section The non-normalized section, or null if there is none.
+	 * @return ?string The normalized section: trimmed and underscores for whitespace.
+	 *   Case is preserved, since HTML anchors are case-sensitive.
+	 */
+	private static function normalizeSection( ?string $section ): ?string {
+		if ( $section === null ) {
+			return null;
+		}
+		$section = self::normalizeWhitespace( $section );
+		return $section === '' ? null : $section;
+	}
+
+	/**
+	 * Collapses runs of whitespace and/or underscores into a single underscore,
+	 * and trims leading/trailing underscores.
+	 */
+	private static function normalizeWhitespace( string $text ): string {
+		$text = preg_replace( '/[\s_]+/', '_', $text ) ?? '';
+		return trim( $text, '_' );
 	}
 }

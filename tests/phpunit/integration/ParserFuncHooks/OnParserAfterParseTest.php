@@ -19,6 +19,7 @@ class OnParserAfterParseTest extends HermesIntegrationTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$this->registerBaseLanguage( 'dewiki', 'de' );
+		$this->registerWiki( 'dewiki', 'https://de.example.org/wiki/$1' );
 	}
 
 	private function parse( string $wikitext, string $titleText = 'OnParserAfterParseTest' ): ParserOutput {
@@ -72,7 +73,7 @@ class OnParserAfterParseTest extends HermesIntegrationTestCase {
 		$this->assertStringContainsString( 'cdx-message--warning', $text );
 		$this->assertStringContainsString( '<code>conflict_details_tag</code>', $text );
 		$this->assertMatchesRegularExpression(
-			'/<a href="[^"]*">ExistingConflictPageDetails<\/a>/',
+			'/<a href="[^"]*"[^>]*>ExistingConflictPageDetails<\/a>/',
 			$text
 		);
 	}
@@ -92,8 +93,14 @@ class OnParserAfterParseTest extends HermesIntegrationTestCase {
 		// Language codes are shown via their autonym (i.e. what {{#language:}} would produce),
 		// not the raw code.
 		$this->assertStringContainsString( 'Deutsch', $text );
-		$this->assertMatchesRegularExpression( '/<a href="[^"]*">AmbiguousDetailsA<\/a>/', $text );
-		$this->assertMatchesRegularExpression( '/<a href="[^"]*">AmbiguousDetailsB<\/a>/', $text );
+		$this->assertMatchesRegularExpression(
+			'#<a href="https://de.example.org/wiki/AmbiguousDetailsA" class="extiw"[^>]*>AmbiguousDetailsA</a>#',
+			$text
+		);
+		$this->assertMatchesRegularExpression(
+			'#<a href="https://de.example.org/wiki/AmbiguousDetailsB" class="extiw"[^>]*>AmbiguousDetailsB</a>#',
+			$text
+		);
 	}
 
 	public function testWarningsSuppressedByConfig() {

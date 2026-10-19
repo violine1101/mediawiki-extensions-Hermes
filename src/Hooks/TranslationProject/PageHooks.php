@@ -1,6 +1,6 @@
 <?php
 
-namespace MediaWiki\Extension\Hermes\Hooks;
+namespace MediaWiki\Extension\Hermes\Hooks\TranslationProject;
 
 use MediaWiki\Content\Hook\PageContentLanguageHook;
 use MediaWiki\Context\Hook\UserGetLanguageObjectHook;
@@ -12,7 +12,11 @@ use MediaWiki\Parser\Hook\ParserAfterParseHook;
 use MediaWiki\Parser\Parser;
 use MediaWiki\Permissions\Hook\GetUserPermissionsErrorsHook;
 
-class TranslationProjectHooks implements
+/**
+ * Page-level behavior of translation-project pages: page and interface language, display title,
+ * hatnote, and title validation.
+ */
+class PageHooks implements
 	GetUserPermissionsErrorsHook,
 	PageContentLanguageHook,
 	UserGetLanguageObjectHook,
@@ -29,15 +33,9 @@ class TranslationProjectHooks implements
 			return true;
 		}
 
-		$page = PageInfo::fromLocalPage( $title );
-
-		if ( $page->hasInvalidTitle() ) {
-			$result = 'hermes-invalid-project-title';
-			return false;
-		}
-
-		if ( $page->hasCapitalizationError() ) {
-			$result = 'hermes-title-not-capitalized';
+		$error = PageInfo::fromLocalPage( $title )->getTitleError();
+		if ( $error !== null ) {
+			$result = $error;
 			return false;
 		}
 
@@ -59,7 +57,7 @@ class TranslationProjectHooks implements
 
 		$query = $request->getQueryValues();
 		unset( $query[ 'title' ] );
-		$output->redirect( $page->getCapitalizedTitle()->getFullURL( $query ) );
+		$output->redirect( $page->toTitle()->getFullURL( $query ) );
 		return false;
 	}
 
@@ -91,17 +89,20 @@ class TranslationProjectHooks implements
 
 	/** @inheritDoc */
 	public function onParserAfterParse( $parser, &$text, $stripState ) {
-		$page = PageInfo::fromLocalPage( $parser->getPage() );
+		$parserPage = $parser->getPage();
+		if ( $parserPage === null ) {
+			return;
+		}
+
+		$page = PageInfo::fromLocalPage( $parserPage );
 		if ( $page->translationProject === null ) {
 			return;
 		}
 
 		$lang = $page->getLanguage();
-		$nsText = $lang->getFormattedNsText( $page->namespace );
-
-		$parser->getOutput()->setDisplayTitle(
-			Parser::formatPageTitle( $nsText, ':', $page->title, $lang )
-		);
+		$parser->getOutput()->setDisplayTitle( Parser::formatPageTitle(
+			$page->getLocalizedNamespaceText(), ':', $page->getDisplayTitle(), $lang
+		) );
 	}
 
 	/** @inheritDoc */

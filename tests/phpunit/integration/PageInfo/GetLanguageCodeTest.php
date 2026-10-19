@@ -17,6 +17,12 @@ class GetLanguageCodeTest extends HermesIntegrationTestCase {
 		$this->assertSame( 'en', $page->getLanguageCode() );
 	}
 
+	public function testFallsBackToContentLanguageForUnregisteredWiki() {
+		$page = $this->makePageInfo( 'unregistered_wiki', 'SomePage' );
+
+		$this->assertSame( 'en', $page->getLanguageCode() );
+	}
+
 	public function testUsesTranslationProjectWhenSet() {
 		$this->registerProjectLanguage( WikiMap::getCurrentWikiId(), 'eo' );
 		$page = $this->makePageInfo( WikiMap::getCurrentWikiId(), '!eo:SomePage' );

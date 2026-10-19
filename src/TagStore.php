@@ -13,7 +13,7 @@ class TagStore {
 		$dbw = Hermes::getDB( DB_PRIMARY );
 		$dbw->delete(
 			self::TABLE_NAME,
-			[ 'ht_wiki' => $page->wiki, 'ht_page_id' => $page->id ],
+			[ 'ht_wiki' => $page->wiki, 'ht_page_id' => $page->getId() ],
 			__METHOD__
 		);
 	}
@@ -31,7 +31,7 @@ class TagStore {
 		// Clear old tags for this page first - order/tag set may have changed.
 		$dbw->delete(
 			self::TABLE_NAME,
-			[ 'ht_wiki' => $page->wiki, 'ht_page_id' => $page->id ],
+			[ 'ht_wiki' => $page->wiki, 'ht_page_id' => $page->getId() ],
 			__METHOD__
 		);
 
@@ -39,7 +39,7 @@ class TagStore {
 		foreach ( $tags as $tag ) {
 			$rows[] = [
 				'ht_wiki' => $page->wiki,
-				'ht_page_id' => $page->id,
+				'ht_page_id' => $page->getId(),
 				'ht_namespace_id' => $page->namespace,
 				'ht_namespace_text' => $page->namespaceText,
 				'ht_translation_project' => $page->translationProject,
@@ -67,7 +67,7 @@ class TagStore {
 		$res = $dbr->select(
 			self::TABLE_NAME,
 			[ 'ht_tag', 'ht_order' ],
-			[ 'ht_wiki' => $page->wiki, 'ht_page_id' => $page->id ],
+			[ 'ht_wiki' => $page->wiki, 'ht_page_id' => $page->getId() ],
 			__METHOD__,
 			[ 'ORDER BY' => 'ht_order ASC, ht_tag ASC' ]
 		);
@@ -110,7 +110,7 @@ class TagStore {
 			[
 				$dbr->makeList( $queryConditions, LIST_OR ),
 				'NOT (' . $dbr->makeList(
-					[ 'ht_wiki' => $page->wiki, 'ht_page_id' => $page->id ],
+					[ 'ht_wiki' => $page->wiki, 'ht_page_id' => $page->getId() ],
 					LIST_AND
 				) . ')',
 			],

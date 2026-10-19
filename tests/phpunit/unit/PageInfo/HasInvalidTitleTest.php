@@ -23,6 +23,18 @@ class HasInvalidTitleTest extends MediaWikiUnitTestCase {
 		$this->assertTrue( $page->hasInvalidTitle() );
 	}
 
+	public function testBangPrefixWithoutColonIsAllowed() {
+		$page = self::makePageInfo( null, '!Foo' );
+
+		$this->assertFalse( $page->hasInvalidTitle() );
+	}
+
+	public function testEscapePrefix() {
+		$page = self::makePageInfo( null, '!:Foo' );
+
+		$this->assertTrue( $page->hasInvalidTitle() );
+	}
+
 	public function testRegisteredProjectTitle() {
 		// A recognized "!xx:" prefix is stripped into $translationProject by parseTitle(),
 		// leaving $title without its leading "!" - so this isn't just the inverse of the

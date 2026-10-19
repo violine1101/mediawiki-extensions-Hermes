@@ -1,8 +1,8 @@
 <?php
 
-namespace MediaWiki\Extension\Hermes\Tests\TranslationProjectHooks;
+namespace MediaWiki\Extension\Hermes\Tests\TranslationProject\PageHooks;
 
-use MediaWiki\Extension\Hermes\Hooks\TranslationProjectHooks;
+use MediaWiki\Extension\Hermes\Hooks\TranslationProject\PageHooks;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 use MediaWiki\MediaWikiServices;
@@ -11,7 +11,7 @@ use MediaWiki\WikiMap\WikiMap;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\Hermes\Hooks\TranslationProjectHooks::onPageContentLanguage
+ * @covers \MediaWiki\Extension\Hermes\Hooks\TranslationProject\PageHooks::onPageContentLanguage
  */
 class OnPageContentLanguageTest extends HermesIntegrationTestCase {
 
@@ -26,7 +26,7 @@ class OnPageContentLanguageTest extends HermesIntegrationTestCase {
 	public function testSetForProjectTitle() {
 		$title = Title::newFromText( 'Category:!eo:Foo' );
 		$pageLang = MediaWikiServices::getInstance()->getLanguageFactory()->getLanguage( 'en' );
-		( new TranslationProjectHooks() )->onPageContentLanguage( $title, $pageLang, null );
+		( new PageHooks() )->onPageContentLanguage( $title, $pageLang, null );
 
 		$this->assertSame( 'eo', $pageLang->getCode() );
 	}
@@ -34,7 +34,7 @@ class OnPageContentLanguageTest extends HermesIntegrationTestCase {
 	public function testUnchangedForOrdinaryTitle() {
 		$title = Title::newFromText( 'Foo' );
 		$pageLang = MediaWikiServices::getInstance()->getLanguageFactory()->getLanguage( 'en' );
-		( new TranslationProjectHooks() )->onPageContentLanguage( $title, $pageLang, null );
+		( new PageHooks() )->onPageContentLanguage( $title, $pageLang, null );
 
 		$this->assertSame( 'en', $pageLang->getCode() );
 	}

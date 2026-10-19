@@ -1,9 +1,9 @@
 <?php
 
-namespace MediaWiki\Extension\Hermes\Tests\TranslationProjectHooks;
+namespace MediaWiki\Extension\Hermes\Tests\TranslationProject\PageHooks;
 
 use MediaWiki\Context\RequestContext;
-use MediaWiki\Extension\Hermes\Hooks\TranslationProjectHooks;
+use MediaWiki\Extension\Hermes\Hooks\TranslationProject\PageHooks;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 use MediaWiki\Title\Title;
@@ -11,7 +11,7 @@ use MediaWiki\WikiMap\WikiMap;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\Hermes\Hooks\TranslationProjectHooks::onOutputPageBeforeHTML
+ * @covers \MediaWiki\Extension\Hermes\Hooks\TranslationProject\PageHooks::onOutputPageBeforeHTML
  */
 class OnOutputPageBeforeHTMLTest extends HermesIntegrationTestCase {
 
@@ -27,7 +27,7 @@ class OnOutputPageBeforeHTMLTest extends HermesIntegrationTestCase {
 		$context = new RequestContext();
 		$context->setTitle( Title::newFromText( '!eo:Foo' ) );
 		$text = '<p>content</p>';
-		( new TranslationProjectHooks() )->onOutputPageBeforeHTML( $context->getOutput(), $text );
+		( new PageHooks() )->onOutputPageBeforeHTML( $context->getOutput(), $text );
 
 		// Reuses core's own "subpages" style/class rather than a custom hatnote, and goes
 		// into the subtitle area, leaving the article body text itself untouched.
@@ -40,7 +40,7 @@ class OnOutputPageBeforeHTMLTest extends HermesIntegrationTestCase {
 		$context = new RequestContext();
 		$context->setTitle( Title::newFromText( 'Foo' ) );
 		$text = '<p>content</p>';
-		( new TranslationProjectHooks() )->onOutputPageBeforeHTML( $context->getOutput(), $text );
+		( new PageHooks() )->onOutputPageBeforeHTML( $context->getOutput(), $text );
 
 		$this->assertSame( '', $context->getOutput()->getSubtitle() );
 		$this->assertSame( '<p>content</p>', $text );

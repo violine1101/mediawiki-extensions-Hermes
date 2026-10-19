@@ -1,6 +1,6 @@
 <?php
 
-namespace MediaWiki\Extension\Hermes\Tests\TranslationProjectHooks;
+namespace MediaWiki\Extension\Hermes\Tests\TranslationProject\PageHooks;
 
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
@@ -10,7 +10,7 @@ use MediaWiki\WikiMap\WikiMap;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\Hermes\Hooks\TranslationProjectHooks::onParserAfterParse
+ * @covers \MediaWiki\Extension\Hermes\Hooks\TranslationProject\PageHooks::onParserAfterParse
  */
 class OnParserAfterParseTest extends HermesIntegrationTestCase {
 
@@ -32,6 +32,16 @@ class OnParserAfterParseTest extends HermesIntegrationTestCase {
 		$this->assertStringContainsString( '<span class="mw-page-title-namespace">Kategorio</span>', $displayTitle );
 		$this->assertStringContainsString( '<span class="mw-page-title-separator">:</span>', $displayTitle );
 		$this->assertStringContainsString( '<span class="mw-page-title-main">Foo</span>', $displayTitle );
+	}
+
+	public function testDisplayTitleUsesSpaces() {
+		$title = Title::newFromText( '!eo:Foo bar' );
+		$parser = $this->getServiceContainer()->getParser();
+		$output = $parser->parse( 'content', $title, ParserOptions::newFromAnon() );
+
+		$this->assertStringContainsString(
+			'<span class="mw-page-title-main">Foo bar</span>', $output->getDisplayTitle()
+		);
 	}
 
 	public function testDisplayTitleUnchangedForOrdinaryPage() {

@@ -29,17 +29,33 @@
 	"Hooks": {
 		"LoadExtensionSchemaUpdates": "init",
 		"UnitTestsAfterDatabaseSetup": "init",
-		"BeforeInitialize": [ "init", "translationproject" ],
+		"BeforeInitialize": [ "init", "translationproject-page" ],
 		"LinksUpdateComplete": "parserfunc",
 		"PageDeleteComplete": "parserfunc",
 		"ParserFirstCallInit": "parserfunc",
 		"LanguageLinks": "languagelinks",
 		"MediaWikiServices": "languagelinks",
-		"getUserPermissionsErrors": "translationproject",
-		"PageContentLanguage": "translationproject",
-		"UserGetLanguageObject": "translationproject",
-		"ParserAfterParse": [ "parserfunc", "translationproject" ],
-		"OutputPageBeforeHTML": "translationproject"
+		"InternalParseBeforeLinks": "translationproject-link",
+		"OutputPageRenderCategoryLink": "translationproject-category",
+		"GetDefaultSortkey": "translationproject-category",
+		"CategoryViewer::generateLink": "translationproject-category",
+		"HtmlPageLinkRendererBegin": "translationproject-link",
+		"HtmlPageLinkRendererEnd": "translationproject-link",
+		"BeforeParserFetchTemplateRevisionRecord": "translationproject-template",
+		"getUserPermissionsErrors": "translationproject-page",
+		"PageContentLanguage": "translationproject-page",
+		"UserGetLanguageObject": "translationproject-page",
+		"ParserAfterParse": [ "parserfunc", "translationproject-page", "translationproject-template" ],
+		"ParserAfterTidy": "translationproject-link",
+		"OutputPageBeforeHTML": [ "translationproject-page", "translationproject-talk" ],
+		"PageSaveComplete": "translationproject-talk"
+	},
+	"AuthManagerAutoConfig": {
+		"preauth": {
+			"MediaWiki\\Extension\\Hermes\\Auth\\ReservedUsernamePreAuthenticationProvider": {
+				"class": "MediaWiki\\Extension\\Hermes\\Auth\\ReservedUsernamePreAuthenticationProvider"
+			}
+		}
 	},
 	"HookHandlers": {
 		"init": {
@@ -51,8 +67,20 @@
 		"languagelinks": {
 			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\LanguageLinkHooks"
 		},
-		"translationproject": {
-			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\TranslationProjectHooks"
+		"translationproject-page": {
+			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\TranslationProject\\PageHooks"
+		},
+		"translationproject-category": {
+			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\TranslationProject\\CategoryHooks"
+		},
+		"translationproject-link": {
+			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\TranslationProject\\LinkHooks"
+		},
+		"translationproject-talk": {
+			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\TranslationProject\\TalkPageHooks"
+		},
+		"translationproject-template": {
+			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\TranslationProject\\TemplateHooks"
 		}
 	},
 	"ExtensionMessagesFiles": {

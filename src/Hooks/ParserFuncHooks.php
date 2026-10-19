@@ -93,7 +93,7 @@ class ParserFuncHooks implements
 					$tagCode = Html::element( 'code', [], $tag );
 					$pages = array_filter(
 						$pages,
-						static fn ( PageInfo $p ) => $p->wiki !== $page->wiki || $p->id !== $page->id,
+						static fn ( PageInfo $p ) => $p->wiki !== $page->wiki || $p->getId() !== $page->getId(),
 					);
 					$links = array_map( static fn ( PageInfo $p ) => $p->buildLink(), $pages );
 					$conflictItems[] = Html::rawElement( 'li', [], "{$tagCode}: " . implode( ', ', $links ) );
@@ -149,6 +149,8 @@ class ParserFuncHooks implements
 		int $archivedRevisionCount
 	) {
 		$page = PageInfo::fromLocalPage( $page );
+		// The page is gone by now, so its ID can't be looked up.
+		$page->setId( $pageID );
 		TagStore::deleteTagsForPage( $page );
 
 		return true;

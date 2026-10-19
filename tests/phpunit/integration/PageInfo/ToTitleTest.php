@@ -8,9 +8,9 @@ use MediaWiki\MainConfigNames;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\Hermes\PageInfo::getCapitalizedTitle
+ * @covers \MediaWiki\Extension\Hermes\PageInfo::toTitle
  */
-class GetCapitalizedTitleTest extends HermesIntegrationTestCase {
+class ToTitleTest extends HermesIntegrationTestCase {
 
 	public function testMainNamespace() {
 		$this->overrideConfigValue( MainConfigNames::CapitalLinks, true );
@@ -20,7 +20,7 @@ class GetCapitalizedTitleTest extends HermesIntegrationTestCase {
 		$page->translationProject = 'eo';
 		$page->title = 'foo';
 
-		$title = $page->getCapitalizedTitle();
+		$title = $page->toTitle();
 
 		$this->assertSame( '!eo:Foo', $title->getPrefixedText() );
 	}
@@ -33,7 +33,7 @@ class GetCapitalizedTitleTest extends HermesIntegrationTestCase {
 		$page->translationProject = 'eo';
 		$page->title = 'foo';
 
-		$title = $page->getCapitalizedTitle();
+		$title = $page->toTitle();
 
 		$this->assertSame( NS_CATEGORY, $title->getNamespace() );
 		$this->assertSame( '!eo:Foo', $title->getText() );
@@ -48,9 +48,19 @@ class GetCapitalizedTitleTest extends HermesIntegrationTestCase {
 		$page->title = 'foo';
 		$page->section = 'Bar';
 
-		$title = $page->getCapitalizedTitle();
+		$title = $page->toTitle();
 
 		$this->assertSame( '!eo:Foo', $title->getPrefixedText() );
 		$this->assertSame( 'Bar', $title->getFragment() );
+	}
+
+	public function testWithProjectOfTemplateTarget() {
+		$this->overrideConfigValue( MainConfigNames::CapitalLinks, true );
+
+		$title = PageInfo::fromLocalPage( \MediaWiki\Title\Title::makeTitle( NS_TEMPLATE, 'Foo_bar' ) )
+			->withProject( 'eo' )
+			->toTitle();
+
+		$this->assertSame( 'Template:!eo:Foo bar', $title->getPrefixedText() );
 	}
 }

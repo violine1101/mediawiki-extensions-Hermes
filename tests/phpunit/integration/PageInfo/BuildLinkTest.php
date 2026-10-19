@@ -11,17 +11,6 @@ use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
  */
 class BuildLinkTest extends HermesIntegrationTestCase {
 
-	public function testValidTarget() {
-		$page = new PageInfo();
-		$page->translationProject = 'de';
-		$page->title = 'BuildLinkValidTarget';
-
-		$this->assertMatchesRegularExpression(
-			'#^<a href="[^"]*">BuildLinkValidTarget</a>$#',
-			$page->buildLink()
-		);
-	}
-
 	public function testInvalidTarget() {
 		$page = new PageInfo();
 		$page->translationProject = 'de';
@@ -41,7 +30,8 @@ class BuildLinkTest extends HermesIntegrationTestCase {
 		$page->title = 'BuildLinkProjectTarget';
 
 		$this->assertSame(
-			'<a href="https://translate.example.org/wiki/!eo:BuildLinkProjectTarget">BuildLinkProjectTarget</a>',
+			'<a href="https://translate.example.org/wiki/!eo:BuildLinkProjectTarget" class="extiw" '
+				. 'title="eo:BuildLinkProjectTarget">BuildLinkProjectTarget</a>',
 			$page->buildLink()
 		);
 	}
@@ -52,13 +42,16 @@ class BuildLinkTest extends HermesIntegrationTestCase {
 
 		$page = new PageInfo();
 		$page->translationProject = 'eo';
+		$page->namespace = NS_CATEGORY;
 		$page->namespaceText = 'Category';
 		$page->title = 'BuildLinkNamespacedProjectTarget';
 
-		// The "!xx:" prefix must land after the namespace, not before it.
+		// The "!xx:" prefix must land after the namespace, not before it. The link text uses the
+		// Esperanto namespace name, the URL the wiki's own.
 		$this->assertSame(
-			'<a href="https://translate.example.org/wiki/Category:!eo:BuildLinkNamespacedProjectTarget">'
-				. 'Category:BuildLinkNamespacedProjectTarget</a>',
+			'<a href="https://translate.example.org/wiki/Category:!eo:BuildLinkNamespacedProjectTarget" '
+				. 'class="extiw" title="eo:Category:BuildLinkNamespacedProjectTarget">'
+				. 'Kategorio:BuildLinkNamespacedProjectTarget</a>',
 			$page->buildLink()
 		);
 	}

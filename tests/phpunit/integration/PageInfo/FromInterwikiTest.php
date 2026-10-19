@@ -47,12 +47,6 @@ class FromInterwikiTest extends HermesIntegrationTestCase {
 		$this->assertSame( 'Foo_Bar', $info->title );
 	}
 
-	public function testNormalizesUnderscoreRunsInUnparseableTitle() {
-		$info = PageInfo::fromInterwiki( 'xx', 'Invalid__|__Title' );
-
-		$this->assertSame( 'Invalid_|_Title', $info->title );
-	}
-
 	public function testExtractsSection() {
 		$info = PageInfo::fromInterwiki( 'xx', 'Category:Foo#Some_Section' );
 

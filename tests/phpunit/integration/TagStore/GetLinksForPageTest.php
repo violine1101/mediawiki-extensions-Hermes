@@ -28,7 +28,7 @@ class GetLinksForPageTest extends HermesIntegrationTestCase {
 		$links = TagStore::getLinksForPage( $en );
 
 		$this->assertArrayHasKey( 'de', $links );
-		$this->assertSame( $de->id, $links[ 'de' ]->page->id );
+		$this->assertSame( $de->getId(), $links[ 'de' ]->page->getId() );
 	}
 
 	public function testExcludesOwnLanguage() {
@@ -60,7 +60,7 @@ class GetLinksForPageTest extends HermesIntegrationTestCase {
 
 		$links = TagStore::getLinksForPage( $en );
 
-		$this->assertSame( $dePrimary->id, $links[ 'de' ]->page->id );
+		$this->assertSame( $dePrimary->getId(), $links[ 'de' ]->page->getId() );
 	}
 
 	public function testEarlierTagWins() {
@@ -76,7 +76,7 @@ class GetLinksForPageTest extends HermesIntegrationTestCase {
 
 		$links = TagStore::getLinksForPage( $en );
 
-		$this->assertSame( $primaryTarget->id, $links[ 'de' ]->page->id );
+		$this->assertSame( $primaryTarget->getId(), $links[ 'de' ]->page->getId() );
 	}
 
 	public function testTiebreakByTitle() {

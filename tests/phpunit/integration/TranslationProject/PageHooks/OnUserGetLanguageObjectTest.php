@@ -1,9 +1,9 @@
 <?php
 
-namespace MediaWiki\Extension\Hermes\Tests\TranslationProjectHooks;
+namespace MediaWiki\Extension\Hermes\Tests\TranslationProject\PageHooks;
 
 use MediaWiki\Context\RequestContext;
-use MediaWiki\Extension\Hermes\Hooks\TranslationProjectHooks;
+use MediaWiki\Extension\Hermes\Hooks\TranslationProject\PageHooks;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 use MediaWiki\Request\FauxRequest;
@@ -12,7 +12,7 @@ use MediaWiki\WikiMap\WikiMap;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\Hermes\Hooks\TranslationProjectHooks::onUserGetLanguageObject
+ * @covers \MediaWiki\Extension\Hermes\Hooks\TranslationProject\PageHooks::onUserGetLanguageObject
  */
 class OnUserGetLanguageObjectTest extends HermesIntegrationTestCase {
 
@@ -29,7 +29,7 @@ class OnUserGetLanguageObjectTest extends HermesIntegrationTestCase {
 		$context->setTitle( Title::newFromText( '!eo:Foo' ) );
 		$user = $this->getTestUser()->getUser();
 		$code = 'en';
-		( new TranslationProjectHooks() )->onUserGetLanguageObject( $user, $code, $context );
+		( new PageHooks() )->onUserGetLanguageObject( $user, $code, $context );
 
 		$this->assertSame( 'eo', $code );
 	}
@@ -39,7 +39,7 @@ class OnUserGetLanguageObjectTest extends HermesIntegrationTestCase {
 		$context->setTitle( Title::newFromText( 'Foo' ) );
 		$user = $this->getTestUser()->getUser();
 		$code = 'en';
-		( new TranslationProjectHooks() )->onUserGetLanguageObject( $user, $code, $context );
+		( new PageHooks() )->onUserGetLanguageObject( $user, $code, $context );
 
 		$this->assertSame( 'en', $code );
 	}
@@ -50,7 +50,7 @@ class OnUserGetLanguageObjectTest extends HermesIntegrationTestCase {
 		$context->setRequest( new FauxRequest( [ 'uselang' => 'de' ] ) );
 		$user = $this->getTestUser()->getUser();
 		$code = 'de';
-		( new TranslationProjectHooks() )->onUserGetLanguageObject( $user, $code, $context );
+		( new PageHooks() )->onUserGetLanguageObject( $user, $code, $context );
 
 		$this->assertSame( 'de', $code );
 	}

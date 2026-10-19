@@ -29,7 +29,7 @@ class FromRowTest extends HermesIntegrationTestCase {
 		return Hermes::getDB()->selectRow(
 			'hermes_tags',
 			'*',
-			[ 'ht_wiki' => $page->wiki, 'ht_page_id' => $page->id ],
+			[ 'ht_wiki' => $page->wiki, 'ht_page_id' => $page->getId() ],
 			__METHOD__
 		);
 	}

@@ -1,8 +1,8 @@
 <?php
 
-namespace MediaWiki\Extension\Hermes\Tests\TranslationProjectHooks;
+namespace MediaWiki\Extension\Hermes\Tests\TranslationProject\PageHooks;
 
-use MediaWiki\Extension\Hermes\Hooks\TranslationProjectHooks;
+use MediaWiki\Extension\Hermes\Hooks\TranslationProject\PageHooks;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 use MediaWiki\MainConfigNames;
@@ -11,7 +11,7 @@ use MediaWiki\WikiMap\WikiMap;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\Hermes\Hooks\TranslationProjectHooks::onGetUserPermissionsErrors
+ * @covers \MediaWiki\Extension\Hermes\Hooks\TranslationProject\PageHooks::onGetUserPermissionsErrors
  */
 class OnGetUserPermissionsErrorsTest extends HermesIntegrationTestCase {
 
@@ -27,7 +27,7 @@ class OnGetUserPermissionsErrorsTest extends HermesIntegrationTestCase {
 		$title = Title::newFromText( $titleText );
 		$user = $this->getTestUser()->getUser();
 		$result = null;
-		( new TranslationProjectHooks() )->onGetUserPermissionsErrors( $title, $user, $action, $result );
+		( new PageHooks() )->onGetUserPermissionsErrors( $title, $user, $action, $result );
 
 		return $result;
 	}
@@ -37,12 +37,18 @@ class OnGetUserPermissionsErrorsTest extends HermesIntegrationTestCase {
 		$title = Title::newFromText( $titleText );
 		$user = $this->getTestUser()->getUser();
 
-		$hooks = new TranslationProjectHooks();
+		$hooks = new PageHooks();
 		return $hooks->onGetUserPermissionsErrors( $title, $user, $action, $result ) !== false;
 	}
 
 	public function testAllowsMainNamespace() {
 		$this->assertTrue( $this->isAllowed( '!eo:Foo' ) );
+	}
+
+	public function testRejectsProjectPrefixInNonProjectNamespaces() {
+		foreach ( [ 'File:!eo:Foo.jpg', 'File talk:!eo:Foo' ] as $text ) {
+			$this->assertFalse( $this->isAllowed( $text ), $text );
+		}
 	}
 
 	public function testAllowsOtherNamespace() {
@@ -55,8 +61,13 @@ class OnGetUserPermissionsErrorsTest extends HermesIntegrationTestCase {
 	}
 
 	public function testDeniesMalformedTitle() {
-		$this->assertFalse( $this->isAllowed( '!Foo' ) );
-		$this->assertSame( 'hermes-invalid-project-title', $this->checkResult( '!Foo' ) );
+		$this->assertFalse( $this->isAllowed( '!:Foo' ) );
+		$this->assertSame( 'hermes-invalid-project-title', $this->checkResult( '!:Foo' ) );
+	}
+
+	public function testAllowsBangTitleWithoutColon() {
+		$this->assertTrue( $this->isAllowed( '!Foo' ) );
+		$this->assertTrue( $this->isAllowed( 'User:!Foo' ) );
 	}
 
 	public function testAllowsOrdinaryTitle() {

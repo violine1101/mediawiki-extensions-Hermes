@@ -35,8 +35,8 @@ abstract class HermesIntegrationTestCase extends MediaWikiIntegrationTestCase {
 	protected function makePageInfo( string $wiki, ?string $title = null ): PageInfo {
 		$page = new PageInfo();
 		$page->wiki = $wiki;
-		$page->id = $this->nextPageId++;
-		$title ??= "Page{$page->id}";
+		$page->setId( $this->nextPageId++ );
+		$title ??= "Page{$page->getId()}";
 		[ $page->translationProject, $page->title ] = PageInfo::parseTitle( $title );
 		return $page;
 	}

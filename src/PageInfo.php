@@ -2,8 +2,9 @@
 
 namespace MediaWiki\Extension\Hermes;
 
-use MediaWiki\Html\Html;
+use LogicException;
 use MediaWiki\Language\Language;
+use MediaWiki\Linker\LinkTarget;
 use MediaWiki\MainConfigNames;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Page\PageReference;
@@ -17,8 +18,8 @@ class PageInfo {
 	/** @var string The ID of this page's wiki */
 	public string $wiki;
 
-	/** @var int The ID of this page */
-	public int $id;
+	/** @var ?int The ID of this page; looked up on first use for local pages. */
+	private ?int $id = null;
 
 	/** @var int The page's namespace ID. */
 	public int $namespace = NS_MAIN;
@@ -37,19 +38,23 @@ class PageInfo {
 	/** @var ?string Page section, if any */
 	public ?string $section = null;
 
-	public static function fromLocalPage( PageReference $page ): PageInfo {
-		$title = Title::newFromPageReference( $page );
+	public static function fromLocalPage( LinkTarget|PageReference $page ): PageInfo {
+		$title = $page instanceof PageReference
+			? Title::newFromPageReference( $page )
+			: Title::newFromLinkTarget( $page );
 		$title->assertWiki( PageReference::LOCAL );
 
 		$self = new PageInfo();
 
 		$self->wiki = WikiMap::getCurrentWikiId();
-		$self->id = $title->getArticleID();
 
 		$self->namespace = $title->getNamespace();
 		$self->namespaceText = $title->getNsText();
 
-		[ $self->translationProject, $self->title ] = self::parseTitle( $title->getText() );
+		// "!xx:" titles in these namespaces aren't projects; hasInvalidTitle() rejects them.
+		[ $self->translationProject, $self->title ] = Hermes::isProjectNamespace( $self->namespace )
+			? self::parseTitle( $title->getText() )
+			: [ null, strtr( $title->getText(), ' ', '_' ) ];
 
 		return $self;
 	}
@@ -91,12 +96,12 @@ class PageInfo {
 			$self->namespace = $parsedTitle->getNamespace();
 			$self->namespaceText = $language->getFormattedNsText( $self->namespace );
 
-			$fragment = $parsedTitle->getFragment() !== '' ? $parsedTitle->getFragment() : null;
-			$self->section = Hermes::normalizeSection( $fragment );
+			$fragment = $parsedTitle->getFragment();
+			$self->section = $fragment !== '' ? strtr( $fragment, ' ', '_' ) : null;
 
-			$self->title = Hermes::normalizeWhitespace( $parsedTitle->getDBkey() );
+			$self->title = $parsedTitle->getDBkey();
 		} catch ( MalformedTitleException ) {
-			$self->title = Hermes::normalizeWhitespace( $title );
+			$self->title = strtr( $title, ' ', '_' );
 		}
 
 		if ( $entry !== null && !$entry[ 'isBase' ] ) {
@@ -116,7 +121,7 @@ class PageInfo {
 		$self = new PageInfo();
 
 		$self->wiki = $row->ht_wiki;
-		$self->id = $row->ht_page_id;
+		$self->id = (int)$row->ht_page_id;
 		$self->namespace = (int)$row->ht_namespace_id;
 		$self->namespaceText = $row->ht_namespace_text;
 		$self->translationProject = $row->ht_translation_project;
@@ -127,16 +132,17 @@ class PageInfo {
 	}
 
 	/**
-	 * Normalizes a title (without namespace) and extracts its translation project prefix.
+	 * Extracts a title's translation project prefix.
 	 *
-	 * @param string $baseTitle The non-normalized title to be parsed, without namespace
-	 * @return array{0: ?string, 1: string} A tuple of (lang code, normalized title).
+	 * @param string $baseTitle The title without namespace, already normalized by core
+	 *   (e.g. from Title::getText() or getDBkey())
+	 * @return array{0: ?string, 1: string} A tuple of (lang code, title in DB key form).
 	 * 	 If the lang code is null, this article is not part of a translation project,
 	 *   either because it doesn't have a "!xx:" prefix, or because the corresponding language
 	 *   is not registered as a project language.
 	 */
 	public static function parseTitle( string $baseTitle ): array {
-		$baseTitle = Hermes::normalizeWhitespace( $baseTitle );
+		$baseTitle = strtr( $baseTitle, ' ', '_' );
 
 		if ( preg_match( '/^!([a-z0-9-]+):(.+)$/', $baseTitle, $match ) ) {
 			$lang = $match[ 1 ];
@@ -151,11 +157,14 @@ class PageInfo {
 
 	/**
 	 * Gets the language code of this page's translation project or wiki.
+	 * Falls back to this wiki's content language if the page's wiki has no registered base language.
 	 *
 	 * @return string
 	 */
 	public function getLanguageCode(): string {
-		return $this->translationProject ?? LanguageStore::getBaseLanguageForWiki( $this->wiki );
+		return $this->translationProject
+			?? LanguageStore::getBaseLanguageForWiki( $this->wiki )
+			?? LanguageStore::getLocalBaseLanguage();
 	}
 
 	/**
@@ -169,13 +178,29 @@ class PageInfo {
 
 	/**
 	 * Checks if the title of this page is in an invalid Hermes title format:
-	 * Page titles starting with "!" must be in the format "!xx:",
+	 * Page titles looking like "!...:" must be in the format "!xx:",
 	 * where "xx" is a registered translation project.
 	 *
 	 * @return bool True if the title format is invalid.
 	 */
 	public function hasInvalidTitle(): bool {
-		return $this->translationProject === null && str_starts_with( $this->title, '!' );
+		return $this->translationProject === null && self::isReservedTitle( $this->title );
+	}
+
+	/** The title a "!:Foo" escape to the base page refers to ("Foo"), or null if $title isn't one. */
+	public static function unescapeTitle( string $title ): ?string {
+		return str_starts_with( $title, '!:' ) ? substr( $title, 2 ) : null;
+	}
+
+	/** Prefixes $title (without namespace) with "!xx:", capitalizing it as $wgCapitalLinks demands. */
+	public static function addProjectPrefix( string $title, int $namespace, string $project ): string {
+		// Core's capitalization only sees the leading "!", so it has to happen here.
+		return "!{$project}:" . Title::capitalize( $title, $namespace );
+	}
+
+	/** Whether $title (without namespace) has the "!...:" shape reserved for translation projects. */
+	public static function isReservedTitle( string $title ): bool {
+		return (bool)preg_match( '/^!.*:/', $title );
 	}
 
 	/**
@@ -192,15 +217,56 @@ class PageInfo {
 		return Title::capitalize( $this->title, $this->namespace ) !== $this->title;
 	}
 
+	/** The message key of the reason why this page can't be created or moved to, if any. */
+	public function getTitleError(): ?string {
+		if ( $this->hasInvalidTitle() ) {
+			return 'hermes-invalid-project-title';
+		}
+
+		return $this->hasCapitalizationError() ? 'hermes-title-not-capitalized' : null;
+	}
+
+	/**
+	 * The namespace name in the project's language (gender-specific for user pages), or the
+	 * wiki-local one if this isn't a project page. Empty for the main namespace.
+	 */
+	public function getLocalizedNamespaceText(): string {
+		if ( $this->translationProject === null || $this->namespace === NS_MAIN ) {
+			return $this->namespaceText;
+		}
+
+		$lang = $this->getLanguage();
+		if ( ( $this->namespace === NS_USER || $this->namespace === NS_USER_TALK ) && $lang->needsGenderDistinction() ) {
+			$userName = strtok( $this->title, '/' );
+			$gender = MediaWikiServices::getInstance()->getGenderCache()->getGenderOf( $userName, __METHOD__ );
+			$nsText = $lang->getGenderNsText( $this->namespace, $gender );
+		} else {
+			$nsText = $lang->getFormattedNsText( $this->namespace );
+		}
+
+		// Empty for namespaces unknown here, e.g. another wiki's custom namespace.
+		return $nsText ?: $this->namespaceText;
+	}
+
+	/**
+	 * Builds the page's title as shown to readers: without any translation prefix, with the
+	 * namespace in the project's language, and with spaces instead of underscores.
+	 *
+	 * @param bool $withNamespace Whether to include the namespace (like Title::getPrefixedText()),
+	 *   or not (like Title::getText()).
+	 */
+	public function getDisplayTitle( bool $withNamespace = false ): string {
+		$nsText = $withNamespace ? $this->getLocalizedNamespaceText() : '';
+		return strtr( $this->joinTitle( $nsText ), '_', ' ' );
+	}
+
 	/**
 	 * Builds the page's title without any translation prefix, i.e. the title used internally
-	 * in a translation project.
+	 * in a translation project, in DB key form.
 	 * If the page is not in a translation project, this is identical to the full page title.
 	 */
 	public function getVirtualTitle(): string {
-		$prefix = $this->namespaceText !== '' ? "{$this->namespaceText}:" : '';
-		$suffix = $this->section !== null ? "#{$this->section}" : '';
-		return Hermes::normalizeWhitespace( "{$prefix}{$this->title}{$suffix}" );
+		return strtr( $this->joinTitle( $this->namespaceText ), ' ', '_' );
 	}
 
 	/**
@@ -208,29 +274,58 @@ class PageInfo {
 	 * namespace, "!xx:" translation project prefix, and "#section", all included.
 	 */
 	public function getRealTitle(): string {
-		if ( $this->translationProject === null ) {
-			return $this->getVirtualTitle();
-		}
+		$project = $this->translationProject !== null ? "!{$this->translationProject}:" : '';
+		return strtr( $this->joinTitle( $this->namespaceText, $project ), ' ', '_' );
+	}
 
-		$prefix = $this->namespaceText !== '' ? "{$this->namespaceText}:" : '';
+	/** "ns:", $projectPrefix, the title and "#section", with empty parts left out. */
+	private function joinTitle( string $nsText, string $projectPrefix = '' ): string {
+		$prefix = $nsText !== '' ? "{$nsText}:" : '';
 		$suffix = $this->section !== null ? "#{$this->section}" : '';
-		return Hermes::normalizeWhitespace( "{$prefix}!{$this->translationProject}:{$this->title}{$suffix}" );
+		return "{$prefix}{$projectPrefix}{$this->title}{$suffix}";
 	}
 
 	/**
-	 * Capitalizes the title correctly, even for a translation project page.
+	 * This page's local title, capitalized correctly even for a translation project page.
 	 */
-	public function getCapitalizedTitle(): Title {
-		if ( !$this->hasCapitalizationError() ) {
-			return Title::makeTitle( $this->title, $this->namespace );
+	public function toTitle(): Title {
+		$title = $this->translationProject !== null
+			? self::addProjectPrefix( $this->title, $this->namespace, $this->translationProject )
+			: $this->title;
+
+		return Title::makeTitle( $this->namespace, $title, $this->section ?? '' );
+	}
+
+	/** A copy of this page in $project (or the base page if null). */
+	public function withProject( ?string $project ): PageInfo {
+		$copy = clone $this;
+		$copy->translationProject = $project;
+		$copy->id = null;
+		return $copy;
+	}
+
+	/** Whether this page is on the current wiki. */
+	public function isLocal(): bool {
+		return $this->wiki === WikiMap::getCurrentWikiId();
+	}
+
+	/** The page ID, or 0 if the page doesn't exist. Only known for local pages and database rows. */
+	public function getId(): int {
+		if ( $this->id === null ) {
+			if ( !$this->isLocal() ) {
+				throw new LogicException( "Unknown page ID of {$this->getRealTitle()} on {$this->wiki}" );
+			}
+
+			// The stored title, which may not be correctly capitalized.
+			$project = $this->translationProject !== null ? "!{$this->translationProject}:" : '';
+			$this->id = Title::makeTitle( $this->namespace, $project . $this->title )->getArticleID();
 		}
 
-		$capitalizedTitle = Title::capitalize( $this->title, $this->namespace );
-		return Title::makeTitle(
-			$this->namespace,
-			"!{$this->translationProject}:{$capitalizedTitle}",
-			$this->section ?? ''
-		);
+		return $this->id;
+	}
+
+	public function setId( int $id ): void {
+		$this->id = $id;
 	}
 
 	/**
@@ -240,18 +335,17 @@ class PageInfo {
 		return "{$this->getLanguageCode()}:{$this->getVirtualTitle()}";
 	}
 
-	// TODO: replace buildLink() with native MediaWiki interwiki link rendering, if possible.
-
 	/**
-	 * Builds a raw HTML link to the page, as if it was an interlanguage link.
+	 * Builds an HTML interlanguage link to the page.
 	 * Falls back to plain (escaped) text if that doesn't resolve to a valid title.
 	 */
 	public function buildLink(): string {
 		$target = Title::newFromText( $this->getInterlanguageLink() );
 		if ( $target === null ) {
-			return htmlspecialchars( $this->getVirtualTitle() );
+			return htmlspecialchars( $this->getDisplayTitle( true ) );
 		}
 
-		return Html::element( 'a', [ 'href' => $target->getFullURL() ], $this->getVirtualTitle() );
+		return MediaWikiServices::getInstance()->getLinkRenderer()
+			->makeLink( $target, $this->getDisplayTitle( true ) );
 	}
 }

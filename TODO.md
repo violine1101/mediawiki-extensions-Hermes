@@ -14,6 +14,7 @@ Phase 3: Links in translation projects
 
 Phase 4: User Interface
 - Special pages for managing tags and languages, creating a translated page
+- Special:WantedPages has lots of translation project pages, would be good to add a checkmark there or similar to ignore those
 - Maybe something like {{#hermes-link:tag|lang=es}} / {{#hermes-query:}} for generating hermes links to an article with a specific tag?
 - Side quest: Rename "order" to something like "fallback priority" everywhere
 

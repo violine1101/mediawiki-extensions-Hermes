@@ -36,6 +36,13 @@ class GetVirtualTitleTest extends MediaWikiUnitTestCase {
 		$this->assertSame( 'Foo#Bar', $page->getVirtualTitle() );
 	}
 
+	public function testUsesUnderscores() {
+		$page = self::makePageInfo( 'User talk', 'Foo Bar' );
+		$page->section = 'Some Section';
+
+		$this->assertSame( 'User_talk:Foo_Bar#Some_Section', $page->getVirtualTitle() );
+	}
+
 	public function testNeverIncludesTranslationProjectPrefix() {
 		// getVirtualTitle() deliberately never adds "!xx:" back - that's solely
 		// Decorators\ProjectPageInterwiki's job on the interwiki side.

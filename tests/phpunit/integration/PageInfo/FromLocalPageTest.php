@@ -54,4 +54,13 @@ class FromLocalPageTest extends HermesIntegrationTestCase {
 		$this->assertSame( 'PageInfoFromLocalPageProject', $info->title );
 		$this->assertSame( 'eo', $info->getLanguageCode() );
 	}
+
+	public function testNonProjectNamespaceIsNeverProject() {
+		$title = Title::newFromText( 'File:!eo:PageInfoFromLocalPageFile' );
+		$info = PageInfo::fromLocalPage( $title );
+
+		$this->assertNull( $info->translationProject );
+		$this->assertSame( '!eo:PageInfoFromLocalPageFile', $info->title );
+		$this->assertTrue( $info->hasInvalidTitle() );
+	}
 }

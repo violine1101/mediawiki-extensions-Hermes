@@ -1,9 +1,9 @@
 <?php
 
-namespace MediaWiki\Extension\Hermes\Tests\TranslationProjectHooks;
+namespace MediaWiki\Extension\Hermes\Tests\TranslationProject\PageHooks;
 
 use MediaWiki\Context\RequestContext;
-use MediaWiki\Extension\Hermes\Hooks\TranslationProjectHooks;
+use MediaWiki\Extension\Hermes\Hooks\TranslationProject\PageHooks;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 use MediaWiki\MainConfigNames;
@@ -13,7 +13,7 @@ use MediaWiki\WikiMap\WikiMap;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\Hermes\Hooks\TranslationProjectHooks::onBeforeInitialize
+ * @covers \MediaWiki\Extension\Hermes\Hooks\TranslationProject\PageHooks::onBeforeInitialize
  */
 class OnBeforeInitializeTest extends HermesIntegrationTestCase {
 
@@ -34,7 +34,7 @@ class OnBeforeInitializeTest extends HermesIntegrationTestCase {
 		$context->setRequest( new FauxRequest( $query ) );
 		$user = $this->getTestUser()->getUser();
 
-		$result = ( new TranslationProjectHooks() )->onBeforeInitialize(
+		$result = ( new PageHooks() )->onBeforeInitialize(
 			$title, null, $context->getOutput(), $user, $context->getRequest(), null
 		);
 

@@ -9,38 +9,25 @@ class Hermes {
 
 	private const VIRTUAL_DOMAIN = 'virtual-hermes';
 
+	/** Namespaces without translation projects: no per-language content, or no project fallback */
+	public const NON_PROJECT_NAMESPACES = [ NS_FILE, NS_MEDIA, NS_FILE_TALK, NS_SPECIAL ];
+
+	/** Namespaces where links to a missing "!xx:" page go to the base page instead of a red link */
+	public const LINK_FALLBACK_NAMESPACES = [ NS_USER, NS_USER_TALK, NS_TEMPLATE, NS_TEMPLATE_TALK ];
+
+	public static function isProjectNamespace( int $namespace ): bool {
+		return !in_array( $namespace, self::NON_PROJECT_NAMESPACES, true );
+	}
+
+	public static function hasLinkFallback( int $namespace ): bool {
+		return in_array( $namespace, self::LINK_FALLBACK_NAMESPACES, true );
+	}
+
 	public static function getDB( int $mode = DB_REPLICA ): IDatabase {
 		$lbFactory = MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
 
 		return $mode === DB_PRIMARY
 			? $lbFactory->getPrimaryDatabase( self::VIRTUAL_DOMAIN )
 			: $lbFactory->getReplicaDatabase( self::VIRTUAL_DOMAIN );
-	}
-
-	/**
-	 * Collapses runs of whitespace and/or underscores into a single underscore,
-	 * and trims leading/trailing underscores.
-	 *
-	 * @param string $text
-	 * @return string
-	 */
-	public static function normalizeWhitespace( string $text ): string {
-		$text = preg_replace( '/[\s_]+/', '_', $text ) ?? '';
-		return trim( $text, '_' );
-	}
-
-	/**
-	 * Normalizes a section name.
-	 *
-	 * @param ?string $section The non-normalized section, or null if there is none.
-	 * @return ?string The normalized section: trimmed and underscores for whitespace.
-	 *   Case is preserved, since HTML anchors are case-sensitive.
-	 */
-	public static function normalizeSection( ?string $section ): ?string {
-		if ( $section === null ) {
-			return null;
-		}
-		$section = self::normalizeWhitespace( $section );
-		return $section === '' ? null : $section;
 	}
 }
