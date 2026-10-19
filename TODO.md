@@ -16,6 +16,8 @@ Phase 4: User Interface
 - Special pages for managing tags and languages, creating a translated page
 - Special:WantedPages has lots of translation project pages, would be good to add a checkmark there or similar to ignore those
 - Maybe something like {{#hermes-link:tag|lang=es}} / {{#hermes-query:}} for generating hermes links to an article with a specific tag?
+- In preferences, proper selection of display language (per translation project + wiki) - especially important if user prefs use a shared table across wikis.
+  - Make configurable if you always want to follow default, or always default back to one particular language (maybe even a preference list of which languages you speak).
 - Side quest: Rename "order" to something like "fallback priority" everywhere
 
 Phase 5: Improved Cache Handling

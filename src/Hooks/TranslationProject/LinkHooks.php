@@ -37,7 +37,6 @@ class LinkHooks implements
 			return;
 		}
 
-		// Also runs on non-project pages, where LinkRewriter only strips "!:" escapes.
 		$text = LinkRewriter::rewrite( $text, ProjectTitle::newFromLinkTarget( $parserPage ) );
 	}
 

@@ -6,12 +6,14 @@ use MediaWiki\MediaWikiServices;
 use MediaWiki\Title\Title;
 
 /**
- * Rewrites wikilink targets on translation-project pages, so editors can omit the "!xx:" prefix:
+ * Rewrites wikilink targets, so editors can omit the "!xx:" prefix on translation-project pages.
+ * A link's project is given by its prefix ("!yy:" for a project, "!:" for the base page), or
+ * defaults to the current page's:
  *  - `[[Foo]]` -> `[[!xx:Foo|Foo]]`, `[[Talk:Foo]]` -> `[[Talk:!xx:Foo|Talk:Foo]]`
- *    (display text is added so readers don't see the prefix)
+ *    (display text is added so readers see what was written)
  *  - `[[Category:Foo]]` -> `[[Category:!xx:Foo]]` (no display text: after "|" it's a sort key)
- *  - `[[!:Foo]]` -> `[[Foo]]`, an escape to the base page. Also applied on non-project pages.
- *  - Left alone: `[[!yy:Foo]]`, `[[#Section]]`, `[[/Subpage]]`, and interwiki links.
+ *  - `[[!:foo]]` -> `[[Foo|!:foo]]`, `[[!yy:foo]]` -> `[[!yy:Foo|!yy:foo]]`, also on non-project pages.
+ *  - Left alone: unregistered "!yy:" prefixes, `[[#Section]]`, `[[/Subpage]]`, and interwiki links.
  *  - Never prefixed: File, Media, File talk and Special links. Files have no fallback for
  *    missing project versions, and special pages aren't per-language content.
  *
@@ -21,8 +23,7 @@ use MediaWiki\Title\Title;
 class LinkRewriter {
 
 	/**
-	 * Rewrites every `[[...]]` link target in $text. On non-project pages, only "!:" escapes
-	 * are stripped.
+	 * Rewrites every `[[...]]` link target in $text.
 	 *
 	 * @param string $text
 	 * @param ProjectTitle $page The page $text belongs to.
@@ -31,7 +32,7 @@ class LinkRewriter {
 	public static function rewrite( string $text, ProjectTitle $page ): string {
 		if (
 			!str_contains( $text, '[[' )
-			|| ( $page->project === null && !str_contains( $text, '!:' ) )
+			|| ( $page->project === null && !str_contains( $text, '!' ) )
 		) {
 			return $text;
 		}
@@ -49,10 +50,10 @@ class LinkRewriter {
 
 	/**
 	 * Rewrites a single link target (the part of "[[...]]" before any "|"), adding display text
-	 * if $hasPipe is false and the rendered text would otherwise change.
+	 * if $hasPipe is false and the target changed.
 	 */
 	private static function rewriteTarget( string $raw, ProjectTitle $page, bool $hasPipe ): string {
-		if ( $page->project === null && !str_contains( $raw, '!:' ) ) {
+		if ( $page->project === null && !str_contains( $raw, '!' ) ) {
 			// Fast path: this runs for every link on every page.
 			return $raw;
 		}
@@ -65,22 +66,22 @@ class LinkRewriter {
 
 		// A leading ":" (e.g. "[[:Category:Foo]]") doesn't change the target, but must be kept.
 		$hadColon = $trimmed[0] === ':';
-		$unescaped = $hadColon ? substr( $trimmed, 1 ) : $trimmed;
-		if ( $unescaped === '' ) {
+		$target = $hadColon ? substr( $trimmed, 1 ) : $trimmed;
+		if ( $target === '' ) {
 			return $raw;
 		}
 
 		$contentLang = MediaWikiServices::getInstance()->getContentLanguage();
 		$projectLang = $page->project !== null ? $page->getLanguage() : $contentLang;
 
-		$colonPos = strpos( $unescaped, ':' );
-		$nsPrefix = $colonPos !== false ? substr( $unescaped, 0, $colonPos ) : '';
-		$afterNs = $colonPos !== false ? substr( $unescaped, $colonPos + 1 ) : '';
+		$colonPos = strpos( $target, ':' );
+		$nsPrefix = $colonPos !== false ? substr( $target, 0, $colonPos ) : '';
+		$afterNs = $colonPos !== false ? substr( $target, $colonPos + 1 ) : '';
 
 		$nsId = null;
 		$nsOutputText = null;
 		$nsFromProjectLang = false;
-		$rest = $unescaped;
+		$rest = $target;
 
 		if ( $nsPrefix !== '' ) {
 			$ns = $contentLang->getNsIndex( $nsPrefix );
@@ -107,12 +108,11 @@ class LinkRewriter {
 				return $raw;
 			}
 			$nsId = NS_MAIN;
-			$rest = $unescaped;
+			$rest = $target;
 		}
 
 		if ( !Hermes::isProjectNamespace( $nsId ) ) {
-			// Still strip "!:" escapes, e.g. from core's "[[:Template:!:Foo]]" red link for a
-			// missing "{{!:Foo}}" transclusion.
+			// These only have base pages, so "!:" is redundant.
 			$unescapedRest = ProjectTitle::unescape( $rest ) ?? $rest;
 			if ( !$nsFromProjectLang && $unescapedRest === $rest ) {
 				return $raw;
@@ -132,43 +132,47 @@ class LinkRewriter {
 			return $raw;
 		}
 
-		if ( $page->project === null && ProjectTitle::unescape( $bareTitle ) === null ) {
+		$resolved = self::resolveBareTitle( $bareTitle, $nsId, $page->project );
+		if ( !$nsFromProjectLang && strtr( $resolved, '_', ' ' ) === strtr( $bareTitle, '_', ' ' ) ) {
 			return $raw;
 		}
-
-		$insertingPrefix = !ProjectTitle::isReserved( $bareTitle );
-		$rewrittenBareTitle = self::rewriteBareTitle( $bareTitle, $nsId, $page->project );
 
 		$result = $leadingSpace
 			. ( $hadColon ? ':' : '' )
 			. ( $nsOutputText !== null ? "{$nsOutputText}:" : '' )
-			. $rewrittenBareTitle
+			. $resolved
 			. $fragment;
 
 		// In a category assignment (but not a "[[:Category:...]]" link), "|" starts a sort key.
 		$pipeMeansSortKey = $nsId === NS_CATEGORY && !$hadColon;
-		if ( $insertingPrefix && !$hasPipe && !$pipeMeansSortKey ) {
-			$result .= '|' . $unescaped;
+		if ( !$hasPipe && !$pipeMeansSortKey ) {
+			$result .= '|' . $target;
 		}
 
 		return $result;
 	}
 
 	/**
-	 * Inserts or strips the "!xx:" prefix on a title without namespace or fragment.
-	 * $projectLanguage is null on non-project pages.
+	 * The title (without namespace or fragment) $bareTitle links to, in the project its prefix
+	 * names, else in $defaultProject (null for the base page).
 	 */
-	private static function rewriteBareTitle( string $bareTitle, int $nsId, ?string $projectLanguage ): string {
-		$unescaped = ProjectTitle::unescape( $bareTitle );
-		if ( $unescaped !== null ) {
-			return $unescaped;
+	private static function resolveBareTitle( string $bareTitle, int $nsId, ?string $defaultProject ): string {
+		$title = ProjectTitle::unescape( $bareTitle );
+		$project = null;
+		if ( $title === null ) {
+			[ $project, $title ] = ProjectTitle::parse( $bareTitle );
+			if ( $project === null ) {
+				if ( $defaultProject === null || ProjectTitle::isReserved( $bareTitle ) ) {
+					// Invalid "!...:" prefixes are left for ProjectTitle::hasInvalidTitle() to report.
+					return $bareTitle;
+				}
+				$project = $defaultProject;
+				$title = $bareTitle;
+			}
 		}
 
-		if ( $projectLanguage === null || ProjectTitle::isReserved( $bareTitle ) ) {
-			// Includes "!yy:" titles. Invalid ones are left for ProjectTitle::hasInvalidTitle() to report.
-			return $bareTitle;
-		}
-
-		return ProjectTitle::addPrefix( $bareTitle, $nsId, $projectLanguage );
+		return $project !== null
+			? ProjectTitle::addPrefix( $title, $nsId, $project )
+			: Title::capitalize( $title, $nsId );
 	}
 }

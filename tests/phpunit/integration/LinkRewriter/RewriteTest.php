@@ -36,9 +36,14 @@ class RewriteTest extends HermesIntegrationTestCase {
 	public function testEscapeIsStrippedOnNonProjectPage() {
 		$page = ProjectTitle::makeTitle( NS_MAIN, 'Some_Page' );
 		$this->assertSame(
-			'[[Foo]] [[Talk:Bar|x]] [[:Template:Baz]] [[Qux]]',
+			'[[Foo|!:Foo]] [[Talk:Bar|x]] [[:Template:Baz|Template:!:Baz]] [[Qux]]',
 			LinkRewriter::rewrite( '[[!:Foo]] [[Talk:!:Bar|x]] [[:Template:!:Baz]] [[Qux]]', $page )
 		);
+	}
+
+	public function testUnprefixedLinkOnNonProjectPageIsUntouched() {
+		$page = ProjectTitle::makeTitle( NS_MAIN, 'Some_Page' );
+		$this->assertSame( '[[Talk:foo!]]', LinkRewriter::rewrite( '[[Talk:foo!]]', $page ) );
 	}
 
 	public function testTextWithoutLinksIsUntouched() {
@@ -64,11 +69,22 @@ class RewriteTest extends HermesIntegrationTestCase {
 	}
 
 	public function testBareEscapeStripsToBasePage() {
-		$this->assertSame( '[[Bar]]', LinkRewriter::rewrite( '[[!:Bar]]', $this->eoPage() ) );
+		$this->assertSame( '[[Bar|!:Bar]]', LinkRewriter::rewrite( '[[!:Bar]]', $this->eoPage() ) );
+	}
+
+	public function testBareEscapeIsCapitalized() {
+		$this->assertSame( '[[Golem|!:golem]]', LinkRewriter::rewrite( '[[!:golem]]', $this->eoPage() ) );
 	}
 
 	public function testExplicitSameProjectReferenceIsUnchanged() {
 		$this->assertSame( '[[!eo:Foo]]', LinkRewriter::rewrite( '[[!eo:Foo]]', $this->eoPage() ) );
+	}
+
+	public function testExplicitProjectReferenceIsCapitalized() {
+		$this->assertSame(
+			'[[!de:Foo|!de:foo]]',
+			LinkRewriter::rewrite( '[[!de:foo]]', ProjectTitle::makeTitle( NS_MAIN, 'Some_Page' ) )
+		);
 	}
 
 	public function testExplicitOtherLocalProjectReferenceIsUnchanged() {
@@ -89,7 +105,7 @@ class RewriteTest extends HermesIntegrationTestCase {
 
 	public function testNamespacedEscapeStripsToBasePage() {
 		$this->assertSame(
-			'[[Talk:Foo]]',
+			'[[Talk:Foo|Talk:!:Foo]]',
 			LinkRewriter::rewrite( '[[Talk:!:Foo]]', $this->eoPage() )
 		);
 	}
@@ -145,15 +161,11 @@ class RewriteTest extends HermesIntegrationTestCase {
 		);
 	}
 
-	public function testTemplateNamespaceEscapeIsStripped() {
-		// How core renders a missing "{{!:Foo}}" transclusion.
+	public function testTemplateNamespaceEscapeGoesToBasePage() {
+		// How core renders a missing "{{!:foo}}" transclusion.
 		$this->assertSame(
-			'[[:Template:Foo]]',
-			LinkRewriter::rewrite( '[[:Template:!:Foo]]', $this->eoPage() )
-		);
-		$this->assertSame(
-			'[[:Template:Foo]]',
-			LinkRewriter::rewrite( '[[:Ŝablono:!:Foo]]', $this->eoPage() )
+			'[[:Template:Foo|Template:!:foo]]',
+			LinkRewriter::rewrite( '[[:Template:!:foo]]', $this->eoPage() )
 		);
 	}
 

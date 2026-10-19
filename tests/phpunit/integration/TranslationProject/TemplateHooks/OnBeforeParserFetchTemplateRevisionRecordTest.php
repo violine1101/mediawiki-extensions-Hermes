@@ -91,9 +91,8 @@ class OnBeforeParserFetchTemplateRevisionRecordTest extends HermesIntegrationTes
 	public function testEscapeRedlinksBaseTemplateWhenMissing() {
 		$html = $this->parseOnProjectPage( '{{!:foo}}' );
 
-		$this->assertStringContainsString( 'action=edit', $html );
-		$this->assertStringContainsString( 'Template:Foo', $html );
-		$this->assertStringNotContainsString( '!:', $html );
+		$this->assertStringContainsString( 'title=Template:Foo&amp;action=edit', $html );
+		$this->assertStringContainsString( '>Template:!:foo</a>', $html );
 	}
 
 	public function testEscapeRegistersNoBogusProjectDependency() {
@@ -126,8 +125,8 @@ class OnBeforeParserFetchTemplateRevisionRecordTest extends HermesIntegrationTes
 			'{{!:foo}}', Title::makeTitle( NS_TEMPLATE, 'Bar' ), ParserOptions::newFromAnon()
 		)->getContentHolderText();
 
-		$this->assertStringContainsString( 'Template:Foo', $html );
-		$this->assertStringNotContainsString( '!:', $html );
+		$this->assertStringContainsString( 'title=Template:Foo&amp;action=edit', $html );
+		$this->assertStringContainsString( '>Template:!:foo</a>', $html );
 	}
 
 	public function testLeavesNonProjectPageUntouched() {
