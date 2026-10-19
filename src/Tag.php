@@ -19,7 +19,7 @@ class Tag {
 
 	/**
 	 * @var int This tag's fallback chain priority, relative to the page's other tags
-	 *   referring to the same section (if any). Defaults to 0 if the sort order is unknown.
+	 *   regardless of section. Defaults to 0 if the sort order is unknown.
 	 */
 	public int $order = 0;
 
@@ -44,8 +44,7 @@ class Tag {
 	 * {{#hermes:tag1|tag2|tag3=#section|tag4=#section}}: an argument "tag=#section" sets that tag
 	 * for the given section only.
 	 *
-	 * Assigns each tag's fallback chain order: tags are grouped by section,
-	 * then ordered in the order they were listed.
+	 * Assigns each tag's fallback chain order: the order they were listed in, regardless of section.
 	 *
 	 * @param string[] $args The arguments passed to the {{#hermes:}} function.
 	 * @return Tag[] The list of tags.
@@ -71,16 +70,12 @@ class Tag {
 		}
 
 		$seenNames = [];
-		$orderBySection = [];
-		foreach ( $tags as $tag ) {
+		foreach ( $tags as $order => $tag ) {
 			if ( isset( $seenNames[ $tag->name ] ) ) {
 				throw new DuplicateTagException( $tag->name );
 			}
 			$seenNames[ $tag->name ] = true;
-
-			$sectionKey = $tag->section ?? '';
-			$tag->order = $orderBySection[ $sectionKey ] ?? 0;
-			$orderBySection[ $sectionKey ] = $tag->order + 1;
+			$tag->order = $order;
 		}
 
 		return $tags;

@@ -68,7 +68,7 @@ class FromArgsTest extends MediaWikiUnitTestCase {
 		Tag::fromArgs( [ 'valid_tag', 'invalid tag!' ] );
 	}
 
-	public function testPageLevelOrder() {
+	public function testOrderFollowsArguments() {
 		$tags = Tag::fromArgs( [ 'tag_a', 'tag_b', 'tag_c' ] );
 
 		$this->assertSame( 0, $tags[ 0 ]->order );
@@ -76,7 +76,7 @@ class FromArgsTest extends MediaWikiUnitTestCase {
 		$this->assertSame( 2, $tags[ 2 ]->order );
 	}
 
-	public function testOrderPerSection() {
+	public function testOrderIgnoresSection() {
 		$tags = Tag::fromArgs( [
 			'page_level_a',
 			'page_level_b',
@@ -87,7 +87,7 @@ class FromArgsTest extends MediaWikiUnitTestCase {
 			'detail_c=#Details',
 		] );
 
-		$this->assertSame( [ 0, 1, 0, 1, 0, 2, 2 ], array_map( static fn ( Tag $tag ) => $tag->order, $tags ) );
+		$this->assertSame( [ 0, 1, 2, 3, 4, 5, 6 ], array_map( static fn ( Tag $tag ) => $tag->order, $tags ) );
 	}
 
 	public function testThrowsOnDuplicateTagName() {

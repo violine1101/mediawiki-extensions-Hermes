@@ -44,7 +44,7 @@ class SetTagsForPageTest extends HermesIntegrationTestCase {
 		$this->assertSame( 'Some_Section', $links[ 'de' ]->tag->section );
 	}
 
-	public function testOrderScopedPerSection() {
+	public function testOrderIgnoresSection() {
 		$page = $this->makePageInfo( WikiMap::getCurrentWikiId() );
 
 		TagStore::setTagsForPage( $page, Tag::fromArgs( [
@@ -66,12 +66,9 @@ class SetTagsForPageTest extends HermesIntegrationTestCase {
 			$orders[ $row->ht_tag ] = (int)$row->ht_order;
 		}
 
-		// Page-level (no-section) tags share one 0-based sequence.
 		$this->assertSame( 0, $orders[ 'page_level_a' ] );
 		$this->assertSame( 1, $orders[ 'page_level_b' ] );
-
-		// Tags under the "Details" section have their own, independent 0-based sequence.
-		$this->assertSame( 0, $orders[ 'detail_a' ] );
-		$this->assertSame( 1, $orders[ 'detail_b' ] );
+		$this->assertSame( 2, $orders[ 'detail_a' ] );
+		$this->assertSame( 3, $orders[ 'detail_b' ] );
 	}
 }
