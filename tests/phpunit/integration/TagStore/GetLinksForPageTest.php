@@ -47,11 +47,11 @@ class GetLinksForPageTest extends HermesIntegrationTestCase {
 		$this->assertSame( [], TagStore::getLinksForPage( $page ) );
 	}
 
-	public function testLowestOrderWins() {
+	public function testHighestPriorityWins() {
 		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
-		// shared_tag is this page's first (order 0) tag.
+		// shared_tag is this page's first (priority 0) tag.
 		$dePrimary = $this->makePageInfo( 'dewiki' );
-		// shared_tag is this page's second (order 1) tag.
+		// shared_tag is this page's second (priority 1) tag.
 		$deSecondary = $this->makePageInfo( 'dewiki' );
 
 		TagStore::setTagsForPage( $en, Tag::fromArgs( [ 'shared_tag' ] ) );
@@ -64,7 +64,7 @@ class GetLinksForPageTest extends HermesIntegrationTestCase {
 	}
 
 	public function testEarlierTagWins() {
-		// primaryTarget's tag has a *higher* ht_order than fallbackTarget's, but
+		// primaryTarget's tag has a *lower* priority than fallbackTarget's, but
 		// primary_tag comes first in en's fallback chain and must still win.
 		$primaryTarget = $this->makePageInfo( 'dewiki' );
 		$fallbackTarget = $this->makePageInfo( 'dewiki' );
@@ -90,7 +90,7 @@ class GetLinksForPageTest extends HermesIntegrationTestCase {
 
 		$links = TagStore::getLinksForPage( $en );
 
-		// deA and deB tie on tag + order; the alphabetically-first title wins
+		// deA and deB tie on tag + priority; the alphabetically-first title wins
 		// deterministically, rather than depending on DB scan order.
 		$this->assertSame( 'ATitle', $links[ 'de' ]->page->title->baseTitle );
 	}

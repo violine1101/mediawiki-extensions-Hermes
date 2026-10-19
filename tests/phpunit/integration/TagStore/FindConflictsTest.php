@@ -28,7 +28,7 @@ class FindConflictsTest extends HermesIntegrationTestCase {
 		TagStore::setTagsForPage( $existing, Tag::fromArgs( [ 'golem' ] ) );
 
 		// newPage is brand new - it has no row of its own in hermes_tags yet - but still
-		// conflicts with an already-saved page claiming the same tag+order+language.
+		// conflicts with an already-saved page claiming the same tag+priority+language.
 		$newPage = $this->makePageInfo( 'frwiki', 'NewPage' );
 		$tags = Tag::fromArgs( [ 'golem' ] );
 
@@ -73,14 +73,14 @@ class FindConflictsTest extends HermesIntegrationTestCase {
 		$this->assertSame( [], TagStore::findConflicts( $page, $tags ) );
 	}
 
-	public function testIgnoresDifferentOrder() {
+	public function testIgnoresDifferentPriority() {
 		$this->registerBaseLanguage( 'frwiki', 'fr' );
 		$existing = $this->makePageInfo( 'frwiki', 'ExistingPage' );
-		// 'golem' is existing's *second* tag (order 1).
+		// 'golem' is existing's *second* tag (priority 1).
 		TagStore::setTagsForPage( $existing, Tag::fromArgs( [ 'unrelated', 'golem' ] ) );
 
 		$newPage = $this->makePageInfo( 'frwiki', 'NewPage' );
-		// 'golem' is newPage's *first* (and only) tag (order 0) - different order.
+		// 'golem' is newPage's *first* (and only) tag (priority 0) - different priority.
 		$tags = Tag::fromArgs( [ 'golem' ] );
 
 		$this->assertSame( [], TagStore::findConflicts( $newPage, $tags ) );

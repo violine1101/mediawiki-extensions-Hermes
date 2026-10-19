@@ -44,7 +44,7 @@ class SetTagsForPageTest extends HermesIntegrationTestCase {
 		$this->assertSame( 'Some_Section', $links[ 'de' ]->tag->section );
 	}
 
-	public function testOrderIgnoresSection() {
+	public function testPriorityIgnoresSection() {
 		$page = $this->makePageInfo( WikiMap::getCurrentWikiId() );
 
 		TagStore::setTagsForPage( $page, Tag::fromArgs( [
@@ -56,19 +56,19 @@ class SetTagsForPageTest extends HermesIntegrationTestCase {
 
 		$rows = Hermes::getDB()->select(
 			'hermes_tags',
-			[ 'ht_tag', 'ht_section', 'ht_order' ],
+			[ 'ht_tag', 'ht_section', 'ht_priority' ],
 			[ 'ht_wiki' => $page->title->wiki, 'ht_page_id' => $page->getId() ],
 			__METHOD__
 		);
 
-		$orders = [];
+		$priorities = [];
 		foreach ( $rows as $row ) {
-			$orders[ $row->ht_tag ] = (int)$row->ht_order;
+			$priorities[ $row->ht_tag ] = (int)$row->ht_priority;
 		}
 
-		$this->assertSame( 0, $orders[ 'page_level_a' ] );
-		$this->assertSame( 1, $orders[ 'page_level_b' ] );
-		$this->assertSame( 2, $orders[ 'detail_a' ] );
-		$this->assertSame( 3, $orders[ 'detail_b' ] );
+		$this->assertSame( 0, $priorities[ 'page_level_a' ] );
+		$this->assertSame( 1, $priorities[ 'page_level_b' ] );
+		$this->assertSame( 2, $priorities[ 'detail_a' ] );
+		$this->assertSame( 3, $priorities[ 'detail_b' ] );
 	}
 }

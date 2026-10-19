@@ -22,13 +22,13 @@ class TagStore {
 	 * Replace the tags for a given page.
 	 *
 	 * @param PageInfo $page
-	 * @param Tag[] $tags Tags, each carrying its own priority order.
+	 * @param Tag[] $tags Tags, each carrying its own priority.
 	 */
 	public static function setTagsForPage( PageInfo $page, array $tags ): void {
 		$dbw = Hermes::getDB( DB_PRIMARY );
 		$dbw->startAtomic( __METHOD__ );
 
-		// Clear old tags for this page first - order/tag set may have changed.
+		// Clear old tags for this page first - priorities/tag set may have changed.
 		$dbw->delete(
 			self::TABLE_NAME,
 			[ 'ht_wiki' => $page->title->wiki, 'ht_page_id' => $page->getId() ],
@@ -46,7 +46,7 @@ class TagStore {
 				'ht_base_title' => $page->title->baseTitle,
 				'ht_section' => $tag->section,
 				'ht_tag' => $tag->name,
-				'ht_order' => $tag->order,
+				'ht_priority' => $tag->priority,
 			];
 		}
 
@@ -58,7 +58,7 @@ class TagStore {
 	}
 
 	/**
-	 * Get all tags (with order) for a given page.
+	 * Get all tags for a given page.
 	 *
 	 * @return Tag[] Array of tags associated with the page, in order.
 	 */
@@ -66,10 +66,10 @@ class TagStore {
 		$dbr = Hermes::getDB();
 		$res = $dbr->select(
 			self::TABLE_NAME,
-			[ 'ht_tag', 'ht_order' ],
+			[ 'ht_tag', 'ht_priority' ],
 			[ 'ht_wiki' => $page->title->wiki, 'ht_page_id' => $page->getId() ],
 			__METHOD__,
-			[ 'ORDER BY' => 'ht_order ASC, ht_tag ASC' ]
+			[ 'ORDER BY' => 'ht_priority ASC, ht_tag ASC' ]
 		);
 
 		$tags = [];
@@ -82,11 +82,11 @@ class TagStore {
 	/**
 	 * Finds all conflicts and ambiguities caused by $page's own tag set.
 	 *
-	 * Two or more pages are in conflict if they have set the same tag with the same order
-	 * (fallback priority) and are in the same language.
+	 * Two or more pages are in conflict if they have set the same tag with the same priority
+	 * and are in the same language.
 	 *
 	 * @param PageInfo $page The page $tags is being set on.
-	 * @param Tag[] $tags The tags to check, each with its assigned order.
+	 * @param Tag[] $tags The tags to check, each with its assigned priority.
 	 * @return array<string, array<string, PageInfo[]>> language => tag name => conflicted pages
 	 */
 	public static function findConflicts( PageInfo $page, array $tags ): array {
@@ -99,7 +99,7 @@ class TagStore {
 		$queryConditions = [];
 		foreach ( $tags as $tag ) {
 			$queryConditions[] = $dbr->makeList(
-				[ 'ht_tag' => $tag->name, 'ht_order' => $tag->order ],
+				[ 'ht_tag' => $tag->name, 'ht_priority' => $tag->priority ],
 				LIST_AND
 			);
 		}
@@ -153,7 +153,7 @@ class TagStore {
 
 		$dbr = Hermes::getDB();
 
-		// Get all matching pages, sorted by where the tag is in the order.
+		// Get all matching pages, sorted by priority.
 		// In case of a conflict, use the page title as a tiebreak,
 		// so that it's deterministic which link gets displayed.
 		$rows = $dbr->select(
@@ -161,7 +161,7 @@ class TagStore {
 			'*',
 			[ 'ht_tag' => $tags ],
 			__METHOD__,
-			[ 'ORDER BY' => 'ht_order ASC, ht_namespace_id ASC, ht_base_title ASC' ]
+			[ 'ORDER BY' => 'ht_priority ASC, ht_namespace_id ASC, ht_base_title ASC' ]
 		);
 
 		// Convert rows, and sort them by tag
@@ -172,8 +172,8 @@ class TagStore {
 		}
 
 		// Walk tags in fallback order so earlier tags take priority; within a
-		// tag, rows are already ht_order-ascending, so the first row seen for
-		// a language is the one with the lowest ht_order.
+		// tag, rows are already priority-ascending, so the first row seen for
+		// a language is the one with the highest priority.
 		$pages = [];
 		foreach ( $tags as $tag ) {
 			foreach ( $links[ $tag ] ?? [] as $link ) {

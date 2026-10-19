@@ -19,9 +19,9 @@ class Tag {
 
 	/**
 	 * @var int This tag's fallback chain priority, relative to the page's other tags
-	 *   regardless of section. Defaults to 0 if the sort order is unknown.
+	 *   regardless of section. 0 is the highest; defaults to 0 if unknown.
 	 */
-	public int $order = 0;
+	public int $priority = 0;
 
 	/**
 	 * Creates a Tag from a hermes_tags table row.
@@ -34,7 +34,7 @@ class Tag {
 
 		$self->name = $row->ht_tag;
 		$self->section = $row->ht_section;
-		$self->order = (int)$row->ht_order;
+		$self->priority = (int)$row->ht_priority;
 
 		return $self;
 	}
@@ -44,7 +44,7 @@ class Tag {
 	 * {{#hermes:tag1|tag2|tag3=#section|tag4=#section}}: an argument "tag=#section" sets that tag
 	 * for the given section only.
 	 *
-	 * Assigns each tag's fallback chain order: the order they were listed in, regardless of section.
+	 * Assigns each tag's fallback chain priority: the order they were listed in, regardless of section.
 	 *
 	 * @param string[] $args The arguments passed to the {{#hermes:}} function.
 	 * @return Tag[] The list of tags.
@@ -70,12 +70,12 @@ class Tag {
 		}
 
 		$seenNames = [];
-		foreach ( $tags as $order => $tag ) {
+		foreach ( $tags as $priority => $tag ) {
 			if ( isset( $seenNames[ $tag->name ] ) ) {
 				throw new DuplicateTagException( $tag->name );
 			}
 			$seenNames[ $tag->name ] = true;
-			$tag->order = $order;
+			$tag->priority = $priority;
 		}
 
 		return $tags;
@@ -86,7 +86,7 @@ class Tag {
 	 *
 	 * @param string $name The non-normalized tag name.
 	 * @param ?string $section The non-normalized section, or null for the page as a whole.
-	 * @return Tag The tag, but without a meaningful sort order.
+	 * @return Tag The tag, but without a meaningful priority.
 	 * @throws InvalidTagNameException If the name is not a valid tag.
 	 */
 	public static function fromArg( string $name, ?string $section = null ): Tag {
@@ -107,7 +107,7 @@ class Tag {
 		$self = new Tag();
 		$self->name = $obj->name;
 		$self->section = $obj->section ?? null;
-		$self->order = $obj->order ?? 0;
+		$self->priority = $obj->priority ?? 0;
 
 		return $self;
 	}

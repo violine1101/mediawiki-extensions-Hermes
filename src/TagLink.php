@@ -6,7 +6,7 @@ class TagLink {
 
 	public PageInfo $page;
 	public Tag $tag;
-	public int $order;
+	public int $priority;
 
 	/**
 	 * Creates a TagLink from a hermes_tags table row.
@@ -19,7 +19,7 @@ class TagLink {
 
 		$self->page = PageInfo::fromRow( $row );
 		$self->tag = Tag::fromRow( $row );
-		$self->order = $row->ht_order;
+		$self->priority = $row->ht_priority;
 
 		return $self;
 	}

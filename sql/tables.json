@@ -10,7 +10,7 @@
 			{ "name": "ht_base_title", "type": "binary", "options": { "length": 255, "notnull": true } },
 			{ "name": "ht_section", "type": "binary", "options": { "length": 255, "notnull": false } },
 			{ "name": "ht_tag", "type": "binary", "options": { "length": 255, "notnull": true } },
-			{ "name": "ht_order", "type": "integer", "options": { "notnull": true, "default": 0 } }
+			{ "name": "ht_priority", "type": "integer", "options": { "notnull": true, "default": 0 } }
 		],
 		"indexes": [
 			{ "name": "ht_wiki_page", "columns": [ "ht_wiki", "ht_page_id" ], "unique": false }

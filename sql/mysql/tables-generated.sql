@@ -11,7 +11,7 @@ CREATE TABLE /*_*/hermes_tags (
   ht_translation_project VARBINARY(35) DEFAULT NULL,
   ht_base_title VARBINARY(255) NOT NULL,
   ht_section VARBINARY(255) DEFAULT NULL,
-  ht_order INT DEFAULT 0 NOT NULL,
+  ht_priority INT DEFAULT 0 NOT NULL,
   INDEX ht_wiki_page (ht_wiki, ht_page_id),
   PRIMARY KEY(ht_wiki, ht_page_id, ht_tag)
 ) /*$wgDBTableOptions*/;

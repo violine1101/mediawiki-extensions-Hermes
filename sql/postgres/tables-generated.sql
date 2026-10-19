@@ -11,7 +11,7 @@ CREATE TABLE hermes_tags (
   ht_translation_project TEXT DEFAULT NULL,
   ht_base_title TEXT NOT NULL,
   ht_section TEXT DEFAULT NULL,
-  ht_order INT DEFAULT 0 NOT NULL,
+  ht_priority INT DEFAULT 0 NOT NULL,
   PRIMARY KEY(ht_wiki, ht_page_id, ht_tag)
 );
 

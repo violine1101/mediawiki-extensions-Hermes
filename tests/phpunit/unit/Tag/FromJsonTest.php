@@ -27,19 +27,19 @@ class FromJsonTest extends MediaWikiUnitTestCase {
 		$this->assertNull( $tag->section );
 	}
 
-	public function testHandlesMissingOrder() {
+	public function testHandlesMissingPriority() {
 		$tag = Tag::fromJson( (object)[ 'name' => 'some_tag' ] );
 
-		$this->assertSame( 0, $tag->order );
+		$this->assertSame( 0, $tag->priority );
 	}
 
-	public function testRoundTripsOrderFromArgs() {
+	public function testRoundTripsPriorityFromArgs() {
 		$originals = Tag::fromArgs( [ 'tag_a', 'tag_b' ] );
 		$decoded = json_decode( json_encode( $originals ) );
 
 		$tags = array_map( Tag::fromJson( ... ), $decoded );
 
-		$this->assertSame( $originals[ 0 ]->order, $tags[ 0 ]->order );
-		$this->assertSame( $originals[ 1 ]->order, $tags[ 1 ]->order );
+		$this->assertSame( $originals[ 0 ]->priority, $tags[ 0 ]->priority );
+		$this->assertSame( $originals[ 1 ]->priority, $tags[ 1 ]->priority );
 	}
 }
