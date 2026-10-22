@@ -83,14 +83,22 @@ abstract class HermesSpecialPage extends SpecialPage {
 		];
 	}
 
-	protected function showForm( array $fields, string $legendMsg ): void {
-		HTMLForm::factory( 'ooui', $fields, $this->getContext() )
+	/**
+	 * @param array $fields
+	 * @param string|null $legendMsg Null for no frame around the form
+	 * @param string $submitMsg
+	 */
+	protected function showForm( array $fields, ?string $legendMsg, string $submitMsg = 'hermestags-submit' ): void {
+		$form = HTMLForm::factory( 'ooui', $fields, $this->getContext() )
 			->setMethod( 'get' )
 			->setTitle( $this->getPageTitle() )
-			->setWrapperLegendMsg( $legendMsg )
-			->setSubmitTextMsg( 'hermestags-submit' )
-			->prepareForm()
-			->displayForm( false );
+			->setSubmitTextMsg( $submitMsg );
+		if ( $legendMsg !== null ) {
+			$form->setWrapperLegendMsg( $legendMsg );
+		} else {
+			$form->setWrapperLegend( false );
+		}
+		$form->prepareForm()->displayForm( false );
 	}
 
 	protected function showPager( TablePager $pager ): void {

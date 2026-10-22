@@ -48,5 +48,18 @@
 	"hermeslanguages-add-placeholder": "Empty first option of the language dropdown on [[Special:HermesLanguages]] for adding a translation project.",
 	"right-hermes-add-translation-project": "{{doc-right|hermes-add-translation-project}}",
 	"action-hermes-add-translation-project": "{{doc-action|hermes-add-translation-project}}",
-	"specialpages-group-hermes": "{{doc-special-group|like=[[Special:HermesTags]], [[Special:HermesPages]], [[Special:HermesLanguages]]}}"
+	"specialpages-group-hermes": "{{doc-special-group|like=[[Special:HermesTags]], [[Special:HermesPages]], [[Special:HermesLanguages]], [[Special:HermesTranslate]]}}",
+	"hermestranslate": "{{doc-special|HermesTranslate}}",
+	"hermestranslate-page": "Label for the field on [[Special:HermesTranslate]] for the page to translate.\n{{Identical|Page}}",
+	"hermestranslate-language": "Label for the dropdown on [[Special:HermesTranslate]] for the translation project to translate into.",
+	"hermestranslate-submit": "Submit button on [[Special:HermesTranslate]], opening the editor for the new translation.\n{{Identical|Translate}}",
+	"hermestranslate-no-base": "Error on [[Special:HermesTranslate]] when the page to translate does not exist, or is in a namespace without translation projects.\n* $1 - the page name as entered",
+	"hermestranslate-no-projects": "Shown on [[Special:HermesTranslate]] instead of the form when the wiki has no translation projects.",
+	"hermestranslate-translation": "Label for the field on [[Special:HermesTranslate]] for the title of the translation, without the translation project prefix.",
+	"hermestranslate-invalid-title": "Error on [[Special:HermesTranslate]] when the translated title is not a valid page title.\n* $1 - the title as entered",
+	"hermestranslate-exists": "Error on [[Special:HermesTranslate]] when a page with the translated title already exists.\n* $1 - link to that page",
+	"hermes-translate-action": "Label of the action in the page actions menu opening [[Special:HermesTranslate]] for the current page.\n{{Identical|Translate}}",
+	"hermestranslate-language-placeholder": "Empty first option of the translation project dropdown on [[Special:HermesTranslate]].",
+	"hermestranslate-all-translated": "Notice on [[Special:HermesTranslate]] when the page to translate already has a translation in every translation project of the wiki.\n* $1 - the page name",
+	"hermestranslate-title": "Page title of [[Special:HermesTranslate]] for a given page.\n* $1 - the name of the page to translate"
 }

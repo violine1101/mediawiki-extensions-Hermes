@@ -60,7 +60,7 @@ class TagStore {
 	/**
 	 * Get all tags for a given page.
 	 *
-	 * @return Tag[] Array of tags associated with the page, in order.
+	 * @return string[] Names of the tags associated with the page, by priority.
 	 */
 	private static function getTagsForPage( PageInfo $page ): array {
 		$dbr = Hermes::getDB();
@@ -201,5 +201,24 @@ class TagStore {
 		unset( $links[ $page->title->getLanguageCode() ] );
 
 		return $links;
+	}
+
+	/**
+	 * The translations of $page: other-language pages sharing its priority-0 tag at priority 0, rather
+	 * than pages it only falls back to.
+	 *
+	 * @return TagLink[] Keyed by language code
+	 */
+	public static function getTranslationsOfPage( PageInfo $page ): array {
+		$tags = self::getTagsForPage( $page );
+		if ( !$tags ) {
+			return [];
+		}
+		// getLinksForTags() prefers the first tag, at the lowest priority.
+		$links = self::getLinksForTags( $tags );
+		unset( $links[ $page->title->getLanguageCode() ] );
+		return array_filter(
+			$links, static fn ( TagLink $link ) => $link->tag->name === $tags[0] && $link->tag->priority === 0
+		);
 	}
 }

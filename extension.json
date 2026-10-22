@@ -51,7 +51,9 @@
 		"ParserAfterParse": [ "parserfunc", "translationproject-page", "translationproject-template" ],
 		"ParserAfterTidy": "translationproject-link",
 		"OutputPageBeforeHTML": [ "translationproject-page", "translationproject-talk" ],
-		"PageSaveComplete": "translationproject-talk"
+		"PageSaveComplete": "translationproject-talk",
+		"EditFormPreloadText": "translationproject-translate",
+		"SkinTemplateNavigation::Universal": "translationproject-translate"
 	},
 	"AvailableRights": [
 		"hermes-add-translation-project"
@@ -88,6 +90,10 @@
 		},
 		"translationproject-template": {
 			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\TranslationProject\\TemplateHooks"
+		},
+		"translationproject-translate": {
+			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\TranslationProject\\TranslateHooks",
+			"services": [ "RevisionLookup", "ContentHandlerFactory" ]
 		}
 	},
 	"SpecialPages": {
@@ -101,6 +107,10 @@
 		},
 		"HermesLanguages": {
 			"class": "MediaWiki\\Extension\\Hermes\\Special\\SpecialHermesLanguages",
+			"services": [ "LanguageNameUtils" ]
+		},
+		"HermesTranslate": {
+			"class": "MediaWiki\\Extension\\Hermes\\Special\\SpecialHermesTranslate",
 			"services": [ "LanguageNameUtils" ]
 		}
 	},

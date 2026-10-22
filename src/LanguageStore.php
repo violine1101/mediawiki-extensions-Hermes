@@ -73,6 +73,15 @@ class LanguageStore {
 		return $row !== null && !$row[ 'isBase' ] && $row[ 'wiki' ] === WikiMap::getCurrentWikiId();
 	}
 
+	/** @return string[] The current wiki's translation project languages, sorted */
+	public static function getLocalProjectLanguages(): array {
+		$projects = array_keys( array_filter( self::getLanguages(), static fn ( $row ) =>
+			!$row[ 'isBase' ] && $row[ 'wiki' ] === WikiMap::getCurrentWikiId()
+		) );
+		sort( $projects );
+		return $projects;
+	}
+
 	/**
 	 * Look up the base language registered for a given wiki.
 	 *

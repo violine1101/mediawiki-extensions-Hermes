@@ -5,20 +5,26 @@ namespace MediaWiki\Extension\Hermes\Hooks\TranslationProject;
 use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\LinkRewriter;
+use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\ProjectTitle;
+use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Html\Html;
 use MediaWiki\Linker\Hook\HtmlPageLinkRendererBeginHook;
 use MediaWiki\Linker\Hook\HtmlPageLinkRendererEndHook;
 use MediaWiki\Parser\Hook\InternalParseBeforeLinksHook;
 use MediaWiki\Parser\Hook\ParserAfterTidyHook;
 use MediaWiki\Parser\ParserOutputLinkTypes;
+use MediaWiki\SpecialPage\SpecialPage;
 use MediaWiki\Title\Title;
 
 /**
  * Links in and to translation projects: rewrites link targets on project pages (see LinkRewriter),
  * sets hover texts, and when a linked "!xx:Foo" page is missing but the base page "Foo" exists,
- * appends a "(xx)" link to the base page after the red link. In Hermes::LINK_FALLBACK_NAMESPACES,
- * the link goes straight to the base page instead.
+ * makes the red link go to Special:HermesTranslate for translating the base page, and appends a
+ * "(en)" link to the base page. If the base page has a translation under another title, appends
+ * "(en, xx)" instead; if it shares the base page's priority-0 tag at priority 0, the red link creates
+ * a redirect to it (see TranslateHooks).
+ * In Hermes::LINK_FALLBACK_NAMESPACES, the link goes straight to the base page instead.
  */
 class LinkHooks implements
 	InternalParseBeforeLinksHook,
@@ -80,16 +86,48 @@ class LinkHooks implements
 			return true;
 		}
 
+		$fallbackLinks = [ $linkRenderer->makeKnownLink( $baseTitle, LanguageStore::getLocalBaseLanguage() ) ];
+		// The translation may exist under another title, linked by tags.
+		$basePage = PageInfo::fromLocalPage( $baseTitle );
+		$translation = TagStore::getLinksForPage( $basePage )[ $projectTitle->project ] ?? null;
+		$redirectTo = null;
+		if ( $translation !== null && $translation->page->title->isLocal() ) {
+			$translationTitle = $translation->page->title->toTitle();
+			$fallbackLinks[] = $linkRenderer->makeKnownLink( $translationTitle, $projectTitle->project );
+			// Only a redirect to a real translation, not a page it falls back to.
+			if ( isset( TagStore::getTranslationsOfPage( $basePage )[ $projectTitle->project ] ) ) {
+				$redirectTo = $translationTitle;
+			}
+		}
+
 		self::$renderingMainLink = true;
 		try {
-			$mainLink = $linkRenderer->makeLink( $target, $text, $customAttribs, $query );
+			if ( $redirectTo !== null ) {
+				// Creating the page as a redirect to the translation.
+				$mainLink = $linkRenderer->makeLink( $target, $text, $customAttribs, [
+					TranslateHooks::REDIRECT_PARAM => $redirectTo->getPrefixedText(),
+				] );
+			} else {
+				// Still a red link, in the project's language like onHtmlPageLinkRendererEnd() does.
+				$mainLink = $linkRenderer->makeKnownLink(
+					SpecialPage::getTitleFor( 'HermesTranslate', $baseTitle->getPrefixedText() ),
+					$text ?? Title::newFromLinkTarget( $target )->getPrefixedText(),
+					[
+						'class' => trim( ( $customAttribs['class'] ?? '' ) . ' new' ),
+						'title' => $customAttribs['title'] ?? wfMessage(
+							'red-link-title', $projectTitle->getDisplayTitle( true )
+						)->inLanguage( $projectTitle->getLanguage() )->text(),
+					] + $customAttribs,
+					[ 'language' => $projectTitle->project ]
+				);
+			}
 		} finally {
 			self::$renderingMainLink = false;
 		}
 
-		$fallbackLink = $linkRenderer->makeKnownLink( $baseTitle, LanguageStore::getLocalBaseLanguage() );
-
-		$ret = $mainLink . Html::rawElement( 'sup', [ 'class' => 'hermes-fallback-link' ], "({$fallbackLink})" );
+		$ret = $mainLink . Html::rawElement( 'sup', [ 'class' => 'hermes-fallback-link' ],
+			'(' . implode( wfMessage( 'comma-separator' )->inContentLanguage()->escaped(), $fallbackLinks ) . ')'
+		);
 		return false;
 	}
 
