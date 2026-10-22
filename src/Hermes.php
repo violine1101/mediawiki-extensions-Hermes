@@ -4,9 +4,6 @@ namespace MediaWiki\Extension\Hermes;
 
 use MediaWiki\MediaWikiServices;
 use Wikimedia\Rdbms\IDatabase;
-use Wikimedia\Rdbms\IExpression;
-use Wikimedia\Rdbms\IReadableDatabase;
-use Wikimedia\Rdbms\LikeValue;
 
 class Hermes {
 
@@ -24,27 +21,6 @@ class Hermes {
 
 	public static function hasLinkFallback( int $namespace ): bool {
 		return in_array( $namespace, self::LINK_FALLBACK_NAMESPACES, true );
-	}
-
-	/**
-	 * SQL condition excluding translation-project titles ("!xx:Foo", or any "!...:" title reserved for them),
-	 * for queries listing link targets.
-	 *
-	 * @param IReadableDatabase $dbr
-	 * @param string|int $namespace Namespace field, or a fixed namespace
-	 * @param string $title Title field
-	 * @return IExpression|null Null if a fixed $namespace has no translation projects
-	 */
-	public static function notProjectTitle(
-		IReadableDatabase $dbr, string|int $namespace, string $title
-	): ?IExpression {
-		$notReserved = $dbr->expr(
-			$title, IExpression::NOT_LIKE, new LikeValue( '!', $dbr->anyString(), ':', $dbr->anyString() )
-		);
-		if ( is_int( $namespace ) ) {
-			return self::isProjectNamespace( $namespace ) ? $notReserved : null;
-		}
-		return $notReserved->or( $namespace, '=', self::NON_PROJECT_NAMESPACES );
 	}
 
 	/** A language's autonym, capitalized as in the interlanguage links box; '' if unknown. */

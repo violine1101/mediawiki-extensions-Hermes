@@ -10,7 +10,6 @@ use MediaWiki\SpecialPage\WantedQueryPage;
 use MediaWiki\Title\Title;
 use Wikimedia\Rdbms\IExpression;
 use Wikimedia\Rdbms\IReadableDatabase;
-use Wikimedia\Rdbms\LikeValue;
 use Wikimedia\Rdbms\SelectQueryBuilder;
 
 /**
@@ -40,13 +39,8 @@ abstract class WantedTranslationsPage extends WantedQueryPage {
 	 * @return IExpression|string Matching nothing if this wiki has no translation projects
 	 */
 	protected function inProject( IReadableDatabase $dbr, string $title ): IExpression|string {
-		$projects = array_map(
-			static fn ( string $project ) => $dbr->expr(
-				$title, IExpression::LIKE, new LikeValue( "!$project:", $dbr->anyString() )
-			),
-			$this->project !== null ? [ $this->project ] : LanguageStore::getLocalProjectLanguages()
-		);
-		return $projects ? $dbr->orExpr( $projects ) : '0 = 1';
+		$projects = $this->project !== null ? [ $this->project ] : LanguageStore::getLocalProjectLanguages();
+		return $projects ? ProjectTitle::projectSqlCondition( $dbr, $title, $projects ) : '0 = 1';
 	}
 
 	/**

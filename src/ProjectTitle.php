@@ -10,6 +10,9 @@ use MediaWiki\Page\PageReference;
 use MediaWiki\Parser\Sanitizer;
 use MediaWiki\Title\Title;
 use MediaWiki\WikiMap\WikiMap;
+use Wikimedia\Rdbms\IExpression;
+use Wikimedia\Rdbms\IReadableDatabase;
+use Wikimedia\Rdbms\LikeValue;
 
 /**
  * A title on some wiki in the family, split into namespace, translation project, base title and
@@ -266,5 +269,37 @@ final class ProjectTitle {
 	/** Whether $title (without namespace) has the "!...:" shape reserved for translation projects. */
 	public static function isReserved( string $title ): bool {
 		return (bool)preg_match( '/^!.*:/', $title );
+	}
+
+	/**
+	 * SQL condition for titles that aren't translation-project pages: not isReserved(), or in a namespace
+	 * without projects.
+	 *
+	 * @param IReadableDatabase $dbr
+	 * @param string $namespace Namespace field
+	 * @param string $title Title field, without namespace
+	 */
+	public static function notProjectSqlCondition(
+		IReadableDatabase $dbr, string $namespace, string $title
+	): IExpression {
+		$reserved = new LikeValue( '!', $dbr->anyString(), ':', $dbr->anyString() );
+		return $dbr->expr( $title, IExpression::NOT_LIKE, $reserved )
+			->or( $namespace, '=', Hermes::NON_PROJECT_NAMESPACES );
+	}
+
+	/**
+	 * SQL condition for titles in one of $projects ("!xx:Foo").
+	 *
+	 * @param IReadableDatabase $dbr
+	 * @param string $title Title field, without namespace
+	 * @param string[] $projects Not empty
+	 */
+	public static function projectSqlCondition( IReadableDatabase $dbr, string $title, array $projects ): IExpression {
+		return $dbr->orExpr( array_map(
+			static fn ( string $project ) => $dbr->expr(
+				$title, IExpression::LIKE, new LikeValue( "!$project:", $dbr->anyString() )
+			),
+			$projects
+		) );
 	}
 }

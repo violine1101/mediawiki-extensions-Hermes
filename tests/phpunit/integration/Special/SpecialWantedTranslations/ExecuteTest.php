@@ -13,6 +13,7 @@ use SpecialPageExecutor;
  * @covers \MediaWiki\Extension\Hermes\Special\WantedTranslationsPage
  * @covers \MediaWiki\Extension\Hermes\Special\SpecialWantedTranslations
  * @covers \MediaWiki\Extension\Hermes\Special\SpecialWantedCategoryTranslations
+ * @covers \MediaWiki\Extension\Hermes\ProjectTitle::projectSqlCondition
  */
 class ExecuteTest extends HermesIntegrationTestCase {
 
