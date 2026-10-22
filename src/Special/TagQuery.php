@@ -63,6 +63,25 @@ final class TagQuery {
 		return "COALESCE($value, " . $dbr->addQuotes( '1' ) . ')';
 	}
 
+	/** @return array<string, int> Number of pages with tags, by language */
+	public static function countPages( IReadableDatabase $dbr ): array {
+		$pages = self::joinLanguages( $dbr->newSelectQueryBuilder()->from( 'hermes_tags', 't' ) )
+			->select( [ 't.ht_wiki', 't.ht_page_id', 'language' => self::language() ] )
+			->distinct();
+		$rows = $dbr->newSelectQueryBuilder()
+			->select( [ 'language', 'pages' => 'COUNT(*)' ] )
+			->from( $pages, 'p' )
+			->groupBy( 'language' )
+			->caller( __METHOD__ )
+			->fetchResultSet();
+
+		$counts = [];
+		foreach ( $rows as $row ) {
+			$counts[ $row->language ?? '' ] = (int)$row->pages;
+		}
+		return $counts;
+	}
+
 	/**
 	 * @param IReadableDatabase $dbr
 	 * @param string[] $tags

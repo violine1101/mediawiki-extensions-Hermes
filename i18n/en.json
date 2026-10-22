@@ -39,5 +39,14 @@
 	"hermespages-single": "Hermes page: $1",
 	"hermespages-notfound": "No matching page found.",
 	"hermespages-header-priority": "Priority $1",
-	"hermes-page-details": "View Hermes Links"
+	"hermes-page-details": "View Hermes Links",
+	"hermeslanguages": "Hermes languages",
+	"hermeslanguages-header-language": "Language",
+	"hermeslanguages-header-wiki": "Wiki",
+	"hermeslanguages-header-pages": "Pages",
+	"hermeslanguages-add-submit": "Add",
+	"hermeslanguages-add-placeholder": "Select a language",
+	"right-hermes-add-translation-project": "Add translation projects to the wiki",
+	"action-hermes-add-translation-project": "add translation projects to the wiki",
+	"specialpages-group-hermes": "Hermes"
 }

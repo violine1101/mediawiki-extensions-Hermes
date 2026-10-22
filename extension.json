@@ -53,6 +53,9 @@
 		"OutputPageBeforeHTML": [ "translationproject-page", "translationproject-talk" ],
 		"PageSaveComplete": "translationproject-talk"
 	},
+	"AvailableRights": [
+		"hermes-add-translation-project"
+	],
 	"AuthManagerAutoConfig": {
 		"preauth": {
 			"MediaWiki\\Extension\\Hermes\\Auth\\ReservedUsernamePreAuthenticationProvider": {
@@ -94,6 +97,10 @@
 		},
 		"HermesPages": {
 			"class": "MediaWiki\\Extension\\Hermes\\Special\\SpecialHermesPages",
+			"services": [ "LanguageNameUtils" ]
+		},
+		"HermesLanguages": {
+			"class": "MediaWiki\\Extension\\Hermes\\Special\\SpecialHermesLanguages",
 			"services": [ "LanguageNameUtils" ]
 		}
 	},

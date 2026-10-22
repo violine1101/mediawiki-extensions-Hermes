@@ -19,7 +19,7 @@ abstract class HermesSpecialPage extends SpecialPage {
 
 	public function __construct(
 		string $name,
-		private readonly LanguageNameUtils $languageNameUtils,
+		protected readonly LanguageNameUtils $languageNameUtils,
 	) {
 		parent::__construct( $name );
 	}
@@ -106,6 +106,6 @@ abstract class HermesSpecialPage extends SpecialPage {
 
 	/** @inheritDoc */
 	protected function getGroupName() {
-		return 'pages';
+		return 'hermes';
 	}
 }

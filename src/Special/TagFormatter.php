@@ -101,11 +101,13 @@ final class TagFormatter {
 	/**
 	 * @param string[] $headers HTML of the header cells, or none for no header
 	 * @param string[] $rows HTML of the rows
+	 * @param bool $sortable Whether readers can sort it (needs the jquery.tablesorter modules)
 	 * @return string HTML
 	 */
-	public function table( array $headers, array $rows ): string {
+	public function table( array $headers, array $rows, bool $sortable = false ): string {
 		$thead = $headers ? Html::rawElement( 'thead', [], Html::rawElement( 'tr', [], implode( '', $headers ) ) ) : '';
-		return Html::rawElement( 'table', [ 'class' => 'wikitable ext-hermes-details' ],
+		$classes = [ 'wikitable', 'ext-hermes-details', 'sortable' => $sortable ];
+		return Html::rawElement( 'table', [ 'class' => $classes ],
 			$thead . Html::rawElement( 'tbody', [], implode( '', $rows ) )
 		);
 	}

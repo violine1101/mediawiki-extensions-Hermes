@@ -39,5 +39,14 @@
 	"hermespages-single": "Page title of [[Special:HermesPages]] when showing a single page.\n* $1 - the page's title",
 	"hermespages-notfound": "Shown on [[Special:HermesPages]] if the page given in the URL has no Hermes tags or doesn't exist.\n* $1 - the requested language code and title",
 	"hermespages-header-priority": "Column header on [[Special:HermesPages]]: the page's tag with this fallback priority.\n* $1 - the priority, where 0 is tried first",
-	"hermes-page-details": "Tooltip and accessible label of the magnifying glass icon after links to pages on Hermes special pages, linking to the page's details on [[Special:HermesPages]]."
+	"hermes-page-details": "Tooltip and accessible label of the magnifying glass icon after links to pages on Hermes special pages, linking to the page's details on [[Special:HermesPages]].",
+	"hermeslanguages": "{{doc-special|HermesLanguages}}",
+	"hermeslanguages-header-language": "Column header on [[Special:HermesLanguages]]: the language.\n{{Identical|Language}}",
+	"hermeslanguages-header-wiki": "Column header on [[Special:HermesLanguages]]: the wiki serving the language.\n{{Identical|Wiki}}",
+	"hermeslanguages-header-pages": "Column header on [[Special:HermesLanguages]]: the number of pages with Hermes tags in the language.\n{{Identical|Page}}",
+	"hermeslanguages-add-submit": "Submit button of the form on [[Special:HermesLanguages]] for adding a translation project.\n{{Identical|Add}}",
+	"hermeslanguages-add-placeholder": "Empty first option of the language dropdown on [[Special:HermesLanguages]] for adding a translation project.",
+	"right-hermes-add-translation-project": "{{doc-right|hermes-add-translation-project}}",
+	"action-hermes-add-translation-project": "{{doc-action|hermes-add-translation-project}}",
+	"specialpages-group-hermes": "{{doc-special-group|like=[[Special:HermesTags]], [[Special:HermesPages]], [[Special:HermesLanguages]]}}"
 }
