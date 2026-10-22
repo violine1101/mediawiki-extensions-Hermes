@@ -53,7 +53,9 @@
 		"OutputPageBeforeHTML": [ "translationproject-page", "translationproject-talk" ],
 		"PageSaveComplete": "translationproject-talk",
 		"EditFormPreloadText": "translationproject-translate",
-		"SkinTemplateNavigation::Universal": "translationproject-translate"
+		"SkinTemplateNavigation::Universal": "translationproject-translate",
+		"WantedPages::getQueryInfo": "translationproject-wanted",
+		"SpecialPage_initList": "translationproject-wanted"
 	},
 	"AvailableRights": [
 		"hermes-add-translation-project"
@@ -90,6 +92,9 @@
 		},
 		"translationproject-template": {
 			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\TranslationProject\\TemplateHooks"
+		},
+		"translationproject-wanted": {
+			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\TranslationProject\\WantedPagesHooks"
 		},
 		"translationproject-translate": {
 			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\TranslationProject\\TranslateHooks",
