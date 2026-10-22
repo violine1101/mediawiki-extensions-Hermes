@@ -62,5 +62,9 @@
 	"hermes-translate-action-tooltip": "Translate this page for a translation project",
 	"hermestranslate-language-placeholder": "Select a translation project",
 	"hermestranslate-all-translated": "<strong>$1</strong> has been translated into all translation projects of this wiki.",
-	"hermestranslate-title": "Translate: $1"
+	"hermestranslate-title": "Translate: $1",
+	"wantedtranslations": "Wanted translations",
+	"wantedcategorytranslations": "Wanted category translations",
+	"hermeswanted-project": "Translation project:",
+	"hermeswanted-all": "All"
 }

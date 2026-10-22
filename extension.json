@@ -55,7 +55,8 @@
 		"EditFormPreloadText": "translationproject-translate",
 		"SkinTemplateNavigation::Universal": "translationproject-translate",
 		"WantedPages::getQueryInfo": "translationproject-wanted",
-		"SpecialPage_initList": "translationproject-wanted"
+		"SpecialPage_initList": "translationproject-wanted",
+		"wgQueryPages": "translationproject-wanted"
 	},
 	"AvailableRights": [
 		"hermes-add-translation-project"
@@ -114,6 +115,14 @@
 		},
 		"HermesTranslate": {
 			"class": "MediaWiki\\Extension\\Hermes\\Special\\SpecialHermesTranslate"
+		},
+		"WantedTranslations": {
+			"class": "MediaWiki\\Extension\\Hermes\\Special\\SpecialWantedTranslations",
+			"services": [ "ConnectionProvider", "LinkBatchFactory", "LinksMigration" ]
+		},
+		"WantedCategoryTranslations": {
+			"class": "MediaWiki\\Extension\\Hermes\\Special\\SpecialWantedCategoryTranslations",
+			"services": [ "ConnectionProvider", "LinkBatchFactory" ]
 		}
 	},
 	"ExtensionMessagesFiles": {

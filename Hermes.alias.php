@@ -7,4 +7,6 @@ $specialPageAliases['en'] = [
 	'HermesPages' => [ 'HermesPages' ],
 	'HermesLanguages' => [ 'HermesLanguages' ],
 	'HermesTranslate' => [ 'HermesTranslate' ],
+	'WantedTranslations' => [ 'WantedTranslations' ],
+	'WantedCategoryTranslations' => [ 'WantedCategoryTranslations' ],
 ];

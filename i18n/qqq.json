@@ -48,7 +48,7 @@
 	"hermeslanguages-add-placeholder": "Empty first option of the language dropdown on [[Special:HermesLanguages]] for adding a translation project.",
 	"right-hermes-add-translation-project": "{{doc-right|hermes-add-translation-project}}",
 	"action-hermes-add-translation-project": "{{doc-action|hermes-add-translation-project}}",
-	"specialpages-group-hermes": "{{doc-special-group|like=[[Special:HermesTags]], [[Special:HermesPages]], [[Special:HermesLanguages]], [[Special:HermesTranslate]]}}",
+	"specialpages-group-hermes": "{{doc-special-group|like=[[Special:HermesTags]], [[Special:HermesPages]], [[Special:HermesLanguages]], [[Special:HermesTranslate]], [[Special:WantedTranslations]]}}",
 	"hermestranslate": "{{doc-special|HermesTranslate}}",
 	"hermestranslate-page": "Label for the field on [[Special:HermesTranslate]] for the page to translate.\n{{Identical|Page}}",
 	"hermestranslate-language": "Label for the dropdown on [[Special:HermesTranslate]] for the translation project to translate into.",
@@ -62,5 +62,9 @@
 	"hermes-translate-action": "Label of the action in the page actions menu opening [[Special:HermesTranslate]] for the current page.\n{{Identical|Translate}}",
 	"hermestranslate-language-placeholder": "Empty first option of the translation project dropdown on [[Special:HermesTranslate]].",
 	"hermestranslate-all-translated": "Notice on [[Special:HermesTranslate]] when the page to translate already has a translation in every translation project of the wiki.\n* $1 - the page name",
-	"hermestranslate-title": "Page title of [[Special:HermesTranslate]] for a given page.\n* $1 - the name of the page to translate"
+	"hermestranslate-title": "Page title of [[Special:HermesTranslate]] for a given page.\n* $1 - the name of the page to translate",
+	"wantedtranslations": "{{doc-special|WantedTranslations}}",
+	"wantedcategorytranslations": "{{doc-special|WantedCategoryTranslations}}",
+	"hermeswanted-project": "Label of the translation project filter on [[Special:WantedTranslations]] and [[Special:WantedCategoryTranslations]].",
+	"hermeswanted-all": "Option of the translation project filter on [[Special:WantedTranslations]] and [[Special:WantedCategoryTranslations]] showing all projects.\n{{Identical|All}}"
 }
