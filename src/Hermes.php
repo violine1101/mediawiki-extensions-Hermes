@@ -23,6 +23,14 @@ class Hermes {
 		return in_array( $namespace, self::LINK_FALLBACK_NAMESPACES, true );
 	}
 
+	/** A language's autonym, capitalized as in the interlanguage links box; '' if unknown. */
+	public static function getAutonym( string $code ): string {
+		$services = MediaWikiServices::getInstance();
+		// Without locale-specific ucfirst overrides, like core (T294695).
+		return $services->getLanguageFactory()->getLanguage( 'en' )
+			->ucfirst( $services->getLanguageNameUtils()->getLanguageName( $code ) );
+	}
+
 	public static function getDB( int $mode = DB_REPLICA ): IDatabase {
 		$lbFactory = MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
 

@@ -23,8 +23,8 @@ class SpecialHermesLanguages extends HermesSpecialPage {
 
 	private const RIGHT = 'hermes-add-translation-project';
 
-	public function __construct( LanguageNameUtils $languageNameUtils ) {
-		parent::__construct( 'HermesLanguages', $languageNameUtils );
+	public function __construct( private readonly LanguageNameUtils $languageNameUtils ) {
+		parent::__construct( 'HermesLanguages' );
 	}
 
 	/** @inheritDoc */
@@ -94,14 +94,14 @@ class SpecialHermesLanguages extends HermesSpecialPage {
 			: htmlspecialchars( $wiki );
 	}
 
-	/** @return array<string, string> Languages MediaWiki supports that aren't registered yet, code => name */
+	/** @return array<string, string> Languages MediaWiki supports that aren't registered yet, code => autonym */
 	private function getAddableLanguages(): array {
-		$names = $this->languageNameUtils->getLanguageNames(
-			$this->getLanguage()->getCode(), LanguageNameUtils::SUPPORTED
-		);
-		$names = array_diff_key( $names, LanguageStore::getLanguages() );
-		ksort( $names );
-		return $names;
+		$codes = array_keys( array_diff_key(
+			$this->languageNameUtils->getLanguageNames( LanguageNameUtils::AUTONYMS, LanguageNameUtils::SUPPORTED ),
+			LanguageStore::getLanguages()
+		) );
+		sort( $codes );
+		return array_combine( $codes, array_map( Hermes::getAutonym( ... ), $codes ) );
 	}
 
 	private function addForm(): string {

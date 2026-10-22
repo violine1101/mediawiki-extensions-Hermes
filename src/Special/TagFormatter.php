@@ -3,11 +3,11 @@
 namespace MediaWiki\Extension\Hermes\Special;
 
 use MediaWiki\Context\IContextSource;
+use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\TagLink;
 use MediaWiki\Html\Html;
-use MediaWiki\Languages\LanguageNameUtils;
 use MediaWiki\Linker\LinkRenderer;
 use MediaWiki\SpecialPage\SpecialPage;
 use MediaWiki\Title\Title;
@@ -20,7 +20,6 @@ final class TagFormatter {
 	public function __construct(
 		private readonly IContextSource $context,
 		private readonly LinkRenderer $linkRenderer,
-		private readonly LanguageNameUtils $languageNameUtils,
 	) {
 	}
 
@@ -109,9 +108,9 @@ final class TagFormatter {
 		return self::conflictPriority( $byPriority ) !== null;
 	}
 
-	/** "Name (code)" in the user's language, or just the code if the name is unknown. */
+	/** "Autonym (code)", or just the code if the name is unknown. */
 	public function languageLabel( string $code ): string {
-		$name = $this->languageNameUtils->getLanguageName( $code, $this->context->getLanguage()->getCode() );
+		$name = Hermes::getAutonym( $code );
 		return $name !== '' ? "$name ($code)" : $code;
 	}
 
@@ -121,7 +120,7 @@ final class TagFormatter {
 		sort( $codes );
 		$options = [];
 		foreach ( $codes as $code ) {
-			$name = $this->languageNameUtils->getLanguageName( $code, $this->context->getLanguage()->getCode() );
+			$name = Hermes::getAutonym( $code );
 			$options[ $name !== '' ? "$code - $name" : $code ] = $code;
 		}
 		return $options;

@@ -98,20 +98,17 @@
 	},
 	"SpecialPages": {
 		"HermesTags": {
-			"class": "MediaWiki\\Extension\\Hermes\\Special\\SpecialHermesTags",
-			"services": [ "LanguageNameUtils" ]
+			"class": "MediaWiki\\Extension\\Hermes\\Special\\SpecialHermesTags"
 		},
 		"HermesPages": {
-			"class": "MediaWiki\\Extension\\Hermes\\Special\\SpecialHermesPages",
-			"services": [ "LanguageNameUtils" ]
+			"class": "MediaWiki\\Extension\\Hermes\\Special\\SpecialHermesPages"
 		},
 		"HermesLanguages": {
 			"class": "MediaWiki\\Extension\\Hermes\\Special\\SpecialHermesLanguages",
 			"services": [ "LanguageNameUtils" ]
 		},
 		"HermesTranslate": {
-			"class": "MediaWiki\\Extension\\Hermes\\Special\\SpecialHermesTranslate",
-			"services": [ "LanguageNameUtils" ]
+			"class": "MediaWiki\\Extension\\Hermes\\Special\\SpecialHermesTranslate"
 		}
 	},
 	"ExtensionMessagesFiles": {

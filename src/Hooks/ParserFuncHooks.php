@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\Hermes\Hooks;
 use MediaWiki\Extension\Hermes\Exceptions\DuplicateTagException;
 use MediaWiki\Extension\Hermes\Exceptions\InvalidSectionException;
 use MediaWiki\Extension\Hermes\Exceptions\InvalidTagNameException;
+use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\Special\TagFormatter;
 use MediaWiki\Extension\Hermes\Tag;
@@ -16,7 +17,6 @@ use MediaWiki\Logging\ManualLogEntry;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Page\Hook\PageDeleteCompleteHook;
 use MediaWiki\Page\ProperPageIdentity;
-use MediaWiki\Parser\CoreParserFunctions;
 use MediaWiki\Parser\Hook\ParserAfterParseHook;
 use MediaWiki\Parser\Parser;
 use MediaWiki\Permissions\Authority;
@@ -126,7 +126,7 @@ class ParserFuncHooks implements
 				foreach ( $foreignConflicts as $lang => $langEntries ) {
 					foreach ( $langEntries as $tag => $pages ) {
 						$tagCode = $tagLink( $tag );
-						$langName = htmlspecialchars( CoreParserFunctions::language( $parser, $lang ) );
+						$langName = htmlspecialchars( Hermes::getAutonym( $lang ) ?: $lang );
 						$links = array_map( static fn ( PageInfo $p ) => $p->buildLink(), $pages );
 						$ambiguousItems[] = Html::rawElement(
 							'li', [], "{$tagCode} ({$langName}): " . implode( ', ', $links )

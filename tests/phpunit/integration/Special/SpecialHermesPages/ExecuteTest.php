@@ -67,7 +67,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		$this->setTags( 'frwiki', 'Creeper', [ 'creeper' ] );
 
 		$this->assertSame(
-			[ 'Creeper | French (fr) | creeper | ', 'Golem | German (de) | golem | monster (#Mobs)' ],
+			[ 'Creeper | Français (fr) | creeper | ', 'Golem | Deutsch (de) | golem | monster (#Mobs)' ],
 			$this->list()
 		);
 		preg_match_all( '/<th[^>]*>(.*?)<\/th>/s', $this->execute(), $headers );
@@ -89,11 +89,11 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		$this->setTags( 'dewiki', 'E', [ 'monster' ] );
 
 		$this->assertSame( [
-			'A | German (de) | [C]golem | ',
-			'B | German (de) | [C]golem | ',
-			'C | German (de) | x | monster',
-			'D | German (de) | y | monster',
-			'E | German (de) | monster | ',
+			'A | Deutsch (de) | [C]golem | ',
+			'B | Deutsch (de) | [C]golem | ',
+			'C | Deutsch (de) | x | monster',
+			'D | Deutsch (de) | y | monster',
+			'E | Deutsch (de) | monster | ',
 		], $this->list() );
 		$this->assertSame( [ 'A', 'B' ], $this->listedTitles( [ 'conflicts' => '1' ] ) );
 	}
@@ -140,14 +140,14 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		$this->setTags( 'dewiki', 'Iron_Golem', [ 'golem' ] );
 		$this->setTags( 'dewiki', 'Creeper', [ 'creeper' ] );
 
-		$this->assertSame( [ 'Iron Golem | German (de) | golem' ], $this->list( [ 'title-contains' => 'on Gol' ] ) );
+		$this->assertSame( [ 'Iron Golem | Deutsch (de) | golem' ], $this->list( [ 'title-contains' => 'on Gol' ] ) );
 	}
 
 	public function testFiltersByLanguage() {
 		$this->setTags( 'dewiki', 'A', [ 'golem' ] );
 		$this->setTags( 'frwiki', 'B', [ 'golem' ] );
 
-		$this->assertSame( [ 'B | French (fr) | golem' ], $this->list( [ 'language' => [ 'fr' ] ] ) );
+		$this->assertSame( [ 'B | Français (fr) | golem' ], $this->list( [ 'language' => [ 'fr' ] ] ) );
 	}
 
 	public function testLanguageSubpagePreselectsLanguage() {
@@ -159,7 +159,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		$this->assertStringContainsString( "name='language[]' value='fr' id='ooui-php-", $html );
 		$this->assertMatchesRegularExpression( "/value='fr' id='[^']*' checked='checked'/", $html );
 		preg_match( '/<tbody>(.*)<\/tbody>/s', $html, $body );
-		$this->assertSame( [ 'B | French (fr) | golem' ], self::rows( $body[ 1 ] ) );
+		$this->assertSame( [ 'B | Français (fr) | golem' ], self::rows( $body[ 1 ] ) );
 	}
 
 	public function testLanguageSubpageWithSlash() {
@@ -167,7 +167,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		$this->setTags( 'frwiki', 'B', [ 'golem' ] );
 
 		preg_match( '/<tbody>(.*)<\/tbody>/s', $this->execute( [], 'fr/' ), $body );
-		$this->assertSame( [ 'B | French (fr) | golem' ], self::rows( $body[ 1 ] ) );
+		$this->assertSame( [ 'B | Français (fr) | golem' ], self::rows( $body[ 1 ] ) );
 	}
 
 	public function testLanguageSubpageYieldsToForm() {
@@ -175,7 +175,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		$this->setTags( 'frwiki', 'B', [ 'golem' ] );
 
 		preg_match( '/<tbody>(.*)<\/tbody>/s', $this->execute( [ 'language' => [ 'de' ] ], 'fr' ), $body );
-		$this->assertSame( [ 'A | German (de) | golem' ], self::rows( $body[ 1 ] ) );
+		$this->assertSame( [ 'A | Deutsch (de) | golem' ], self::rows( $body[ 1 ] ) );
 	}
 
 	/** @return string[] Rows of a page's links table, with language names reduced to codes */

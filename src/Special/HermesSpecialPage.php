@@ -4,7 +4,6 @@ namespace MediaWiki\Extension\Hermes\Special;
 
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\HTMLForm\HTMLForm;
-use MediaWiki\Languages\LanguageNameUtils;
 use MediaWiki\Pager\TablePager;
 use MediaWiki\Parser\ParserOptions;
 use MediaWiki\SpecialPage\SpecialPage;
@@ -16,13 +15,6 @@ use MediaWiki\SpecialPage\SpecialPage;
 abstract class HermesSpecialPage extends SpecialPage {
 
 	private ?TagFormatter $formatter = null;
-
-	public function __construct(
-		string $name,
-		protected readonly LanguageNameUtils $languageNameUtils,
-	) {
-		parent::__construct( $name );
-	}
 
 	/** @inheritDoc */
 	public function execute( $par ) {
@@ -51,9 +43,7 @@ abstract class HermesSpecialPage extends SpecialPage {
 	abstract protected function showList( string $par ): void;
 
 	protected function getFormatter(): TagFormatter {
-		$this->formatter ??= new TagFormatter(
-			$this->getContext(), $this->getLinkRenderer(), $this->languageNameUtils
-		);
+		$this->formatter ??= new TagFormatter( $this->getContext(), $this->getLinkRenderer() );
 		return $this->formatter;
 	}
 

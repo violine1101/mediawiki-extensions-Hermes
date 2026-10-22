@@ -6,7 +6,6 @@ use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\TagLink;
 use MediaWiki\Html\Html;
-use MediaWiki\Languages\LanguageNameUtils;
 
 /**
  * Special:HermesPages[/<language>]: all pages in the wiki family with Hermes tags, filterable by title
@@ -14,8 +13,8 @@ use MediaWiki\Languages\LanguageNameUtils;
  */
 class SpecialHermesPages extends HermesSpecialPage {
 
-	public function __construct( LanguageNameUtils $languageNameUtils ) {
-		parent::__construct( 'HermesPages', $languageNameUtils );
+	public function __construct() {
+		parent::__construct( 'HermesPages' );
 	}
 
 	/** @inheritDoc */

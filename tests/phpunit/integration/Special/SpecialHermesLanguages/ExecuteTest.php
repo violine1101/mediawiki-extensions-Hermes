@@ -69,10 +69,10 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 		$this->assertSame( [
 			'(hermeslanguages-header-wiki) | (hermeslanguages-header-language) | (hermeslanguages-header-pages)',
-			'dewiki | German (de) | 2',
+			'dewiki | Deutsch (de) | 2',
 			"{$this->wiki} | English (en) | 0",
 			'Esperanto (eo) | 1',
-			'French (fr) | 0',
+			'Français (fr) | 0',
 		], self::rows( $this->execute() ) );
 	}
 

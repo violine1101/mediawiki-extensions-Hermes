@@ -86,7 +86,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 		preg_match_all( '/<th[^>]*>(.*?)<\/th>/s', $this->execute(), $headers );
 		$this->assertSame(
-			[ '(hermestags-header-tag)', 'German (de)', 'English (en)', 'French (fr)' ],
+			[ '(hermestags-header-tag)', 'Deutsch (de)', 'English (en)', 'Français (fr)' ],
 			array_map( static fn ( $header ) => trim( strip_tags( $header ) ), $headers[ 1 ] )
 		);
 	}

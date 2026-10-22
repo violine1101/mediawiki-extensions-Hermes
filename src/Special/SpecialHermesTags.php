@@ -6,7 +6,6 @@ use MediaWiki\Extension\Hermes\Exceptions\InvalidTagNameException;
 use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Html\Html;
-use MediaWiki\Languages\LanguageNameUtils;
 
 /**
  * Special:HermesTags: all Hermes tags in the wiki family, filterable by tag name and language, with
@@ -15,8 +14,8 @@ use MediaWiki\Languages\LanguageNameUtils;
  */
 class SpecialHermesTags extends HermesSpecialPage {
 
-	public function __construct( LanguageNameUtils $languageNameUtils ) {
-		parent::__construct( 'HermesTags', $languageNameUtils );
+	public function __construct() {
+		parent::__construct( 'HermesTags' );
 	}
 
 	/** @inheritDoc */

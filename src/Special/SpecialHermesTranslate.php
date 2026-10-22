@@ -9,7 +9,6 @@ use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Html\Html;
-use MediaWiki\Languages\LanguageNameUtils;
 use MediaWiki\Title\Title;
 
 /**
@@ -19,8 +18,8 @@ use MediaWiki\Title\Title;
  */
 class SpecialHermesTranslate extends HermesSpecialPage {
 
-	public function __construct( LanguageNameUtils $languageNameUtils ) {
-		parent::__construct( 'HermesTranslate', $languageNameUtils );
+	public function __construct() {
+		parent::__construct( 'HermesTranslate' );
 	}
 
 	/** @inheritDoc */
