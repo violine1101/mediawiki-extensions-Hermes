@@ -71,7 +71,12 @@ class OnParserAfterParseTest extends HermesIntegrationTestCase {
 			->getContentHolderText();
 
 		$this->assertStringContainsString( 'cdx-message--warning', $text );
-		$this->assertStringContainsString( '<code>conflict_details_tag</code>', $text );
+		$this->assertMatchesRegularExpression(
+			'#<a href="[^"]*Special:HermesTags/conflict_details_tag"[^>]*><code>conflict_details_tag</code></a>#', $text
+		);
+		$this->assertMatchesRegularExpression(
+			'#<a href="[^"]*Special:HermesPages/en/ParserFuncHooksConflictDetailsTest"[^>]*>#', $text
+		);
 		$this->assertMatchesRegularExpression(
 			'/<a href="[^"]*"[^>]*>ExistingConflictPageDetails<\/a>/',
 			$text
@@ -89,7 +94,12 @@ class OnParserAfterParseTest extends HermesIntegrationTestCase {
 			->getContentHolderText();
 
 		$this->assertStringContainsString( 'cdx-message--warning', $text );
-		$this->assertStringContainsString( '<code>ambiguous_details_tag</code>', $text );
+		$this->assertMatchesRegularExpression(
+			'#Special:HermesTags/ambiguous_details_tag"[^>]*><code>ambiguous_details_tag</code></a>#', $text
+		);
+		$this->assertMatchesRegularExpression(
+			'#<a href="[^"]*Special:HermesPages/en/ParserFuncHooksAmbiguousDetailsTest"[^>]*>#', $text
+		);
 		// Language codes are shown via their autonym (i.e. what {{#language:}} would produce),
 		// not the raw code.
 		$this->assertStringContainsString( 'Deutsch', $text );

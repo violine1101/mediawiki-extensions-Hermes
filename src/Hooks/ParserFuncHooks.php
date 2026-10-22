@@ -6,6 +6,7 @@ use MediaWiki\Extension\Hermes\Exceptions\DuplicateTagException;
 use MediaWiki\Extension\Hermes\Exceptions\InvalidSectionException;
 use MediaWiki\Extension\Hermes\Exceptions\InvalidTagNameException;
 use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\Special\TagFormatter;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Hook\LinksUpdateCompleteHook;
@@ -20,6 +21,8 @@ use MediaWiki\Parser\Hook\ParserAfterParseHook;
 use MediaWiki\Parser\Parser;
 use MediaWiki\Permissions\Authority;
 use MediaWiki\Revision\RevisionRecord;
+use MediaWiki\SpecialPage\SpecialPage;
+use Wikimedia\HtmlArmor\HtmlArmor;
 
 class ParserFuncHooks implements
 	LinksUpdateCompleteHook,
@@ -84,6 +87,13 @@ class ParserFuncHooks implements
 		$page = PageInfo::fromLocalPage( $parser->getPage() );
 
 		$conflicts = TagStore::findConflicts( $page, $tags );
+		$linkRenderer = $parser->getLinkRenderer();
+		$tagLink = static fn ( string $tag ) => $linkRenderer->makeKnownLink(
+			SpecialPage::getTitleFor( 'HermesTags', $tag ), new HtmlArmor( Html::element( 'code', [], $tag ) )
+		);
+		$detailsLink = $linkRenderer->makeKnownLink(
+			TagFormatter::detailsTitle( $page ), wfMessage( 'hermes-page-details' )->text()
+		);
 		$localConflicts = $conflicts[ $page->title->getLanguageCode() ] ?? [];
 		$foreignConflicts = $conflicts;
 		unset( $foreignConflicts[ $page->title->getLanguageCode() ] );
@@ -93,7 +103,7 @@ class ParserFuncHooks implements
 			if ( $showWarnings ) {
 				$conflictItems = [];
 				foreach ( $localConflicts as $tag => $pages ) {
-					$tagCode = Html::element( 'code', [], $tag );
+					$tagCode = $tagLink( $tag );
 					$pages = array_filter(
 						$pages,
 						static fn ( PageInfo $p ) => $p->title->wiki !== $page->title->wiki
@@ -103,7 +113,9 @@ class ParserFuncHooks implements
 					$conflictItems[] = Html::rawElement( 'li', [], "{$tagCode}: " . implode( ', ', $links ) );
 				}
 				$list = Html::rawElement( 'ul', [], implode( '', $conflictItems ) );
-				$text .= Html::warningBox( wfMessage( 'hermes-tag-conflict-warning' )->parse() . $list );
+				$text .= Html::warningBox(
+					wfMessage( 'hermes-tag-conflict-warning' )->rawParams( $detailsLink )->parse() . $list
+				);
 			}
 		}
 
@@ -113,7 +125,7 @@ class ParserFuncHooks implements
 				$ambiguousItems = [];
 				foreach ( $foreignConflicts as $lang => $langEntries ) {
 					foreach ( $langEntries as $tag => $pages ) {
-						$tagCode = Html::element( 'code', [], $tag );
+						$tagCode = $tagLink( $tag );
 						$langName = htmlspecialchars( CoreParserFunctions::language( $parser, $lang ) );
 						$links = array_map( static fn ( PageInfo $p ) => $p->buildLink(), $pages );
 						$ambiguousItems[] = Html::rawElement(
@@ -122,7 +134,9 @@ class ParserFuncHooks implements
 					}
 				}
 				$list = Html::rawElement( 'ul', [], implode( '', $ambiguousItems ) );
-				$text .= Html::warningBox( wfMessage( 'hermes-ambiguous-links-warning' )->parse() . $list );
+				$text .= Html::warningBox(
+					wfMessage( 'hermes-ambiguous-links-warning' )->rawParams( $detailsLink )->parse() . $list
+				);
 			}
 		}
 	}
