@@ -120,6 +120,39 @@ class FindConflictsTest extends HermesIntegrationTestCase {
 		$this->assertArrayNotHasKey( $page->title->getLanguageCode(), $conflicts );
 	}
 
+	public function testIgnoresTieBehindLowerPriority() {
+		$this->registerBaseLanguage( 'frwiki', 'fr' );
+		TagStore::setTagsForPage( $this->makePageInfo( 'frwiki', 'Main' ), Tag::fromArgs( [ 'golem' ] ) );
+		TagStore::setTagsForPage( $this->makePageInfo( 'frwiki', 'Other' ), Tag::fromArgs( [ 'other', 'golem' ] ) );
+
+		$newPage = $this->makePageInfo( 'frwiki', 'NewPage' );
+
+		$this->assertSame( [], TagStore::findConflicts( $newPage, Tag::fromArgs( [ 'new', 'golem' ] ) ) );
+	}
+
+	public function testAmbiguityAtLowestPriority() {
+		$this->registerBaseLanguage( 'dewiki', 'de' );
+		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'DeA' ), Tag::fromArgs( [ 'a', 'golem' ] ) );
+		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'DeB' ), Tag::fromArgs( [ 'b', 'golem' ] ) );
+
+		$page = $this->makePageInfo( WikiMap::getCurrentWikiId(), 'SomePage' );
+		$conflicts = TagStore::findConflicts( $page, Tag::fromArgs( [ 'golem' ] ) );
+
+		$this->assertSame( [ 'DeA', 'DeB' ], self::titlesOf( $conflicts[ 'de' ][ 'golem' ] ) );
+	}
+
+	public function testNoAmbiguityBehindEarlierTag() {
+		$this->registerBaseLanguage( 'dewiki', 'de' );
+		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'DeA' ), Tag::fromArgs( [ 'golem' ] ) );
+		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'DeB' ), Tag::fromArgs( [ 'golem' ] ) );
+		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'DeC' ), Tag::fromArgs( [ 'iron_golem' ] ) );
+
+		// Links to German resolve by 'iron_golem', unambiguously.
+		$page = $this->makePageInfo( WikiMap::getCurrentWikiId(), 'SomePage' );
+
+		$this->assertSame( [], TagStore::findConflicts( $page, Tag::fromArgs( [ 'iron_golem', 'golem' ] ) ) );
+	}
+
 	public function testEmptyWithoutClaimant() {
 		$this->registerBaseLanguage( 'dewiki', 'de' );
 		$page = $this->makePageInfo( 'dewiki', 'SomePage' );

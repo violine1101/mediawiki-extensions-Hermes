@@ -10,9 +10,9 @@ use MediaWiki\Pager\TablePager;
 use Wikimedia\Rdbms\Subquery;
 
 /**
- * Lists the pages of the whole wiki family that have Hermes tags, one column per fallback priority.
- * To make every column sortable, a subquery groups hermes_tags by page, with the tag, section and a
- * sort key per priority.
+ * Lists the pages of the whole wiki family that have Hermes tags, one column per fallback priority;
+ * tags in a conflict are highlighted. To make every column sortable, a subquery groups hermes_tags by
+ * page, with the tag, section, conflict flag and a sort key per priority.
  */
 class HermesPagesPager extends TablePager {
 
@@ -27,12 +27,14 @@ class HermesPagesPager extends TablePager {
 	 * @param TagFormatter $formatter
 	 * @param string $titleFilter Only base titles containing this, in DB key form, if not empty
 	 * @param string[] $languages Only these languages, or all if empty
+	 * @param bool $conflictsOnly Only pages with a tag in a conflict
 	 */
 	public function __construct(
 		IContextSource $context,
 		private readonly TagFormatter $formatter,
 		private readonly string $titleFilter,
 		private readonly array $languages,
+		private readonly bool $conflictsOnly,
 	) {
 		$this->mDb = Hermes::getDB();
 		$maxPriority = (int)$this->mDb->newSelectQueryBuilder()
@@ -56,7 +58,10 @@ class HermesPagesPager extends TablePager {
 		];
 		$query = TagQuery::joinLanguages( $dbr->newSelectQueryBuilder()->from( 'hermes_tags', 't' ) )
 			->select( $pageFields )
-			->select( [ 'language' => 'COALESCE(' . TagQuery::language() . ", '')" ] )
+			->select( [
+				'language' => 'COALESCE(' . TagQuery::language() . ", '')",
+				'has_conflict' => 'MAX(CASE WHEN ' . TagQuery::inConflict( $dbr ) . ' THEN 1 ELSE 0 END)',
+			] )
 			->groupBy( [ ...$pageFields, 'l.hl_language' ] )
 			->caller( __METHOD__ );
 		foreach ( $this->priorityFields as $priority ) {
@@ -64,6 +69,8 @@ class HermesPagesPager extends TablePager {
 			$query->select( [
 				"tag_$priority" => $tag,
 				"section_$priority" => "MAX(CASE WHEN t.ht_priority = $priority THEN t.ht_section END)",
+				"conflict_$priority" => "MAX(CASE WHEN t.ht_priority = $priority AND " . TagQuery::inConflict( $dbr )
+					. ' THEN 1 ELSE 0 END)',
 				"sort_$priority" => TagQuery::sortKey( $dbr, $tag ),
 			] );
 		}
@@ -79,6 +86,7 @@ class HermesPagesPager extends TablePager {
 			'tables' => [ 'pages' => new Subquery( $query->getSQL() ) ],
 			// The page as a whole, not one of its tags' sections.
 			'fields' => [ 'pages.*', 'ht_section' => 'NULL' ],
+			'conds' => $this->conflictsOnly ? [ 'has_conflict' => 1 ] : [],
 		];
 	}
 
@@ -133,6 +141,16 @@ class HermesPagesPager extends TablePager {
 			? Html::element( 'a', [ 'href' => $url, 'class' => 'extiw' ], $text )
 			: htmlspecialchars( $text );
 		return "$html ($sectionLink)";
+	}
+
+	/** @inheritDoc */
+	protected function getCellAttrs( $field, $value ) {
+		$attrs = parent::getCellAttrs( $field, $value );
+		$priority = $this->priorityFields[ $field ] ?? null;
+		if ( $priority !== null && $this->mCurrentRow->{"conflict_$priority"} ) {
+			$attrs[ 'class' ] .= ' ext-hermes-tag-conflict';
+		}
+		return $attrs;
 	}
 
 	/** @inheritDoc */

@@ -82,11 +82,12 @@ class TagStore {
 	/**
 	 * Finds all conflicts and ambiguities caused by $page's own tag set.
 	 *
-	 * Two or more pages are in conflict if they have set the same tag with the same priority
-	 * and are in the same language.
+	 * Links resolve to the pages setting a tag in a language with the lowest priority, so only a tie there
+	 * counts. In $page's own language, that's a conflict for each of its tags it's part of. In other
+	 * languages, its links are ambiguous if the first of its tags set there has such a tie.
 	 *
 	 * @param PageInfo $page The page $tags is being set on.
-	 * @param Tag[] $tags The tags to check, each with its assigned priority.
+	 * @param Tag[] $tags The tags to check, each with its assigned priority, in fallback order.
 	 * @return array<string, array<string, PageInfo[]>> language => tag name => conflicted pages
 	 */
 	public static function findConflicts( PageInfo $page, array $tags ): array {
@@ -94,22 +95,12 @@ class TagStore {
 			return [];
 		}
 
-		$dbr = Hermes::getDB();
-
-		$queryConditions = [];
-		foreach ( $tags as $tag ) {
-			$queryConditions[] = $dbr->makeList(
-				[ 'ht_tag' => $tag->name, 'ht_priority' => $tag->priority ],
-				LIST_AND
-			);
-		}
-
-		$rows = $dbr->select(
+		$rows = Hermes::getDB()->select(
 			self::TABLE_NAME,
 			'*',
 			[
-				$dbr->makeList( $queryConditions, LIST_OR ),
-				'NOT (' . $dbr->makeList(
+				'ht_tag' => array_map( static fn ( Tag $tag ) => $tag->name, $tags ),
+				'NOT (' . Hermes::getDB()->makeList(
 					[ 'ht_wiki' => $page->title->wiki, 'ht_page_id' => $page->getId() ],
 					LIST_AND
 				) . ')',
@@ -118,23 +109,36 @@ class TagStore {
 			[ 'ORDER BY' => 'ht_namespace_id ASC, ht_base_title ASC' ]
 		);
 
-		$conflicts = [];
+		$ownLanguage = $page->title->getLanguageCode();
+		// language => tag => priority => pages
+		$pages = [];
 		foreach ( $tags as $tag ) {
-			$conflicts[ $page->title->getLanguageCode() ][ $tag->name ][] = $page;
+			$pages[ $ownLanguage ][ $tag->name ][ $tag->priority ][] = $page;
 		}
 		foreach ( $rows as $row ) {
 			$rowPage = PageInfo::fromRow( $row );
-			$conflicts[ $rowPage->title->getLanguageCode() ][ $row->ht_tag ][] = $rowPage;
+			$pages[ $rowPage->title->getLanguageCode() ][ $row->ht_tag ][ (int)$row->ht_priority ][] = $rowPage;
 		}
 
-		foreach ( $conflicts as $lang => $langConflicts ) {
-			foreach ( $langConflicts as $tag => $pages ) {
-				if ( count( $pages ) <= 1 ) {
-					unset( $conflicts[ $lang ][ $tag ] );
+		$conflicts = [];
+		foreach ( $pages as $language => $byTag ) {
+			foreach ( $tags as $tag ) {
+				if ( !isset( $byTag[ $tag->name ] ) ) {
+					continue;
 				}
-			}
-			if ( !count( $conflicts[ $lang ] ) ) {
-				unset( $conflicts[ $lang ] );
+				$lowest = min( array_keys( $byTag[ $tag->name ] ) );
+				$tied = $byTag[ $tag->name ][ $lowest ];
+				if ( $language === $ownLanguage ) {
+					if ( $lowest === $tag->priority && count( $tied ) > 1 ) {
+						$conflicts[ $language ][ $tag->name ] = $tied;
+					}
+				} else {
+					// The first tag set in this language is the one links resolve by.
+					if ( count( $tied ) > 1 ) {
+						$conflicts[ $language ][ $tag->name ] = $tied;
+					}
+					break;
+				}
 			}
 		}
 		return $conflicts;

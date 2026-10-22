@@ -128,12 +128,30 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		$this->setTags( 'frwiki', 'D', [ 'golem' ] );
 		$this->setTags( 'frwiki', 'E', [ 'other', 'golem' ] );
 		$this->setTags( 'frwiki', 'F', [ 'golem' ] );
+		// A tie behind a lower priority: links resolve to that instead.
 		$this->setTags( 'frwiki', 'G', [ 'other_2', 'golem' ] );
 
 		$this->assertSame(
-			[ '!de' => '+A / B, *C', '!fr' => '+D / F, *+E / G' ],
+			[ '!de' => '+A / B, *C', '!fr' => '+D / F, *E / G' ],
 			self::table( $this->execute() )[ 'golem' ]
 		);
+	}
+
+	public function testConflictAtLowestPriority() {
+		$this->setTags( 'dewiki', 'A', [ 'other', 'golem' ] );
+		$this->setTags( 'dewiki', 'B', [ 'other_2', 'golem' ] );
+		$this->setTags( 'dewiki', 'C', [ 'x', 'y', 'golem' ] );
+
+		$this->assertSame( [ '!de' => '*+A / B, *C' ], self::table( $this->execute() )[ 'golem' ] );
+		$this->assertSame( [ 'golem' ], $this->listedTags( [ 'conflicts' => '1' ] ) );
+	}
+
+	public function testNoConflictBehindLowerPriority() {
+		$this->setTags( 'dewiki', 'A', [ 'golem' ] );
+		$this->setTags( 'dewiki', 'B', [ 'other', 'golem' ] );
+		$this->setTags( 'dewiki', 'C', [ 'other_2', 'golem' ] );
+
+		$this->assertSame( [], $this->listedTags( [ 'conflicts' => '1' ] ) );
 	}
 
 	public function testConflictsOnly() {
@@ -238,7 +256,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		$this->setTags( 'dewiki', 'F', [ 'golem_2' ] );
 
 		$this->assertSame(
-			[ 'de' => [ 'C', '*B', '!*+D<br>E' ], 'fr' => [ 'A', '', '' ] ],
+			[ 'de' => [ 'C', '*B', '*D<br>E' ], 'fr' => [ 'A', '', '' ] ],
 			self::details( $this->execute( [], 'golem' ) )
 		);
 	}

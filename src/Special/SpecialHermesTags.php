@@ -35,12 +35,7 @@ class SpecialHermesTags extends HermesSpecialPage {
 				'default' => $tagFilter,
 			],
 			'language' => $this->getLanguageField( $languages ),
-			'conflicts' => [
-				'type' => 'check',
-				'name' => 'conflicts',
-				'label-message' => 'hermestags-conflicts-only',
-				'default' => $conflictsOnly,
-			],
+			'conflicts' => $this->getConflictsField( $conflictsOnly ),
 		], 'hermestags-legend' );
 
 		$this->showPager( new HermesTagsPager(
@@ -72,13 +67,13 @@ class SpecialHermesTags extends HermesSpecialPage {
 		$formatter = $this->getFormatter();
 		$rows = [];
 		foreach ( $byLanguage as $language => $links ) {
+			$conflict = TagFormatter::conflictPriority( $links );
 			$cells = [];
 			foreach ( $priorities as $priority ) {
-				$pages = $links[ $priority ] ?? [];
 				$cells[] = Html::rawElement(
 					'td',
-					[ 'class' => count( $pages ) > 1 ? 'ext-hermes-tag-conflict' : null ],
-					$formatter->pages( $pages, Html::element( 'br' ) )
+					[ 'class' => $priority === $conflict ? 'ext-hermes-tag-conflict' : null ],
+					$formatter->pages( $links[ $priority ] ?? [], $priority === $conflict, Html::element( 'br' ) )
 				);
 			}
 			$rows[] = $formatter->languageRow( $language, $cells );

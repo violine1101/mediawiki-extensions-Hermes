@@ -38,7 +38,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	/**
 	 * Cell texts of a table's rows; fallbacks are marked "*", link targets "[T]", conflicts "[C]", the page's
-	 * own language "[O]".
+	 * own language "[O]", and line breaks are "; ".
 	 */
 	private static function rows( string $html ): array {
 		preg_match_all( '/<tr[^>]*>(.*?)<\/tr>/s', $html, $rows );
@@ -49,7 +49,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 					. ( str_contains( $cell[ 1 ], 'ext-hermes-own-language' ) ? '[O]' : '' )
 					. ( str_contains( $cell[ 1 ], 'ext-hermes-tag-conflict' ) ? '[C]' : '' )
 					. trim( preg_replace( '/[\s\x{a0}]+/u', ' ', strip_tags(
-						preg_replace( [ '/<i>/', '/<br>/' ], [ '*', ' / ' ], $cell[ 2 ] )
+						preg_replace( [ '/<i>/', '/<br>/' ], [ '*', '; ' ], $cell[ 2 ] )
 					) ) ),
 				$cells
 			) );
@@ -78,6 +78,24 @@ class ExecuteTest extends HermesIntegrationTestCase {
 			],
 			array_map( static fn ( $header ) => trim( strip_tags( $header ) ), $headers[ 1 ] )
 		);
+	}
+
+	public function testMarksConflicts() {
+		$this->setTags( 'dewiki', 'A', [ 'golem' ] );
+		$this->setTags( 'dewiki', 'B', [ 'golem' ] );
+		// A tie behind a lower priority (E): no conflict.
+		$this->setTags( 'dewiki', 'C', [ 'x', 'monster' ] );
+		$this->setTags( 'dewiki', 'D', [ 'y', 'monster' ] );
+		$this->setTags( 'dewiki', 'E', [ 'monster' ] );
+
+		$this->assertSame( [
+			'A | German (de) | [C]golem | ',
+			'B | German (de) | [C]golem | ',
+			'C | German (de) | x | monster',
+			'D | German (de) | y | monster',
+			'E | German (de) | monster | ',
+		], $this->list() );
+		$this->assertSame( [ 'A', 'B' ], $this->listedTitles( [ 'conflicts' => '1' ] ) );
 	}
 
 	/** @return string[] Titles of the listed pages */
@@ -185,8 +203,21 @@ class ExecuteTest extends HermesIntegrationTestCase {
 				'(hermespages-header-language) | iron_golem | golem',
 				'de | [C]Eisengolem / Golem | [O]*Golem',
 				'es |  | [T]*Golem',
-				'fr | [T]Golem de fer | [C]Golem / Golem 2',
+				// Links resolve by iron_golem, so golem isn't ambiguous.
+				'fr | [T]Golem de fer | Golem / Golem 2',
 			],
+			$this->links( 'de/Golem' )
+		);
+	}
+
+	public function testDetailsListPrioritiesOnLines() {
+		$this->setTags( 'dewiki', 'Golem', [ 'golem' ] );
+		$this->setTags( 'frwiki', 'A', [ 'x', 'golem' ] );
+		$this->setTags( 'frwiki', 'B', [ 'y', 'golem' ] );
+		$this->setTags( 'frwiki', 'C', [ 'x', 'y', 'golem' ] );
+
+		$this->assertSame(
+			[ '(hermespages-header-language) | golem', 'de | [O]Golem', 'fr | [T][C]*A / B ; *C' ],
 			$this->links( 'de/Golem' )
 		);
 	}

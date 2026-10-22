@@ -51,19 +51,20 @@ final class TagFormatter {
 	}
 
 	/**
-	 * Links to pages setting a tag with the same priority: in bold if there are several (a conflict),
-	 * in italics if they're fallbacks.
+	 * Links to pages setting a tag with the same priority: in bold if they're in conflict, in italics if
+	 * they're fallbacks.
 	 *
 	 * @param TagLink[] $links
+	 * @param bool $conflict
 	 * @param string $separator HTML between the pages
 	 * @return string HTML
 	 */
-	public function pages( array $links, string $separator = ' / ' ): string {
+	public function pages( array $links, bool $conflict = false, string $separator = ' / ' ): string {
 		if ( !$links ) {
 			return '';
 		}
 		$html = implode( $separator, array_map( fn ( TagLink $link ) => $this->pageLink( $link->page ), $links ) );
-		if ( count( $links ) > 1 ) {
+		if ( $conflict ) {
 			$html = Html::rawElement( 'b', [], $html );
 		}
 		if ( $links[ 0 ]->tag->priority > 0 ) {
@@ -73,11 +74,39 @@ final class TagFormatter {
 	}
 
 	/**
+	 * pages() for each priority of a tag in one language, conflicts in bold.
+	 *
 	 * @param array<int, TagLink[]> $byPriority
-	 * @return bool Whether several pages share a priority
+	 * @param bool $resolved False if links don't resolve here (an earlier tag in a fallback chain wins),
+	 *   so there's no conflict either
+	 * @return string[] HTML
 	 */
+	public function priorityLines( array $byPriority, bool $resolved = true ): array {
+		$conflict = $resolved ? self::conflictPriority( $byPriority ) : null;
+		$lines = [];
+		foreach ( $byPriority as $priority => $links ) {
+			$lines[] = $this->pages( $links, $priority === $conflict );
+		}
+		return $lines;
+	}
+
+	/**
+	 * Links resolve to the pages with the lowest priority, so only a tie there is a conflict.
+	 *
+	 * @param array<int, TagLink[]> $byPriority
+	 * @return int|null The conflicting priority, if any
+	 */
+	public static function conflictPriority( array $byPriority ): ?int {
+		if ( !$byPriority ) {
+			return null;
+		}
+		$lowest = min( array_keys( $byPriority ) );
+		return count( $byPriority[ $lowest ] ) > 1 ? $lowest : null;
+	}
+
+	/** @param array<int, TagLink[]> $byPriority */
 	public static function hasConflict( array $byPriority ): bool {
-		return $byPriority && max( array_map( 'count', $byPriority ) ) > 1;
+		return self::conflictPriority( $byPriority ) !== null;
 	}
 
 	/** "Name (code)" in the user's language, or just the code if the name is unknown. */

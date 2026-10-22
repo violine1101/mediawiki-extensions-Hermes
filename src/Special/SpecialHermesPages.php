@@ -23,6 +23,7 @@ class SpecialHermesPages extends HermesSpecialPage {
 		$titleFilter = strtr( trim( $this->getRequest()->getText( 'title-contains' ) ), ' ', '_' );
 		$parLanguage = self::parseLanguage( $par );
 		$languages = $this->getLanguageFilter( $parLanguage !== null ? [ $parLanguage ] : [] );
+		$conflictsOnly = $this->getRequest()->getBool( 'conflicts' );
 
 		$this->showForm( [
 			'title-contains' => [
@@ -32,10 +33,11 @@ class SpecialHermesPages extends HermesSpecialPage {
 				'default' => strtr( $titleFilter, '_', ' ' ),
 			],
 			'language' => $this->getLanguageField( $languages ),
+			'conflicts' => $this->getConflictsField( $conflictsOnly ),
 		], 'hermespages-legend' );
 
 		$this->showPager( new HermesPagesPager(
-			$this->getContext(), $this->getFormatter(), $titleFilter, $languages
+			$this->getContext(), $this->getFormatter(), $titleFilter, $languages, $conflictsOnly
 		) );
 	}
 
@@ -72,7 +74,8 @@ class SpecialHermesPages extends HermesSpecialPage {
 	/**
 	 * One row per language, one column per tag of the page in fallback order, each cell listing the pages
 	 * with that tag. In other languages, the cell the language link is taken from (the first non-empty one)
-	 * is marked; the page's own language is marked as such, except where it conflicts with the page.
+	 * is marked, and only it can be in conflict; the page's own language is marked as such, except where
+	 * it's in conflict.
 	 *
 	 * @param TagLink[] $tags The page's tags
 	 * @param string $ownLanguage
@@ -104,19 +107,19 @@ class SpecialHermesPages extends HermesSpecialPage {
 			foreach ( $chain as $tag ) {
 				$byPriority = $links[ $tag ][ $language ] ?? [];
 				$classes = [];
+				// In other languages, only the cell the link comes from can be ambiguous.
+				$resolved = $isOwn;
 				if ( $byPriority && !$linked ) {
 					$linked = true;
+					$resolved = true;
 					$classes[] = 'ext-hermes-link-target';
 				}
-				if ( TagFormatter::hasConflict( $byPriority ) ) {
+				if ( $resolved && TagFormatter::hasConflict( $byPriority ) ) {
 					$classes[] = 'ext-hermes-tag-conflict';
 				} elseif ( $isOwn ) {
 					$classes[] = 'ext-hermes-own-language';
 				}
-				$lines = array_map(
-					static fn ( array $pages ) => $formatter->pages( $pages, Html::element( 'br' ) ),
-					$byPriority
-				);
+				$lines = $formatter->priorityLines( $byPriority, $resolved );
 				$cells[] = Html::rawElement( 'td', [ 'class' => $classes ], implode( Html::element( 'br' ), $lines ) );
 			}
 			$rows[] = $formatter->languageRow( $language, $cells );

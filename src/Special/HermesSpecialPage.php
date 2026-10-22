@@ -83,6 +83,16 @@ abstract class HermesSpecialPage extends SpecialPage {
 		];
 	}
 
+	/** @return array HTMLForm field for the "only conflicts" filter (`conflicts=1`) */
+	protected function getConflictsField( bool $checked ): array {
+		return [
+			'type' => 'check',
+			'name' => 'conflicts',
+			'label-message' => 'hermestags-conflicts-only',
+			'default' => $checked,
+		];
+	}
+
 	/**
 	 * @param array $fields
 	 * @param string|null $legendMsg Null for no frame around the form

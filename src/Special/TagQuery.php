@@ -40,18 +40,28 @@ final class TagQuery {
 		return $dbr->expr( $field, IExpression::LIKE, new LikeValue( $dbr->anyString(), $text, $dbr->anyString() ) );
 	}
 
-	/** Rows whose tag another page sets with the same priority in the same language. */
+	/**
+	 * Rows in a conflict: another page sets their tag with the same priority in the same language, and no
+	 * page sets it there with a lower priority (which links would resolve to instead).
+	 */
 	public static function inConflict( IReadableDatabase $dbr ): string {
-		$other = self::joinLanguages( $dbr->newSelectQueryBuilder()->from( 'hermes_tags', 'o' ), 'o', 'ol' )
+		$sameTag = static fn ( string $tags, string $languages ) => [
+			"$tags.ht_tag = t.ht_tag",
+			self::language( $tags, $languages ) . ' = ' . self::language(),
+		];
+		$tie = self::joinLanguages( $dbr->newSelectQueryBuilder()->from( 'hermes_tags', 'o' ), 'o', 'ol' )
 			->select( '1' )
 			->where( [
-				'o.ht_tag = t.ht_tag',
+				...$sameTag( 'o', 'ol' ),
 				'o.ht_priority = t.ht_priority',
-				self::language( 'o', 'ol' ) . ' = ' . self::language(),
 				'NOT (o.ht_wiki = t.ht_wiki AND o.ht_page_id = t.ht_page_id)',
 			] )
 			->caller( __METHOD__ );
-		return 'EXISTS(' . $other->getSQL() . ')';
+		$lower = self::joinLanguages( $dbr->newSelectQueryBuilder()->from( 'hermes_tags', 'b' ), 'b', 'bl' )
+			->select( '1' )
+			->where( [ ...$sameTag( 'b', 'bl' ), 'b.ht_priority < t.ht_priority' ] )
+			->caller( __METHOD__ );
+		return '(EXISTS(' . $tie->getSQL() . ') AND NOT EXISTS(' . $lower->getSQL() . '))';
 	}
 
 	/**

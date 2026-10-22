@@ -114,8 +114,8 @@ class HermesTagsPager extends TablePager {
 		}
 
 		$lines = array_map(
-			fn ( array $pages ) => Html::rawElement( 'li', [], $this->formatter->pages( $pages ) ),
-			$this->getCell( $name )
+			static fn ( string $line ) => Html::rawElement( 'li', [], $line ),
+			$this->formatter->priorityLines( $this->getCell( $name ) )
 		);
 		return $lines ? Html::rawElement( 'ul', [ 'class' => 'ext-hermes-tag-pages' ], implode( '', $lines ) ) : '';
 	}
