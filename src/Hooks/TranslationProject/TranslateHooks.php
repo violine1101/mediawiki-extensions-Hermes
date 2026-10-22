@@ -46,6 +46,7 @@ class TranslateHooks implements EditFormPreloadTextHook, SkinTemplateNavigation_
 		if ( SpecialHermesTranslate::getUntranslatedProjects( $page ) ) {
 			$links['actions']['hermes-translate'] = [
 				'text' => $sktemplate->msg( 'hermes-translate-action' )->text(),
+				'title' => $sktemplate->msg( 'hermes-translate-action-tooltip' )->text(),
 				'href' => SpecialPage::getTitleFor( 'HermesTranslate', $title->getPrefixedText() )->getLocalURL(),
 			];
 		}

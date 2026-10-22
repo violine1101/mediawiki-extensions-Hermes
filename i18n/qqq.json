@@ -53,6 +53,7 @@
 	"hermestranslate-page": "Label for the field on [[Special:HermesTranslate]] for the page to translate.\n{{Identical|Page}}",
 	"hermestranslate-language": "Label for the dropdown on [[Special:HermesTranslate]] for the translation project to translate into.",
 	"hermestranslate-submit": "Submit button on [[Special:HermesTranslate]], opening the editor for the new translation.\n{{Identical|Translate}}",
+	"hermes-translate-action-tooltip": "Tooltip of the {{msg-mw|hermes-translate-action}} action in the page actions menu.",
 	"hermestranslate-no-base": "Error on [[Special:HermesTranslate]] when the page to translate does not exist, or is in a namespace without translation projects.\n* $1 - the page name as entered",
 	"hermestranslate-no-projects": "Shown on [[Special:HermesTranslate]] instead of the form when the wiki has no translation projects.",
 	"hermestranslate-translation": "Label for the field on [[Special:HermesTranslate]] for the title of the translation, without the translation project prefix.",
