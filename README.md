@@ -1,5 +1,7 @@
 # Hermes MediaWiki extension
 
+🚧 **WORK IN PROGRESS – DO NOT USE IN PRODUCTION** 🚧
+
 This is a lightweight and simple extension that automates interlanguage links (the "In other
 languages" box) across a family of wikis and adds support for translation projects.
 
@@ -19,6 +21,6 @@ language, and messaging (among others). This extension aims to bridge different 
 features messaging between different wikis using shared data.
 
 ## AI disclosure
-This extension is currently still in the prototyping phase. I'm using Claude for automating some tasks; in particular, most tests are fully auto-generated.
+This extension is currently still in the prototyping phase. I'm using Claude for code generation while I flesh out the features of this extension. After code has been generated, I verify that it makes sense and works as it should. However, most tests are fully auto-generated and not verified.
 
-For the rest of the codebase: Some parts I've written myself, and those that Claude generated I've reviewed, rewritten, and/or refactored to ensure that the code is high quality and does in fact do what it should.
+Before the extension leaves the prototyping phase, all code will again be manually reviewed, rewritten, and/or refactored by me to ensure that the code is high quality and does in fact do what it should.

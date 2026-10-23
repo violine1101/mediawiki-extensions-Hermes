@@ -2,23 +2,16 @@ Phase 1: DONE
 
 Phase 2: Skipped
 
-Phase 3: Links in translation projects
-- Project-internal links: e.g. on `!xx:` translation project pages, `[[foo]]` should turn into `[[!xx:foo]]` and `[[!:bar]]` should turn into `[[bar]]`
-  - With namespaces: `[[Namespace:Foo]]` -> `[[Namespace:!xx:Foo]]`, `[[Namespace:!:Foo]]` -> `[[Namespace:Foo]]`
-- Links should link to the main article if the linked page exists in the translation project, but does outside (and offer a link to translate)
-- Similar for templates, though `{{foo}}` should always resolve to `[[Template:Foo]]` if `[[Template:!xx:Foo]]` does not exist
-- Also categories: in project `!xx:`, `[[Category:Foo]]` should become `[[Category:!xx:Foo]]`
-- In translation projects, allow using namespace from the language of the translation project in addition to the wiki's base language. E.g. for Esperanto, `[[Kategorio:Foo]]` should resolve to `[[Category:!eo:Foo]]`.
-- Proper link display in categories (might be solved together with the two points above)
-  - Also proper ordering (sort key) within categories (without overwriting custom sortkeys in `[[Category:Foo|sotrkey]]`)
+Phase 3: Links in translation projects - DONE
 
-Phase 4: User Interface
-- Special pages for managing tags and languages, creating a translated page
-- Special:WantedPages has lots of translation project pages, would be good to add a checkmark there or similar to ignore those
-- Maybe something like {{#hermes-link:tag|lang=es}} / {{#hermes-query:}} for generating hermes links to an article with a specific tag?
-- In preferences, proper selection of display language (per translation project + wiki) - especially important if user prefs use a shared table across wikis.
-  - Make configurable if you always want to follow default, or always default back to one particular language (maybe even a preference list of which languages you speak).
-- Side quest: Rename "order" to something like "fallback priority" everywhere
+Phase 4: User Interface - DONE
+
+Phase 4.1: Fix language conflicts
+- When a language exists both as a translation project and as a wiki, the extension currently breaks
+- It'd be great if the extension had built-in support for migrating a translation project to a new wiki (and subsequently wouldn't break if a new wiki has the same language as a translation project)
+- Maybe support for exporting all pages of a translation project?
+- Special:HermesLanguages: add support for removing translation projects in Special:HermesLanguages, auto-deleting all pages. Only works with mass delete rights
+- On Hermes special pages, show all pages, nut just those tagged with `{{#hermes:}}`
 
 Phase 5: Improved Cache Handling
 - Currently caching doesn't cause issues in my dev environment
