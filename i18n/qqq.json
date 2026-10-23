@@ -66,5 +66,13 @@
 	"wantedtranslations": "{{doc-special|WantedTranslations}}",
 	"wantedcategorytranslations": "{{doc-special|WantedCategoryTranslations}}",
 	"hermeswanted-project": "Label of the translation project filter on [[Special:WantedTranslations]] and [[Special:WantedCategoryTranslations]].",
-	"hermeswanted-all": "Option of the translation project filter on [[Special:WantedTranslations]] and [[Special:WantedCategoryTranslations]] showing all projects.\n{{Identical|All}}"
+	"hermeswanted-all": "Option of the translation project filter on [[Special:WantedTranslations]] and [[Special:WantedCategoryTranslations]] showing all projects.\n{{Identical|All}}",
+	"hermes-pref-displaylanguage": "Label of the radio buttons choosing the interface language in [[Special:Preferences]].",
+	"hermes-pref-displaylanguage-default": "Radio option: show the interface in the content language of the page (the wiki's language, or a translation project's language on its pages).",
+	"hermes-pref-displaylanguage-base": "Radio option: show the interface in the wiki's main language, also on translation project pages.",
+	"hermes-pref-displaylanguage-spoken": "Radio option: show the interface in the page's language if it is in the user's list of spoken languages, otherwise in the first language of that list.",
+	"hermes-pref-displaylanguage-spoken-label": "Label of the list of languages the user speaks besides their preferred language.",
+	"hermes-pref-displaylanguage-spoken-help": "Help text of the list of languages the user speaks besides their preferred language.",
+	"hermes-pref-displaylanguage-preferred": "Label of the dropdown choosing the user's preferred interface language (preselected: the wiki's main language), used where the user doesn't speak the language of the current page.",
+	"hermes-pref-variant": "Label of the radio buttons choosing the variant (e.g. script) in which content and interface in a language with variants are shown, one per language of the wiki family that has variants, in [[Special:Preferences]].\n\nParameters:\n* $1 - the language, as \"autonym (code)\""
 }

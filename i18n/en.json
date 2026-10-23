@@ -66,5 +66,13 @@
 	"wantedtranslations": "Wanted translations",
 	"wantedcategorytranslations": "Wanted category translations",
 	"hermeswanted-project": "Translation project:",
-	"hermeswanted-all": "All"
+	"hermeswanted-all": "All",
+	"hermes-pref-displaylanguage": "Show the interface in:",
+	"hermes-pref-displaylanguage-default": "The language of the current page",
+	"hermes-pref-displaylanguage-base": "The main language of the wiki",
+	"hermes-pref-displaylanguage-spoken": "The language(s) I speak",
+	"hermes-pref-displaylanguage-spoken-label": "Other languages I speak:",
+	"hermes-pref-displaylanguage-spoken-help": "Pages and wikis in these languages display the interface in their language. Otherwise, your preferred language is used.",
+	"hermes-pref-displaylanguage-preferred": "Preferred language:",
+	"hermes-pref-variant": "Preferred language variant of $1:"
 }

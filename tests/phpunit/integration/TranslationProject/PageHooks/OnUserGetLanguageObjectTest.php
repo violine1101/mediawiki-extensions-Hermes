@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\Hermes\Tests\TranslationProject\PageHooks;
 
 use MediaWiki\Context\RequestContext;
+use MediaWiki\Extension\Hermes\DisplayLanguage;
 use MediaWiki\Extension\Hermes\Hooks\TranslationProject\PageHooks;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
@@ -34,14 +35,27 @@ class OnUserGetLanguageObjectTest extends HermesIntegrationTestCase {
 		$this->assertSame( 'eo', $code );
 	}
 
-	public function testUnchangedForOrdinaryTitle() {
+	public function testBaseLanguageForOrdinaryTitle() {
+		$this->overrideConfigValue( 'LanguageCode', 'en' );
 		$context = new RequestContext();
 		$context->setTitle( Title::newFromText( 'Foo' ) );
 		$user = $this->getTestUser()->getUser();
-		$code = 'en';
+		$code = 'fr';
 		( new PageHooks() )->onUserGetLanguageObject( $user, $code, $context );
 
 		$this->assertSame( 'en', $code );
+	}
+
+	public function testUsesDisplayLanguagePreference() {
+		$context = new RequestContext();
+		$context->setTitle( Title::newFromText( '!eo:Foo' ) );
+		$user = $this->getTestUser()->getUser();
+		$this->getServiceContainer()->getUserOptionsManager()
+			->setOption( $user, DisplayLanguage::OPTION, DisplayLanguage::BASE );
+		$code = 'fr';
+		( new PageHooks() )->onUserGetLanguageObject( $user, $code, $context );
+
+		$this->assertSame( LanguageStore::getLocalBaseLanguage(), $code );
 	}
 
 	public function testRespectsExplicitUselang() {

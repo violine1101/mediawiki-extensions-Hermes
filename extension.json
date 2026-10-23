@@ -30,6 +30,11 @@
 			"value": true
 		}
 	},
+	"DefaultUserOptions": {
+		"hermes-displaylanguage": "default",
+		"hermes-displaylanguage-preferred": "",
+		"hermes-displaylanguage-spoken": ""
+	},
 	"Hooks": {
 		"LoadExtensionSchemaUpdates": "init",
 		"UnitTestsAfterDatabaseSetup": "init",
@@ -38,6 +43,10 @@
 		"PageDeleteComplete": "parserfunc",
 		"ParserFirstCallInit": "parserfunc",
 		"SidebarBeforeOutput": "languagelinks",
+		"GetPreferences": "preferences",
+		"PreferencesFormPreSave": "preferences",
+		"LoadUserOptions": "preferences",
+		"SaveUserOptions": "preferences",
 		"InternalParseBeforeLinks": "translationproject-link",
 		"OutputPageRenderCategoryLink": "translationproject-category",
 		"GetDefaultSortkey": "translationproject-category",
@@ -78,6 +87,10 @@
 		"languagelinks": {
 			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\LanguageLinkHooks",
 			"services": [ "MainConfig", "LanguageNameUtils", "LanguageFactory" ]
+		},
+		"preferences": {
+			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\PreferencesHooks",
+			"services": [ "LanguageNameUtils", "UserOptionsManager", "LanguageConverterFactory" ]
 		},
 		"translationproject-page": {
 			"class": "MediaWiki\\Extension\\Hermes\\Hooks\\TranslationProject\\PageHooks"
