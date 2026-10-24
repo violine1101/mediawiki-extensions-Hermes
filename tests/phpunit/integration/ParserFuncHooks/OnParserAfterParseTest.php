@@ -18,8 +18,8 @@ class OnParserAfterParseTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->registerBaseLanguage( 'dewiki', 'de' );
-		$this->registerWiki( 'dewiki', 'https://de.example.org/wiki/$1' );
+		$this->activateLocalBaseLanguage();
+		$this->registerBaseLanguage( 'dewiki', 'de', url: 'https://de.example.org/wiki/$1' );
 	}
 
 	private function parse( string $wikitext, string $titleText = 'OnParserAfterParseTest' ): ParserOutput {

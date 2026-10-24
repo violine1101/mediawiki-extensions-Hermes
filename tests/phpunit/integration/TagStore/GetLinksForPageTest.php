@@ -15,6 +15,7 @@ class GetLinksForPageTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
+		$this->activateLocalBaseLanguage();
 		$this->registerBaseLanguage( 'dewiki', 'de' );
 	}
 
@@ -93,5 +94,35 @@ class GetLinksForPageTest extends HermesIntegrationTestCase {
 		// deA and deB tie on tag + priority; the alphabetically-first title wins
 		// deterministically, rather than depending on DB scan order.
 		$this->assertSame( 'ATitle', $links[ 'de' ]->page->title->baseTitle );
+	}
+
+	public function testSkipsInactivePages() {
+		$wiki = WikiMap::getCurrentWikiId();
+		$this->registerProjectLanguage( $wiki, 'eo', false );
+		$this->registerProjectLanguage( $wiki, 'de', false );
+		$en = $this->makePageInfo( $wiki );
+		$de = $this->makePageInfo( 'dewiki' );
+
+		TagStore::setTagsForPage( $en, Tag::fromArgs( [ 'shared_tag' ] ) );
+		TagStore::setTagsForPage( $this->makePageInfo( $wiki, '!eo:Foo' ), Tag::fromArgs( [ 'shared_tag' ] ) );
+		TagStore::setTagsForPage( $this->makePageInfo( $wiki, '!de:Foo' ), Tag::fromArgs( [ 'shared_tag' ] ) );
+		TagStore::setTagsForPage( $de, Tag::fromArgs( [ 'other_tag', 'shared_tag' ] ) );
+
+		$links = TagStore::getLinksForPage( $en );
+
+		$this->assertSame( [ 'de' ], array_keys( $links ) );
+		$this->assertSame( $de->getId(), $links[ 'de' ]->page->getId() );
+	}
+
+	public function testInactivePageLinksToActivePages() {
+		$wiki = WikiMap::getCurrentWikiId();
+		$this->registerProjectLanguage( $wiki, 'de', false );
+		$inactive = $this->makePageInfo( $wiki, '!de:Foo' );
+
+		TagStore::setTagsForPage( $inactive, Tag::fromArgs( [ 'shared_tag' ] ) );
+		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki' ), Tag::fromArgs( [ 'shared_tag' ] ) );
+		TagStore::setTagsForPage( $this->makePageInfo( $wiki ), Tag::fromArgs( [ 'shared_tag' ] ) );
+
+		$this->assertSame( [ 'en' ], array_keys( TagStore::getLinksForPage( $inactive ) ) );
 	}
 }

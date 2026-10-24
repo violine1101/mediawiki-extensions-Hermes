@@ -18,6 +18,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
+		$this->activateLocalBaseLanguage();
 		$this->registerBaseLanguage( 'dewiki', 'de' );
 		$this->registerBaseLanguage( 'frwiki', 'fr' );
 	}
@@ -325,5 +326,13 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	public function testEmpty() {
 		$this->assertStringContainsString( '(hermestags-empty)', $this->execute() );
+	}
+
+	public function testSkipsInactivePages() {
+		$this->registerProjectLanguage( WikiMap::getCurrentWikiId(), 'de', false );
+		$this->setTags( 'dewiki', 'Golem_de', [ 'golem' ] );
+		$this->setTags( WikiMap::getCurrentWikiId(), '!de:Golem', [ 'golem', 'other' ] );
+
+		$this->assertSame( [ 'golem' => [ 'de' => 'Golem de' ] ], self::table( $this->execute() ) );
 	}
 }

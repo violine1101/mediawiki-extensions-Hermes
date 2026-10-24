@@ -6,7 +6,6 @@ use MediaWiki\Context\RequestContext;
 use MediaWiki\Extension\Hermes\Hooks\InitHooks;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
-use MediaWiki\Extension\Hermes\WikiStore;
 use MediaWiki\Title\Title;
 use MediaWiki\WikiMap\WikiMap;
 
@@ -31,10 +30,10 @@ class OnBeforeInitializeTest extends HermesIntegrationTestCase {
 			$title, null, $context->getOutput(), $user, $context->getRequest(), null
 		);
 
-		$this->assertSame( WikiMap::getCurrentWikiId(), LanguageStore::getWikiForLanguage( 'de' ) );
+		$this->assertSame( 'de', LanguageStore::getBaseLanguageForWiki( WikiMap::getCurrentWikiId() ) );
 		$this->assertSame(
 			'https://example.org/wiki/$1',
-			WikiStore::getUrlTemplate( WikiMap::getCurrentWikiId() )
+			LanguageStore::getUrlTemplate( WikiMap::getCurrentWikiId() )
 		);
 	}
 }

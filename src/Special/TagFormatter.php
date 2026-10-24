@@ -116,7 +116,7 @@ final class TagFormatter {
 
 	/** @return array<string, string> Options for a language multiselect, label => code */
 	public function languageOptions(): array {
-		$codes = array_keys( LanguageStore::getLanguages() );
+		$codes = array_keys( LanguageStore::getActiveLanguages() );
 		sort( $codes );
 		$options = [];
 		foreach ( $codes as $code ) {

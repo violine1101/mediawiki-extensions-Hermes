@@ -38,7 +38,7 @@ class HermesTagsPager extends TablePager {
 		private readonly array $languages,
 		private readonly bool $conflictsOnly,
 	) {
-		$columns = $languages ?: array_keys( LanguageStore::getLanguages() );
+		$columns = $languages ?: array_keys( LanguageStore::getActiveLanguages() );
 		sort( $columns );
 		foreach ( $columns as $language ) {
 			$this->languageFields[ "lang-$language" ] = $language;

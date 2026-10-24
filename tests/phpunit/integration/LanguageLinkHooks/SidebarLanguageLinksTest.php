@@ -22,10 +22,8 @@ class SidebarLanguageLinksTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->registerBaseLanguage( 'dewiki', 'de' );
-		$this->registerWiki( 'dewiki', 'https://de.example.org/wiki/$1' );
-		$this->registerProjectLanguage( 'trwiki', 'eo' );
-		$this->registerWiki( 'trwiki', 'https://translate.example.org/wiki/$1' );
+		$this->registerBaseLanguage( 'dewiki', 'de', url: 'https://de.example.org/wiki/$1' );
+		$this->registerProjectLanguage( 'trwiki', 'eo', url: 'https://translate.example.org/wiki/$1' );
 
 		$page = $this->getExistingTestPage( 'SidebarLanguageLinksTest' );
 		$this->editPage( $page, '{{#hermes:stone}}' );

@@ -64,7 +64,7 @@ class SpecialHermesPages extends HermesSpecialPage {
 
 	/** The registered language of a "<language>" or "<language>/" sub-page, if it is one. */
 	private static function parseLanguage( string $par ): ?string {
-		if ( !preg_match( '#^([^/]+)/?$#', $par, $m ) || !isset( LanguageStore::getLanguages()[ $m[ 1 ] ] ) ) {
+		if ( !preg_match( '#^([^/]+)/?$#', $par, $m ) || !isset( LanguageStore::getActiveLanguages()[ $m[ 1 ] ] ) ) {
 			return null;
 		}
 		return $m[ 1 ];

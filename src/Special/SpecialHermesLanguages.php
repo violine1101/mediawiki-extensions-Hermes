@@ -5,7 +5,6 @@ namespace MediaWiki\Extension\Hermes\Special;
 use MediaWiki\Extension\Hermes\Exceptions\LanguageConflictException;
 use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\LanguageStore;
-use MediaWiki\Extension\Hermes\WikiStore;
 use MediaWiki\Html\Html;
 use MediaWiki\Languages\LanguageNameUtils;
 use MediaWiki\SpecialPage\SpecialPage;
@@ -15,9 +14,9 @@ use OOUI\ButtonInputWidget;
 use OOUI\DropdownInputWidget;
 
 /**
- * Special:HermesLanguages: the wikis of the family with their languages, and how many pages with Hermes tags
- * each language has. Users with the hermes-add-translation-project right can add translation projects to
- * this wiki.
+ * Special:HermesLanguages: the wikis of the family with their languages (marking inactive ones), and how many
+ * pages with Hermes tags each language has there. Users with the hermes-add-translation-project right can add
+ * translation projects to this wiki.
  */
 class SpecialHermesLanguages extends HermesSpecialPage {
 
@@ -50,8 +49,10 @@ class SpecialHermesLanguages extends HermesSpecialPage {
 		$formatter = $this->getFormatter();
 		$counts = TagQuery::countPages( Hermes::getDB() );
 		$byWiki = [];
-		foreach ( LanguageStore::getLanguages() as $code => [ 'wiki' => $wiki, 'isBase' => $isBase ] ) {
-			$byWiki[ $wiki ][ $isBase ? '' : $code ] = $code;
+		foreach ( LanguageStore::getLanguages() as $code => $registrations ) {
+			foreach ( $registrations as $wiki => $language ) {
+				$byWiki[ $wiki ][ $language->isBase ? '' : $code ] = $language;
+			}
 		}
 		ksort( $byWiki );
 
@@ -68,14 +69,23 @@ class SpecialHermesLanguages extends HermesSpecialPage {
 				[ 'scope' => 'rowgroup', 'rowspan' => count( $languages ) + (int)$addRow ],
 				$this->wikiLink( $wiki )
 			);
-			foreach ( $languages as $key => $code ) {
+			foreach ( $languages as $key => $language ) {
+				$code = $language->code;
+				$label = $formatter->languageLabel( $code );
+				if ( !$language->isActive ) {
+					$label .= ' ' . $this->msg( 'hermeslanguages-inactive' )->text();
+				}
+				$count = $this->getLanguage()->formatNum( $counts[ $wiki ][ $code ] ?? 0 );
 				$rows[] = Html::rawElement( 'tr', [ 'class' => $key === '' ? 'ext-hermes-base-language' : null ],
 					$wikiCell .
-					Html::element( 'td', [], $formatter->languageLabel( $code ) ) .
-					Html::rawElement( 'td', [], $this->getLinkRenderer()->makeKnownLink(
-						SpecialPage::getTitleFor( 'HermesPages', $code ),
-						$this->getLanguage()->formatNum( $counts[ $code ] ?? 0 )
-					) )
+					Html::element( 'td', [], $label ) .
+					// Special:HermesPages only lists active pages.
+					Html::rawElement( 'td', [], $language->isActive
+						? $this->getLinkRenderer()->makeKnownLink(
+							SpecialPage::getTitleFor( 'HermesPages', $code ), $count
+						)
+						: htmlspecialchars( $count )
+					)
 				);
 				$wikiCell = '';
 			}
@@ -88,7 +98,7 @@ class SpecialHermesLanguages extends HermesSpecialPage {
 
 	/** A link to the wiki's main page, or just its ID if it has no registered URL. */
 	private function wikiLink( string $wiki ): string {
-		$url = WikiStore::getUrlTemplate( $wiki );
+		$url = LanguageStore::getUrlTemplate( $wiki );
 		return $url !== null
 			? Html::element( 'a', [ 'href' => str_replace( '$1', '', $url ), 'class' => 'extiw' ], $wiki )
 			: htmlspecialchars( $wiki );

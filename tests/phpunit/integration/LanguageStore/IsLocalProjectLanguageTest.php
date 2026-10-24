@@ -19,6 +19,12 @@ class IsLocalProjectLanguageTest extends HermesIntegrationTestCase {
 		$this->assertTrue( LanguageStore::isLocalProjectLanguage( 'eo' ) );
 	}
 
+	public function testTrueForInactiveProject() {
+		$this->registerProjectLanguage( WikiMap::getCurrentWikiId(), 'eo', false );
+
+		$this->assertTrue( LanguageStore::isLocalProjectLanguage( 'eo' ) );
+	}
+
 	public function testFalseForBaseLanguage() {
 		$this->overrideConfigValue( 'LanguageCode', 'en' );
 

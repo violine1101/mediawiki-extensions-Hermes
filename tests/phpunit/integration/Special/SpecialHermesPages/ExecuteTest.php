@@ -118,7 +118,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	}
 
 	public function testLinksPagesAndDetails() {
-		$this->registerWiki( 'dewiki', 'https://de.example/wiki/$1' );
+		$this->setWikiUrl( 'dewiki', 'https://de.example/wiki/$1' );
 		$this->setTags( 'dewiki', 'Golem', [ 'golem', 'monster=#Mobs' ] );
 
 		$html = $this->execute();
@@ -264,5 +264,13 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		$this->assertStringContainsString( '(hermespages-notfound: fr/Golem)', $this->execute( [], 'fr/Golem' ) );
 		$this->assertStringContainsString( '(hermespages-notfound: xx/Golem)', $this->execute( [], 'xx/Golem' ) );
 		$this->assertStringContainsString( '(hermespages-notfound: xx)', $this->execute( [], 'xx' ) );
+	}
+
+	public function testSkipsInactivePages() {
+		$this->registerProjectLanguage( WikiMap::getCurrentWikiId(), 'de', false );
+		$this->setTags( 'dewiki', 'Golem', [ 'golem' ] );
+		$this->setTags( WikiMap::getCurrentWikiId(), '!de:Golem', [ 'golem' ] );
+
+		$this->assertSame( [ 'Golem | Deutsch (de) | golem' ], $this->list() );
 	}
 }

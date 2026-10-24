@@ -3,7 +3,6 @@
 namespace MediaWiki\Extension\Hermes\Hooks;
 
 use MediaWiki\Extension\Hermes\LanguageStore;
-use MediaWiki\Extension\Hermes\WikiStore;
 use MediaWiki\Hook\BeforeInitializeHook;
 use MediaWiki\Hook\UnitTestsAfterDatabaseSetupHook;
 use MediaWiki\Installer\Hook\LoadExtensionSchemaUpdatesHook;
@@ -18,7 +17,6 @@ class InitHooks implements LoadExtensionSchemaUpdatesHook, UnitTestsAfterDatabas
 	public function onBeforeInitialize( $title, $unused, $output, $user, $request, $mediaWiki ) {
 		// Ensure this wiki's base language and URL template are registered.
 		LanguageStore::init();
-		WikiStore::init();
 	}
 
 	/** @inheritDoc */

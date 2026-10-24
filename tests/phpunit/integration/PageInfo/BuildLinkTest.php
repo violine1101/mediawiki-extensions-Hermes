@@ -19,8 +19,7 @@ class BuildLinkTest extends HermesIntegrationTestCase {
 	}
 
 	public function testProjectPageTarget() {
-		$this->registerProjectLanguage( 'trwiki', 'eo' );
-		$this->registerWiki( 'trwiki', 'https://translate.example.org/wiki/$1' );
+		$this->registerProjectLanguage( 'trwiki', 'eo', url: 'https://translate.example.org/wiki/$1' );
 
 		$title = ProjectTitle::makeTitleOnWiki( 'trwiki', NS_MAIN, 'BuildLinkProjectTarget', 'eo', null, '' );
 		$page = new PageInfo( $title );
@@ -33,8 +32,7 @@ class BuildLinkTest extends HermesIntegrationTestCase {
 	}
 
 	public function testNamespacedProjectPageTarget() {
-		$this->registerProjectLanguage( 'trwiki', 'eo' );
-		$this->registerWiki( 'trwiki', 'https://translate.example.org/wiki/$1' );
+		$this->registerProjectLanguage( 'trwiki', 'eo', url: 'https://translate.example.org/wiki/$1' );
 
 		$title = ProjectTitle::makeTitleOnWiki(
 			'trwiki', NS_CATEGORY, 'BuildLinkNamespacedProjectTarget', 'eo', null, 'Category'

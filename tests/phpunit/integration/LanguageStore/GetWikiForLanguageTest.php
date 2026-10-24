@@ -2,10 +2,8 @@
 
 namespace MediaWiki\Extension\Hermes\Tests\LanguageStore;
 
-use MediaWiki\Extension\Hermes\Exceptions\LanguageConflictException;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
-use MediaWiki\WikiMap\WikiMap;
 
 /**
  * @group Database
@@ -23,30 +21,16 @@ class GetWikiForLanguageTest extends HermesIntegrationTestCase {
 		$this->assertSame( 'dewiki', LanguageStore::getWikiForLanguage( 'de' ) );
 	}
 
-	public function testSyncsCurrentWikiIntoDatabase() {
-		$this->overrideConfigValue( 'LanguageCode', 'de' );
+	public function testReturnsActiveWiki() {
+		$this->registerBaseLanguage( 'dewiki', 'de', false );
+		$this->registerProjectLanguage( 'otherwiki', 'de' );
 
-		$this->assertSame( WikiMap::getCurrentWikiId(), LanguageStore::getWikiForLanguage( 'de' ) );
+		$this->assertSame( 'otherwiki', LanguageStore::getWikiForLanguage( 'de' ) );
 	}
 
-	public function testThrowsWhenLanguageCodeChangedSinceRegistering() {
-		$this->overrideConfigValue( 'LanguageCode', 'de' );
-		LanguageStore::getWikiForLanguage( 'de' );
+	public function testNullWhenOnlyInactive() {
+		$this->registerBaseLanguage( 'dewiki', 'de', false );
 
-		// Wiki IDs and language codes are expected to stay fixed once registered, so this isn't
-		// silently re-synced - it needs a by-hand database fix, same as a genuine conflict.
-		$this->overrideConfigValue( 'LanguageCode', 'fr' );
-		LanguageStore::clearCacheForTesting();
-
-		$this->expectException( \RuntimeException::class );
-		LanguageStore::getWikiForLanguage( 'fr' );
-	}
-
-	public function testThrowsWhenAlreadyRegisteredElsewhere() {
-		$this->registerBaseLanguage( 'otherwiki', 'de' );
-		$this->overrideConfigValue( 'LanguageCode', 'de' );
-
-		$this->expectException( LanguageConflictException::class );
-		LanguageStore::getWikiForLanguage( 'de' );
+		$this->assertNull( LanguageStore::getWikiForLanguage( 'de' ) );
 	}
 }

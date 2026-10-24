@@ -25,21 +25,21 @@ abstract class WantedTranslationsPage extends WantedQueryPage {
 	/** @inheritDoc */
 	public function execute( $par ) {
 		$language = $this->getRequest()->getVal( 'language' ) ?? $par;
-		if ( in_array( $language, LanguageStore::getLocalProjectLanguages(), true ) ) {
+		if ( in_array( $language, LanguageStore::getActiveLocalProjectLanguages(), true ) ) {
 			$this->project = $language;
 		}
 		parent::execute( $par );
 	}
 
 	/**
-	 * Condition for link targets in the selected translation project, or any of this wiki's.
+	 * Condition for link targets in the selected translation project, or any of this wiki's active ones.
 	 *
 	 * @param IReadableDatabase $dbr
 	 * @param string $title Title field of the link target
-	 * @return IExpression|string Matching nothing if this wiki has no translation projects
+	 * @return IExpression|string Matching nothing if this wiki has no active translation projects
 	 */
 	protected function inProject( IReadableDatabase $dbr, string $title ): IExpression|string {
-		$projects = $this->project !== null ? [ $this->project ] : LanguageStore::getLocalProjectLanguages();
+		$projects = $this->project !== null ? [ $this->project ] : LanguageStore::getActiveLocalProjectLanguages();
 		return $projects ? ProjectTitle::projectSqlCondition( $dbr, $title, $projects ) : '0 = 1';
 	}
 
@@ -67,7 +67,7 @@ abstract class WantedTranslationsPage extends WantedQueryPage {
 
 	/** @inheritDoc */
 	protected function getPageHeader() {
-		$projects = LanguageStore::getLocalProjectLanguages();
+		$projects = LanguageStore::getActiveLocalProjectLanguages();
 		if ( !$projects ) {
 			return '';
 		}

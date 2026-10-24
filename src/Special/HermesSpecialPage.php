@@ -55,7 +55,7 @@ abstract class HermesSpecialPage extends SpecialPage {
 	 */
 	protected function getLanguageFilter( array $default = [] ): array {
 		$languages = $this->getRequest()->getArray( 'language' ) ?? $default;
-		return array_values( array_intersect( $languages, array_keys( LanguageStore::getLanguages() ) ) );
+		return array_values( array_intersect( $languages, array_keys( LanguageStore::getActiveLanguages() ) ) );
 	}
 
 	/**

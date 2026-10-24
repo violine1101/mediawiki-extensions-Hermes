@@ -34,7 +34,7 @@ class SpecialHermesTranslate extends HermesSpecialPage {
 		$pageName = trim( $request->getText( 'page', $par ) );
 		$language = $request->getVal( 'language' );
 		$translation = $request->getVal( 'translation' );
-		$projects = LanguageStore::getLocalProjectLanguages();
+		$projects = LanguageStore::getActiveLocalProjectLanguages();
 
 		$page = null;
 		if ( $pageName !== '' ) {
@@ -113,13 +113,13 @@ class SpecialHermesTranslate extends HermesSpecialPage {
 	}
 
 	/**
-	 * This wiki's translation projects without a translation of $page: neither one linked by its main tag
+	 * This wiki's active translation projects without a translation of $page: neither one linked by its main tag
 	 * (TagStore::getTranslationsOfPage()), nor an untagged page with the same title.
 	 *
 	 * @return string[]
 	 */
 	public static function getUntranslatedProjects( ProjectTitle $page ): array {
-		$projects = LanguageStore::getLocalProjectLanguages();
+		$projects = LanguageStore::getActiveLocalProjectLanguages();
 		$translated = $projects ? TagStore::getTranslationsOfPage( PageInfo::fromLocalPage( $page->toTitle() ) ) : [];
 		return array_values( array_filter( $projects, static fn ( string $project ) =>
 			!isset( $translated[ $project ] ) && !$page->withProject( $project )->toTitle()->exists()

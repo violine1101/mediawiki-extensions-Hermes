@@ -24,8 +24,8 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$this->wiki = WikiMap::getCurrentWikiId();
-		$this->registerBaseLanguage( 'dewiki', 'de' );
-		$this->registerWiki( 'dewiki', 'https://de.example/wiki/$1' );
+		$this->activateLocalBaseLanguage();
+		$this->registerBaseLanguage( 'dewiki', 'de', url: 'https://de.example/wiki/$1' );
 	}
 
 	private function execute( ?Authority $performer = null ): string {
@@ -94,7 +94,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		$request = new FauxRequest( [ 'add-language' => 'eo' ], true );
 		$request->setVal( 'wpEditToken', ( new CsrfTokenSet( $request ) )->getToken()->toString() );
 		$this->executeRequest( $request );
-		$this->assertArrayNotHasKey( 'eo', LanguageStore::getLanguages() );
+		$this->assertArrayNotHasKey( 'eo', LanguageStore::getActiveLanguages() );
 	}
 
 	public function testAddRow() {
@@ -122,7 +122,9 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	public function testAddProjectLanguage() {
 		$html = $this->post( [ 'add-language' => 'eo' ] );
 
-		$this->assertSame( [ 'wiki' => $this->wiki, 'isBase' => false ], LanguageStore::getLanguages()[ 'eo' ] );
+		$eo = LanguageStore::getActiveLanguages()[ 'eo' ];
+		$this->assertSame( $this->wiki, $eo->wiki );
+		$this->assertFalse( $eo->isBase );
 		preg_match_all( "/<option value='([^']*)'/", $html, $options );
 		$this->assertNotContains( 'eo', $options[ 1 ] );
 	}
@@ -130,7 +132,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	public function testAddUnknownLanguage() {
 		$this->post( [ 'add-language' => 'xx-nope' ] );
 
-		$this->assertArrayNotHasKey( 'xx-nope', LanguageStore::getLanguages() );
+		$this->assertArrayNotHasKey( 'xx-nope', LanguageStore::getActiveLanguages() );
 	}
 
 	public static function provideRegistered() {
@@ -153,6 +155,20 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		);
 
 		$this->assertStringContainsString( '(sessionfailure)', $html );
-		$this->assertArrayNotHasKey( 'eo', LanguageStore::getLanguages() );
+		$this->assertArrayNotHasKey( 'eo', LanguageStore::getActiveLanguages() );
+	}
+
+	public function testListsInactiveRegistrations() {
+		$this->registerProjectLanguage( $this->wiki, 'de', false );
+		TagStore::setTagsForPage( $this->makePageInfo( $this->wiki, '!de:C' ), Tag::fromArgs( [ 'a' ] ) );
+
+		$html = $this->execute();
+		$this->assertSame( [
+			'(hermeslanguages-header-wiki) | (hermeslanguages-header-language) | (hermeslanguages-header-pages)',
+			'dewiki | Deutsch (de) | 0',
+			"{$this->wiki} | English (en) | 0",
+			'Deutsch (de) (hermeslanguages-inactive) | 1',
+		], self::rows( $html ) );
+		$this->assertSame( 1, preg_match_all( '/href="[^"]*Special:HermesPages\/de"/', $html ) );
 	}
 }

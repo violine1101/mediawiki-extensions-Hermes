@@ -160,4 +160,26 @@ class FindConflictsTest extends HermesIntegrationTestCase {
 
 		$this->assertSame( [], TagStore::findConflicts( $page, $tags ) );
 	}
+
+	public function testIgnoresInactivePages() {
+		$this->registerBaseLanguage( 'dewiki', 'de' );
+		$this->registerProjectLanguage( WikiMap::getCurrentWikiId(), 'de', false );
+		TagStore::setTagsForPage(
+			$this->makePageInfo( WikiMap::getCurrentWikiId(), '!de:Golem' ), Tag::fromArgs( [ 'golem' ] )
+		);
+
+		$page = $this->makePageInfo( 'dewiki', 'Golem' );
+
+		$this->assertSame( [], TagStore::findConflicts( $page, Tag::fromArgs( [ 'golem' ] ) ) );
+	}
+
+	public function testNoOwnLanguageConflictForInactivePage() {
+		$this->registerBaseLanguage( 'dewiki', 'de' );
+		$this->registerProjectLanguage( WikiMap::getCurrentWikiId(), 'de', false );
+		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'Golem' ), Tag::fromArgs( [ 'golem' ] ) );
+
+		$page = $this->makePageInfo( WikiMap::getCurrentWikiId(), '!de:Golem' );
+
+		$this->assertSame( [], TagStore::findConflicts( $page, Tag::fromArgs( [ 'golem' ] ) ) );
+	}
 }

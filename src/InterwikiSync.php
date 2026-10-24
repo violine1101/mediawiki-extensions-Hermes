@@ -3,7 +3,6 @@
 namespace MediaWiki\Extension\Hermes;
 
 use MediaWiki\MediaWikiServices;
-use MediaWiki\WikiMap\WikiMap;
 use Wikimedia\Rdbms\IDatabase;
 
 /**
@@ -29,16 +28,15 @@ class InterwikiSync {
 	 */
 	public static function sync( bool $dryRun = false ): array {
 		$targets = [];
-		foreach ( LanguageStore::getBaseLanguages() as $language => $wiki ) {
-			$url = WikiStore::getUrlTemplate( $wiki );
-			if ( $wiki !== WikiMap::getCurrentWikiId() && $url !== null ) {
-				$targets[ $language ] = [ 'iw_url' => $url, 'iw_wikiid' => $wiki ];
+		foreach ( LanguageStore::getBaseLanguages() as $code => $language ) {
+			if ( !$language->isLocal() && $language->urlTemplate !== null ) {
+				$targets[ $code ] = [ 'iw_url' => $language->urlTemplate, 'iw_wikiid' => $language->wiki ];
 			}
 		}
 
 		$services = MediaWikiServices::getInstance();
 		$dbw = $services->getConnectionProvider()->getPrimaryDatabase();
-		$hermesWikis = WikiStore::getWikiIds();
+		$hermesWikis = LanguageStore::getWikiIds();
 		$conds = [ 'iw_wikiid' => $hermesWikis ];
 		if ( $targets ) {
 			$conds = $dbw->orExpr( [ 'iw_prefix' => array_keys( $targets ), 'iw_wikiid' => $hermesWikis ] );

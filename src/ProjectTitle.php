@@ -105,6 +105,11 @@ final class ProjectTitle {
 			?? LanguageStore::getLocalBaseLanguage();
 	}
 
+	/** Whether this title's language is active on its wiki, so that other languages link to it. */
+	public function isActive(): bool {
+		return $this->wiki !== null && LanguageStore::isActive( $this->getLanguageCode(), $this->wiki );
+	}
+
 	public function getLanguage(): Language {
 		return MediaWikiServices::getInstance()->getLanguageFactory()->getLanguage( $this->getLanguageCode() );
 	}
@@ -199,11 +204,11 @@ final class ProjectTitle {
 	}
 
 	/**
-	 * The URL of this title on its own wiki, as registered in WikiStore (so possibly
+	 * The URL of this title on its own wiki, as registered in LanguageStore (so possibly
 	 * protocol-relative), or null if that wiki has none.
 	 */
 	public function getUrl(): ?string {
-		$template = $this->wiki !== null ? WikiStore::getUrlTemplate( $this->wiki ) : null;
+		$template = $this->wiki !== null ? LanguageStore::getUrlTemplate( $this->wiki ) : null;
 		if ( $template === null ) {
 			return null;
 		}

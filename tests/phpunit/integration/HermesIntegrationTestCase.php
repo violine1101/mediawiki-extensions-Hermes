@@ -3,10 +3,11 @@
 namespace MediaWiki\Extension\Hermes\Tests;
 
 use MediaWiki\Extension\Hermes\Hermes;
+use MediaWiki\Extension\Hermes\HermesLanguage;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\ProjectTitle;
-use MediaWiki\Extension\Hermes\WikiStore;
+use MediaWiki\WikiMap\WikiMap;
 use MediaWikiIntegrationTestCase;
 
 /**
@@ -20,7 +21,6 @@ abstract class HermesIntegrationTestCase extends MediaWikiIntegrationTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		LanguageStore::clearCacheForTesting();
-		WikiStore::clearCacheForTesting();
 	}
 
 	/**
@@ -29,9 +29,8 @@ abstract class HermesIntegrationTestCase extends MediaWikiIntegrationTestCase {
 	 *
 	 * $wiki must already be registered (via registerBaseLanguage() for a foreign-wiki partner
 	 * page, or the current wiki id for a same-wiki page, possibly a project page after
-	 * registerProjectLanguage()) - a language is only ever served by one wiki in the family
-	 * (see LanguageStore::validateLanguages()), so a page's wiki isn't independently
-	 * choosable from its language.
+	 * registerProjectLanguage()) - a page's language is derived from its wiki's registrations, so
+	 * its wiki isn't independently choosable from its language.
 	 */
 	protected function makePageInfo( string $wiki, ?string $title = null ): PageInfo {
 		$id = $this->nextPageId++;
@@ -44,13 +43,10 @@ abstract class HermesIntegrationTestCase extends MediaWikiIntegrationTestCase {
 	 * registered itself (this doesn't exercise that self-registration, just consumes its
 	 * result).
 	 */
-	protected function registerBaseLanguage( string $wiki, string $language ): void {
-		Hermes::getDB( DB_PRIMARY )->insert(
-			'hermes_languages',
-			[ 'hl_language' => $language, 'hl_wiki' => $wiki, 'hl_base' => 1 ],
-			__METHOD__
-		);
-		LanguageStore::clearCacheForTesting();
+	protected function registerBaseLanguage(
+		string $wiki, string $language, bool $active = true, ?string $url = null
+	): void {
+		$this->insertLanguage( new HermesLanguage( $language, $wiki, true, $active, $url ) );
 	}
 
 	/**
@@ -58,26 +54,35 @@ abstract class HermesIntegrationTestCase extends MediaWikiIntegrationTestCase {
 	 * registered itself via LanguageStore::addProjectLanguage() (this doesn't exercise that
 	 * registration, just consumes its result).
 	 */
-	protected function registerProjectLanguage( string $wiki, string $language ): void {
-		Hermes::getDB( DB_PRIMARY )->insert(
-			'hermes_languages',
-			[ 'hl_language' => $language, 'hl_wiki' => $wiki, 'hl_base' => 0 ],
-			__METHOD__
-		);
+	protected function registerProjectLanguage(
+		string $wiki, string $language, bool $active = true, ?string $url = null
+	): void {
+		$this->insertLanguage( new HermesLanguage( $language, $wiki, false, $active, $url ) );
+	}
+
+	/** Registers this wiki's base language and activates it, as a set-up wiki would have. */
+	protected function activateLocalBaseLanguage(): void {
+		LanguageStore::init();
+		LanguageStore::activate( LanguageStore::getLocalBaseLanguage(), WikiMap::getCurrentWikiId() );
+	}
+
+	/** Sets the URL template of a wiki whose languages are registered already. */
+	protected function setWikiUrl( string $wiki, string $url ): void {
+		Hermes::getDB( DB_PRIMARY )->newUpdateQueryBuilder()
+			->update( 'hermes_languages' )
+			->set( [ 'hl_url' => $url ] )
+			->where( [ 'hl_wiki' => $wiki ] )
+			->caller( __METHOD__ )
+			->execute();
 		LanguageStore::clearCacheForTesting();
 	}
 
-	/**
-	 * Directly inserts a wiki's URL template, standing in for that wiki having already
-	 * registered itself via WikiStore::init() (this doesn't exercise that registration, just
-	 * consumes its result).
-	 */
-	protected function registerWiki( string $wiki, string $url ): void {
-		Hermes::getDB( DB_PRIMARY )->insert(
-			'hermes_wikis',
-			[ 'hw_wiki' => $wiki, 'hw_url' => $url ],
-			__METHOD__
-		);
-		WikiStore::clearCacheForTesting();
+	private function insertLanguage( HermesLanguage $language ): void {
+		Hermes::getDB( DB_PRIMARY )->newInsertQueryBuilder()
+			->insertInto( 'hermes_languages' )
+			->row( $language->toRow() )
+			->caller( __METHOD__ )
+			->execute();
+		LanguageStore::clearCacheForTesting();
 	}
 }

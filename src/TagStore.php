@@ -117,7 +117,13 @@ class TagStore {
 		}
 		foreach ( $rows as $row ) {
 			$rowPage = PageInfo::fromRow( $row );
-			$pages[ $rowPage->title->getLanguageCode() ][ $row->ht_tag ][ (int)$row->ht_priority ][] = $rowPage;
+			if ( $rowPage->title->isActive() ) {
+				$pages[ $rowPage->title->getLanguageCode() ][ $row->ht_tag ][ (int)$row->ht_priority ][] = $rowPage;
+			}
+		}
+		// Nothing links to an inactive page, so it can't conflict in its own language.
+		if ( !$page->title->isActive() ) {
+			unset( $pages[ $ownLanguage ] );
 		}
 
 		$conflicts = [];
@@ -172,7 +178,9 @@ class TagStore {
 		$links = [];
 		foreach ( $rows as $row ) {
 			$link = TagLink::fromRow( $row );
-			$links[ $link->tag->name ][] = $link;
+			if ( $link->page->title->isActive() ) {
+				$links[ $link->tag->name ][] = $link;
+			}
 		}
 
 		// Walk tags in fallback order so earlier tags take priority; within a

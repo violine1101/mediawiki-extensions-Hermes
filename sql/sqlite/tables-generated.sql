@@ -22,14 +22,9 @@ CREATE TABLE /*_*/hermes_languages (
   hl_language BLOB NOT NULL,
   hl_wiki BLOB NOT NULL,
   hl_base SMALLINT DEFAULT 1 NOT NULL,
-  PRIMARY KEY(hl_language)
+  hl_active SMALLINT DEFAULT 1 NOT NULL,
+  hl_url BLOB DEFAULT NULL,
+  PRIMARY KEY(hl_language, hl_wiki)
 );
 
 CREATE INDEX hl_wiki ON /*_*/hermes_languages (hl_wiki);
-
-
-CREATE TABLE /*_*/hermes_wikis (
-  hw_wiki BLOB NOT NULL,
-  hw_url BLOB NOT NULL,
-  PRIMARY KEY(hw_wiki)
-);

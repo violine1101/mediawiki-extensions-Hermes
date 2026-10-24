@@ -59,6 +59,17 @@ class AddProjectLanguageTest extends HermesIntegrationTestCase {
 		}
 	}
 
+	public function testThrowsOnConflictWithInactiveRegistration() {
+		$this->registerBaseLanguage( 'dewiki', 'de', false );
+
+		try {
+			LanguageStore::addProjectLanguage( WikiMap::getCurrentWikiId(), 'de' );
+			$this->fail( 'Expected LanguageConflictException to be thrown' );
+		} catch ( LanguageConflictException $e ) {
+			$this->assertSame( 'dewiki', $e->existingWiki );
+		}
+	}
+
 	public function testThrowsOnConflictWithOwnBaseLanguage() {
 		$this->overrideConfigValue( 'LanguageCode', 'en' );
 		$wiki = WikiMap::getCurrentWikiId();

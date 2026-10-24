@@ -14,10 +14,8 @@ class SyncTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->registerBaseLanguage( 'dewiki', 'de' );
-		$this->registerWiki( 'dewiki', 'https://de.example.org/wiki/$1' );
-		$this->registerBaseLanguage( 'frwiki', 'fr' );
-		$this->registerWiki( 'frwiki', 'https://fr.example.org/wiki/$1' );
+		$this->registerBaseLanguage( 'dewiki', 'de', url: 'https://de.example.org/wiki/$1' );
+		$this->registerBaseLanguage( 'frwiki', 'fr', url: 'https://fr.example.org/wiki/$1' );
 	}
 
 	private function getRows(): array {

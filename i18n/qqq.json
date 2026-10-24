@@ -46,6 +46,7 @@
 	"hermeslanguages-header-pages": "Column header on [[Special:HermesLanguages]]: the number of pages with Hermes tags in the language.\n{{Identical|Page}}",
 	"hermeslanguages-add-submit": "Submit button of the form on [[Special:HermesLanguages]] for adding a translation project.\n{{Identical|Add}}",
 	"hermeslanguages-add-placeholder": "Empty first option of the language dropdown on [[Special:HermesLanguages]] for adding a translation project.",
+	"hermeslanguages-inactive": "Shown on [[Special:HermesLanguages]] after a language that is registered on a wiki but not active there (e.g. because it is active on another wiki), so its pages there are not linked to.",
 	"right-hermes-add-translation-project": "{{doc-right|hermes-add-translation-project}}",
 	"action-hermes-add-translation-project": "{{doc-action|hermes-add-translation-project}}",
 	"specialpages-group-hermes": "{{doc-special-group|like=[[Special:HermesTags]], [[Special:HermesPages]], [[Special:HermesLanguages]], [[Special:HermesTranslate]], [[Special:WantedTranslations]]}}",
