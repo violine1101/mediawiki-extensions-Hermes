@@ -1,8 +1,8 @@
 <?php
 
-namespace MediaWiki\Extension\Hermes\Tests\Special\SpecialHermesLanguages;
+namespace MediaWiki\Extension\Hermes\Tests\Special\SpecialHermesProjects;
 
-use MediaWiki\Extension\Hermes\LanguageStore;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
@@ -15,7 +15,7 @@ use SpecialPageExecutor;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\Hermes\Special\SpecialHermesLanguages
+ * @covers \MediaWiki\Extension\Hermes\Special\SpecialHermesProjects
  * @covers \MediaWiki\Extension\Hermes\Special\TagQuery::countPages
  */
 class ExecuteTest extends HermesIntegrationTestCase {
@@ -25,8 +25,8 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$this->wiki = WikiMap::getCurrentWikiId();
-		$this->activateLocalBaseLanguage();
-		$this->registerBaseLanguage( 'dewiki', 'de', url: 'https://de.example/wiki/$1' );
+		$this->activateLocalBaseProject();
+		$this->registerBaseProject( 'dewiki', 'de', url: 'https://de.example/wiki/$1' );
 	}
 
 	private function execute( ?Authority $performer = null ): string {
@@ -34,7 +34,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	}
 
 	private function executeRequest( FauxRequest $request, ?Authority $performer = null ): string {
-		$page = $this->getServiceContainer()->getSpecialPageFactory()->getPage( 'HermesLanguages' );
+		$page = $this->getServiceContainer()->getSpecialPageFactory()->getPage( 'HermesProjects' );
 		[ $html ] = ( new SpecialPageExecutor() )->executeSpecialPage( $page, null, $request, null, $performer );
 		return $html;
 	}
@@ -56,7 +56,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	/** @return string[] Wikis with an add form */
 	private static function addForms( string $html ): array {
-		preg_match_all( "/name='add-language'.*?value=\"([^\"]*)\" name=\"wiki\"/s", $html, $forms );
+		preg_match_all( "/name='add-project'.*?value=\"([^\"]*)\" name=\"wiki\"/s", $html, $forms );
 		return $forms[ 1 ];
 	}
 
@@ -74,7 +74,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	/** @return string[] The (de)activate buttons, as "<action> <code>@<wiki>" */
 	private static function activeButtons( string $html ): array {
 		preg_match_all(
-			"/name='(activate|deactivate)-language' value='([^']*)'.*?value=\"([^\"]*)\" name=\"wiki\"/s",
+			"/name='(activate|deactivate)-project' value='([^']*)'.*?value=\"([^\"]*)\" name=\"wiki\"/s",
 			$html, $buttons, PREG_SET_ORDER
 		);
 		return array_map( static fn ( $m ) => "{$m[ 1 ]} {$m[ 2 ]}@{$m[ 3 ]}", $buttons );
@@ -85,37 +85,37 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		preg_match_all( '/<tr([^>]*)>(.*?)<\/tr>/s', $html, $rows, PREG_SET_ORDER );
 		return array_map( static function ( $row ) {
 			preg_match_all( '/<t[hd][^>]*>(.*?)<\/t[hd]>/s', $row[ 2 ], $cells );
-			return ( str_contains( $row[ 1 ], 'ext-hermes-active-language' ) ? '*' : '' )
+			return ( str_contains( $row[ 1 ], 'ext-hermes-active-project' ) ? '*' : '' )
 				. implode( ' | ', array_map( static fn ( $cell ) => trim( strip_tags( $cell ) ), $cells[ 1 ] ) );
 		}, $rows );
 	}
 
-	public function testListsLanguages() {
-		$this->registerProjectLanguage( $this->wiki, 'fr' );
-		$this->registerProjectLanguage( $this->wiki, 'eo' );
+	public function testListsProjects() {
+		$this->registerTranslationProject( $this->wiki, 'fr' );
+		$this->registerTranslationProject( $this->wiki, 'eo' );
 		// Several tags on one page, and several pages: count pages, not tags.
 		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'A' ), Tag::fromArgs( [ 'a', 'b' ] ) );
 		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'B' ), Tag::fromArgs( [ 'a' ] ) );
 		TagStore::setTagsForPage( $this->makePageInfo( $this->wiki, '!eo:C' ), Tag::fromArgs( [ 'a' ] ) );
 
 		$this->assertSame( [
-			'(hermeslanguages-header-wiki) | (hermeslanguages-header-language) | (hermeslanguages-header-pages) | '
-				. '(hermeslanguages-header-active)',
-			'*dewiki | Deutsch (de) | 2 | (hermeslanguages-active-yes)',
-			"*{$this->wiki} | English (en) | 0 | (hermeslanguages-active-yes)",
-			'*Esperanto (eo) | 1 | (hermeslanguages-active-yes)',
-			'*Français (fr) | 0 | (hermeslanguages-active-yes)',
+			'(hermesprojects-header-wiki) | (hermesprojects-header-language) | (hermesprojects-header-pages) | '
+				. '(hermesprojects-header-active)',
+			'*dewiki | Deutsch (de) | 2 | (hermesprojects-active-yes)',
+			"*{$this->wiki} | English (en) | 0 | (hermesprojects-active-yes)",
+			'*Esperanto (eo) | 1 | (hermesprojects-active-yes)',
+			'*Français (fr) | 0 | (hermesprojects-active-yes)',
 		], self::rows( $this->execute() ) );
 	}
 
 	public function testLinks() {
-		$this->registerProjectLanguage( 'dewiki', 'eo' );
+		$this->registerTranslationProject( 'dewiki', 'eo' );
 		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'A' ), Tag::fromArgs( [ 'a' ] ) );
 
 		$html = $this->execute();
 		$this->assertMatchesRegularExpression( '/<a href="[^"]*Special:HermesPages\/de"[^>]*>1<\/a>/', $html );
 		$this->assertStringContainsString(
-			'<th><abbr title="(hermeslanguages-header-active-tooltip)">(hermeslanguages-header-active)</abbr></th>',
+			'<th><abbr title="(hermesprojects-header-active-tooltip)">(hermesprojects-header-active)</abbr></th>',
 			$html
 		);
 		$this->assertStringContainsString(
@@ -125,18 +125,18 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	public function testNoEditingWithoutRight() {
 		$html = $this->execute();
-		$this->assertStringNotContainsString( 'name="add-language"', $html );
+		$this->assertStringNotContainsString( 'name="add-project"', $html );
 
-		$request = new FauxRequest( [ 'add-language' => 'eo' ], true );
+		$request = new FauxRequest( [ 'add-project' => 'eo' ], true );
 		$request->setVal( 'wpEditToken', ( new CsrfTokenSet( $request ) )->getToken()->toString() );
 		$this->executeRequest( $request );
-		$this->assertArrayNotHasKey( 'eo', LanguageStore::getActiveLanguages() );
+		$this->assertArrayNotHasKey( 'eo', ProjectStore::getActiveProjects() );
 		$this->assertSame( [], $this->getLogActions() );
 	}
 
 	public function testAddRow() {
-		$this->registerProjectLanguage( 'dewiki', 'es' );
-		$this->registerProjectLanguage( $this->wiki, 'eo' );
+		$this->registerTranslationProject( 'dewiki', 'es' );
+		$this->registerTranslationProject( $this->wiki, 'eo' );
 
 		$html = $this->execute( $this->getAdmin() );
 		$this->assertMatchesRegularExpression(
@@ -144,10 +144,10 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		);
 		$this->assertStringContainsString( '<th scope="rowgroup" rowspan="2">', $html );
 		$this->assertMatchesRegularExpression(
-			'/<tr><td colspan="4"><form [^>]*>.*name=.add-language.*<\/form><\/td><\/tr>\s*<\/tbody>/s', $html
+			'/<tr><td colspan="4"><form [^>]*>.*name=.add-project.*<\/form><\/td><\/tr>\s*<\/tbody>/s', $html
 		);
 		$this->assertStringContainsString( 'oo-ui-dropdownInputWidget', $html );
-		$this->assertSame( 2, preg_match_all( '/<tr class="[^"]*ext-hermes-base-language/', $html ) );
+		$this->assertSame( 2, preg_match_all( '/<tr class="[^"]*ext-hermes-base-project/', $html ) );
 		preg_match_all( "/<option value='([^']*)'/", $html, $options );
 		$this->assertContains( 'fr', $options[ 1 ] );
 		$this->assertContains( '', $options[ 1 ] );
@@ -164,12 +164,12 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		$rows = [];
 		foreach ( array_keys( $names ) as $code ) {
 			if ( $code !== 'en' ) {
-				$rows[] = [ 'hl_language' => $code, 'hl_wiki' => $this->wiki, 'hl_base' => 0, 'hl_active' => 0 ];
+				$rows[] = [ 'hp_language' => $code, 'hp_wiki' => $this->wiki, 'hp_base' => 0, 'hp_active' => 0 ];
 			}
 		}
-		$this->getDb()->newInsertQueryBuilder()->insertInto( 'hermes_languages' )->rows( $rows )
+		$this->getDb()->newInsertQueryBuilder()->insertInto( 'hermes_projects' )->rows( $rows )
 			->caller( __METHOD__ )->execute();
-		LanguageStore::clearCacheForTesting();
+		ProjectStore::clearCacheForTesting();
 
 		$html = $this->execute( $this->getAdmin() );
 		$this->assertSame( [], self::addForms( $html ) );
@@ -178,10 +178,10 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		);
 	}
 
-	public function testAddProjectLanguage() {
-		$html = $this->post( [ 'add-language' => 'eo' ] );
+	public function testAddTranslationProject() {
+		$html = $this->post( [ 'add-project' => 'eo' ] );
 
-		$eo = LanguageStore::getActiveLanguages()[ 'eo' ];
+		$eo = ProjectStore::getActiveProjects()[ 'eo' ];
 		$this->assertSame( $this->wiki, $eo->wiki );
 		$this->assertFalse( $eo->isBase );
 		$this->assertSame( [ 'add-project' ], $this->getLogActions() );
@@ -190,49 +190,49 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	}
 
 	public function testAddUnknownLanguage() {
-		$this->post( [ 'add-language' => 'xx-nope' ] );
+		$this->post( [ 'add-project' => 'xx-nope' ] );
 
-		$this->assertArrayNotHasKey( 'xx-nope', LanguageStore::getActiveLanguages() );
+		$this->assertArrayNotHasKey( 'xx-nope', ProjectStore::getActiveProjects() );
 	}
 
-	public function testAddLanguageRegisteredElsewhere() {
-		$this->post( [ 'add-language' => 'de' ] );
+	public function testAddLanguageWithProjectElsewhere() {
+		$this->post( [ 'add-project' => 'de' ] );
 
-		$this->assertTrue( LanguageStore::isLocalProjectLanguage( 'de' ) );
-		$this->assertSame( 'dewiki', LanguageStore::getWikiForLanguage( 'de' ) );
+		$this->assertTrue( ProjectStore::isLocalTranslationProject( 'de' ) );
+		$this->assertSame( 'dewiki', ProjectStore::getWikiForLanguage( 'de' ) );
 	}
 
 	public function testAddOwnBaseLanguage() {
-		$this->post( [ 'add-language' => 'en' ] );
+		$this->post( [ 'add-project' => 'en' ] );
 
-		$this->assertFalse( LanguageStore::isLocalProjectLanguage( 'en' ) );
+		$this->assertFalse( ProjectStore::isLocalTranslationProject( 'en' ) );
 		$this->assertSame( [], $this->getLogActions() );
 	}
 
 	public function testAddNeedsToken() {
 		$html = $this->executeRequest(
-			new FauxRequest( [ 'add-language' => 'eo', 'wpEditToken' => 'bogus' ], true ),
+			new FauxRequest( [ 'add-project' => 'eo', 'wpEditToken' => 'bogus' ], true ),
 			$this->getAdmin()
 		);
 
 		$this->assertStringContainsString( '(sessionfailure)', $html );
-		$this->assertArrayNotHasKey( 'eo', LanguageStore::getActiveLanguages() );
+		$this->assertArrayNotHasKey( 'eo', ProjectStore::getActiveProjects() );
 	}
 
-	public function testListsInactiveRegistrations() {
-		$this->registerProjectLanguage( $this->wiki, 'de', false );
+	public function testListsInactiveProjects() {
+		$this->registerTranslationProject( $this->wiki, 'de', false );
 		TagStore::setTagsForPage( $this->makePageInfo( $this->wiki, '!de:C' ), Tag::fromArgs( [ 'a' ] ) );
 
 		$html = $this->execute();
 		$this->assertSame( [
-			'(hermeslanguages-header-wiki) | (hermeslanguages-header-language) | (hermeslanguages-header-pages) | '
-				. '(hermeslanguages-header-active)',
-			'*dewiki | Deutsch (de) | 0 | (hermeslanguages-active-yes)',
-			"*{$this->wiki} | English (en) | 0 | (hermeslanguages-active-yes)",
-			'Deutsch (de) | 1 | (hermeslanguages-active-no)',
+			'(hermesprojects-header-wiki) | (hermesprojects-header-language) | (hermesprojects-header-pages) | '
+				. '(hermesprojects-header-active)',
+			'*dewiki | Deutsch (de) | 0 | (hermesprojects-active-yes)',
+			"*{$this->wiki} | English (en) | 0 | (hermesprojects-active-yes)",
+			'Deutsch (de) | 1 | (hermesprojects-active-no)',
 		], self::rows( $html ) );
 		$this->assertSame( 1, preg_match_all( '/href="[^"]*Special:HermesPages\/de"/', $html ) );
-		$key = LanguageStore::getLanguages()[ 'de' ][ $this->wiki ]->toId();
+		$key = ProjectStore::getProjects()[ 'de' ][ $this->wiki ]->toId();
 		$this->assertMatchesRegularExpression( "/href=\"[^\"]*Special:HermesPages\\/$key\"[^>]*>1<\\/a>/", $html );
 	}
 
@@ -240,47 +240,47 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		$this->assertSame( [ $this->wiki ], self::addForms( $this->execute( $this->getAdmin() ) ) );
 		$this->assertSame( [ 'dewiki', $this->wiki ], self::addForms( $this->execute( $this->getAdmin( true ) ) ) );
 
-		$this->post( [ 'add-language' => 'eo', 'wiki' => 'dewiki' ], true );
+		$this->post( [ 'add-project' => 'eo', 'wiki' => 'dewiki' ], true );
 
-		$this->assertSame( 'dewiki', LanguageStore::getWikiForLanguage( 'eo' ) );
+		$this->assertSame( 'dewiki', ProjectStore::getWikiForLanguage( 'eo' ) );
 		$this->assertSame( [ 'add-project' ], $this->getLogActions() );
 	}
 
 	public function testLocalAdminOnlyManagesThisWiki() {
-		$this->post( [ 'add-language' => 'eo', 'wiki' => 'dewiki' ] );
+		$this->post( [ 'add-project' => 'eo', 'wiki' => 'dewiki' ] );
 
-		$this->assertNull( LanguageStore::getWikiForLanguage( 'eo' ) );
+		$this->assertNull( ProjectStore::getWikiForLanguage( 'eo' ) );
 		$this->assertSame( [], $this->getLogActions() );
 	}
 
 	public function testAddToUnregisteredWiki() {
-		$this->post( [ 'add-language' => 'eo', 'wiki' => 'nowiki' ], true );
+		$this->post( [ 'add-project' => 'eo', 'wiki' => 'nowiki' ], true );
 
-		$this->assertNull( LanguageStore::getWikiForLanguage( 'eo' ) );
+		$this->assertNull( ProjectStore::getWikiForLanguage( 'eo' ) );
 	}
 
 	public function testActionButtons() {
-		$this->registerProjectLanguage( $this->wiki, 'de', false );
+		$this->registerTranslationProject( $this->wiki, 'de', false );
 
 		$html = $this->execute( $this->getAdmin( true ) );
 		$this->assertSame(
 			[ 'deactivate de@dewiki', "deactivate en@{$this->wiki}", "activate de@{$this->wiki}" ],
 			self::activeButtons( $html )
 		);
-		$this->assertStringContainsString( '(hermeslanguages-header-actions)', $html );
+		$this->assertStringContainsString( '(hermesprojects-header-actions)', $html );
 
 		foreach ( [ $this->execute( $this->getAdmin() ), $this->execute() ] as $html ) {
 			$this->assertSame( [], self::activeButtons( $html ) );
-			$this->assertStringNotContainsString( '(hermeslanguages-header-actions)', $html );
+			$this->assertStringNotContainsString( '(hermesprojects-header-actions)', $html );
 		}
 	}
 
 	public function testActivate() {
-		$this->registerProjectLanguage( $this->wiki, 'de', false );
+		$this->registerTranslationProject( $this->wiki, 'de', false );
 
-		$html = $this->post( [ 'activate-language' => 'de' ], true );
+		$html = $this->post( [ 'activate-project' => 'de' ], true );
 
-		$this->assertSame( $this->wiki, LanguageStore::getWikiForLanguage( 'de' ) );
+		$this->assertSame( $this->wiki, ProjectStore::getWikiForLanguage( 'de' ) );
 		// It was active on dewiki before.
 		$this->assertSame( [ 'deactivate', 'activate' ], $this->getLogActions() );
 		$this->assertContains( "deactivate de@{$this->wiki}", self::activeButtons( $html ) );
@@ -288,59 +288,59 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	}
 
 	public function testActivateOnOtherWiki() {
-		$this->registerProjectLanguage( 'frwiki', 'de', false );
+		$this->registerTranslationProject( 'frwiki', 'de', false );
 
-		$this->post( [ 'activate-language' => 'de', 'wiki' => 'frwiki' ], true );
+		$this->post( [ 'activate-project' => 'de', 'wiki' => 'frwiki' ], true );
 
-		$this->assertSame( 'frwiki', LanguageStore::getWikiForLanguage( 'de' ) );
+		$this->assertSame( 'frwiki', ProjectStore::getWikiForLanguage( 'de' ) );
 	}
 
 	public function testDeactivate() {
-		$this->post( [ 'deactivate-language' => 'de', 'wiki' => 'dewiki' ], true );
+		$this->post( [ 'deactivate-project' => 'de', 'wiki' => 'dewiki' ], true );
 
-		$this->assertNull( LanguageStore::getWikiForLanguage( 'de' ) );
+		$this->assertNull( ProjectStore::getWikiForLanguage( 'de' ) );
 		$this->assertSame( [ 'deactivate' ], $this->getLogActions() );
-		$this->assertSame( $this->wiki, LanguageStore::getWikiForLanguage( 'en' ) );
+		$this->assertSame( $this->wiki, ProjectStore::getWikiForLanguage( 'en' ) );
 	}
 
 	public function testDeactivateWhereInactive() {
-		$this->registerProjectLanguage( $this->wiki, 'de', false );
+		$this->registerTranslationProject( $this->wiki, 'de', false );
 
-		$this->post( [ 'deactivate-language' => 'de' ], true );
+		$this->post( [ 'deactivate-project' => 'de' ], true );
 
-		$this->assertSame( 'dewiki', LanguageStore::getWikiForLanguage( 'de' ) );
+		$this->assertSame( 'dewiki', ProjectStore::getWikiForLanguage( 'de' ) );
 		$this->assertSame( [], $this->getLogActions() );
 	}
 
 	public function testLocalAdminActionButtons() {
-		$this->registerProjectLanguage( $this->wiki, 'eo' );
-		$this->registerProjectLanguage( $this->wiki, 'de', false );
+		$this->registerTranslationProject( $this->wiki, 'eo' );
+		$this->registerTranslationProject( $this->wiki, 'de', false );
 
 		$html = $this->execute( $this->getAdmin() );
 		$this->assertSame( [ "deactivate eo@{$this->wiki}" ], self::activeButtons( $html ) );
-		$this->assertStringContainsString( '(hermeslanguages-header-actions)', $html );
+		$this->assertStringContainsString( '(hermesprojects-header-actions)', $html );
 	}
 
 	public function testLocalAdminTogglesUniqueProject() {
-		$this->registerProjectLanguage( $this->wiki, 'eo' );
+		$this->registerTranslationProject( $this->wiki, 'eo' );
 
-		$this->post( [ 'deactivate-language' => 'eo' ] );
-		$this->assertNull( LanguageStore::getWikiForLanguage( 'eo' ) );
+		$this->post( [ 'deactivate-project' => 'eo' ] );
+		$this->assertNull( ProjectStore::getWikiForLanguage( 'eo' ) );
 
-		$this->post( [ 'activate-language' => 'eo' ] );
-		$this->assertSame( $this->wiki, LanguageStore::getWikiForLanguage( 'eo' ) );
+		$this->post( [ 'activate-project' => 'eo' ] );
+		$this->assertSame( $this->wiki, ProjectStore::getWikiForLanguage( 'eo' ) );
 		$this->assertSame( [ 'deactivate', 'activate' ], $this->getLogActions() );
 	}
 
 	/** Base languages, and languages other wikis have too, affect other wikis. */
 	public function testActivationNeedsGlobalRight() {
-		$this->registerProjectLanguage( $this->wiki, 'de', false );
+		$this->registerTranslationProject( $this->wiki, 'de', false );
 
-		$this->post( [ 'activate-language' => 'de' ] );
-		$this->post( [ 'deactivate-language' => 'en' ] );
+		$this->post( [ 'activate-project' => 'de' ] );
+		$this->post( [ 'deactivate-project' => 'en' ] );
 
-		$this->assertSame( 'dewiki', LanguageStore::getWikiForLanguage( 'de' ) );
-		$this->assertSame( $this->wiki, LanguageStore::getWikiForLanguage( 'en' ) );
+		$this->assertSame( 'dewiki', ProjectStore::getWikiForLanguage( 'de' ) );
+		$this->assertSame( $this->wiki, ProjectStore::getWikiForLanguage( 'en' ) );
 		$this->assertSame( [], $this->getLogActions() );
 	}
 }

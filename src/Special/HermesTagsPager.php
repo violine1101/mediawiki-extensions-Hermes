@@ -4,7 +4,7 @@ namespace MediaWiki\Extension\Hermes\Special;
 
 use MediaWiki\Context\IContextSource;
 use MediaWiki\Extension\Hermes\Hermes;
-use MediaWiki\Extension\Hermes\LanguageStore;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\TagLink;
 use MediaWiki\Html\Html;
 use MediaWiki\Pager\TablePager;
@@ -12,17 +12,17 @@ use Wikimedia\Rdbms\IResultWrapper;
 use Wikimedia\Rdbms\Subquery;
 
 /**
- * Lists the Hermes tags of the whole wiki family, one row per tag and one column per language (plus, if shown,
- * one per inactive registration, dimmed), each cell listing the pages with that tag; conflicts are
+ * Lists the Hermes tags of the whole wiki family, one row per tag and one column per active language (plus, if shown,
+ * one per inactive project, dimmed), each cell listing the pages with that tag; conflicts are
  * highlighted. To make every column sortable, a subquery groups hermes_tags by tag, with a sort key per column:
  * its first title there.
  */
 class HermesTagsPager extends TablePager {
 
-	/** @var array<string, string> Column field => registration ID */
+	/** @var array<string, string> Column field => project ID */
 	private array $languageFields = [];
 
-	/** @var array<string, array<string, array<int, TagLink[]>>> Tag => registration ID => priority => links */
+	/** @var array<string, array<string, array<int, TagLink[]>>> Tag => project ID => priority => links */
 	private array $links = [];
 
 	/**
@@ -31,7 +31,7 @@ class HermesTagsPager extends TablePager {
 	 * @param string $tagFilter Only tags containing this, if not empty
 	 * @param string[] $languages Only these languages, or all if empty
 	 * @param string[] $wikis Only pages on these wikis, or all if empty
-	 * @param bool $withInactive Whether to include pages of inactive registrations
+	 * @param bool $withInactive Whether to include pages of inactive projects
 	 * @param bool $conflictsOnly Only tags with a conflict
 	 */
 	public function __construct(
@@ -43,15 +43,15 @@ class HermesTagsPager extends TablePager {
 		private readonly bool $withInactive,
 		private readonly bool $conflictsOnly,
 	) {
-		$columns = array_intersect( $languages ?: array_keys( LanguageStore::getLanguages() ),
-			array_keys( LanguageStore::getActiveLanguages() ) );
+		$columns = array_intersect( $languages ?: array_keys( ProjectStore::getProjects() ),
+			array_keys( ProjectStore::getActiveProjects() ) );
 		if ( $withInactive ) {
-			foreach ( LanguageStore::getLanguages() as $code => $registrations ) {
-				foreach ( $registrations as $wiki => $registration ) {
-					if ( !$registration->isActive && ( !$languages || in_array( $code, $languages, true ) )
+			foreach ( ProjectStore::getProjects() as $code => $projects ) {
+				foreach ( $projects as $wiki => $project ) {
+					if ( !$project->isActive && ( !$languages || in_array( $code, $languages, true ) )
 						&& ( !$wikis || in_array( $wiki, $wikis, true ) )
 					) {
-						$columns[] = $registration->toId();
+						$columns[] = $project->toId();
 					}
 				}
 			}
@@ -68,14 +68,14 @@ class HermesTagsPager extends TablePager {
 	/** @inheritDoc */
 	public function getQueryInfo() {
 		$dbr = $this->getDatabase();
-		$query = TagQuery::joinLanguages(
-			$dbr->newSelectQueryBuilder()->from( 'hermes_tags', 't' ), 't', 'l', $this->withInactive
+		$query = TagQuery::joinProjects(
+			$dbr->newSelectQueryBuilder()->from( 'hermes_tags', 't' ), 't', 'p', $this->withInactive
 		)
 			->select( [ 'ht_tag' => 't.ht_tag' ] )
 			->groupBy( 't.ht_tag' )
 			->caller( __METHOD__ );
 		foreach ( array_values( $this->languageFields ) as $i => $id ) {
-			$inColumn = TagQuery::inRegistration( $dbr, $id );
+			$inColumn = TagQuery::inProject( $dbr, $id );
 			$query->select( [
 				"sort_$i" => TagQuery::sortKey( $dbr, "MIN(CASE WHEN $inColumn THEN t.ht_base_title END)" ),
 			] );
@@ -124,7 +124,7 @@ class HermesTagsPager extends TablePager {
 	protected function getFieldNames() {
 		$fields = [ 'ht_tag' => $this->msg( 'hermestags-header-tag' )->text() ];
 		foreach ( $this->languageFields as $field => $id ) {
-			$fields[ $field ] = $this->formatter->registrationLabel( $id );
+			$fields[ $field ] = $this->formatter->projectLabel( $id );
 		}
 		return $fields;
 	}

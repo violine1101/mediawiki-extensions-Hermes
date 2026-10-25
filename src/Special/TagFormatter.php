@@ -4,9 +4,9 @@ namespace MediaWiki\Extension\Hermes\Special;
 
 use MediaWiki\Context\IContextSource;
 use MediaWiki\Extension\Hermes\Hermes;
-use MediaWiki\Extension\Hermes\HermesLanguage;
-use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\Project;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\TagLink;
 use MediaWiki\Html\Html;
 use MediaWiki\Linker\LinkRenderer;
@@ -25,13 +25,13 @@ final class TagFormatter {
 	}
 
 	/**
-	 * Special:HermesPages/<id>/<title> for a page: its registration ID (HermesLanguage::toId()) identifies the wiki
+	 * Special:HermesPages/<id>/<title> for a page: its project ID (Project::toId()) identifies the wiki
 	 * and translation project, the title is the namespace name as stored and the base title.
 	 */
 	public static function detailsTitle( PageInfo $page ): Title {
 		$title = $page->title;
 		$namespace = $title->getNamespaceText() !== '' ? $title->getNamespaceText() . ':' : '';
-		$id = $title->getRegistration()?->toId() ?? $title->getLanguageCode();
+		$id = $title->getProject()?->toId() ?? $title->getLanguageCode();
 		return SpecialPage::getTitleFor( 'HermesPages', "$id/$namespace{$title->baseTitle}" );
 	}
 
@@ -116,19 +116,19 @@ final class TagFormatter {
 		return $name !== '' ? "$name ($code)" : $code;
 	}
 
-	/** "Autonym (code)" for a registration ID, followed by the wiki if it's an inactive registration. */
-	public function registrationLabel( string $id ): string {
-		$registration = HermesLanguage::parseId( $id );
-		if ( $registration === null || $registration->isActive ) {
-			return $this->languageLabel( $registration->code ?? $id );
+	/** "Autonym (code)" for a project ID, followed by the wiki if it's an inactive project. */
+	public function projectLabel( string $id ): string {
+		$project = Project::parseId( $id );
+		if ( $project === null || $project->isActive ) {
+			return $this->languageLabel( $project->code ?? $id );
 		}
-		return $this->context->msg( 'hermes-inactive-registration' )
-			->plaintextParams( $this->languageLabel( $registration->code ), $registration->wiki )->text();
+		return $this->context->msg( 'hermes-inactive-project' )
+			->plaintextParams( $this->languageLabel( $project->code ), $project->wiki )->text();
 	}
 
 	/** @return array<string, string> Options for a language multiselect, label => code */
 	public function languageOptions(): array {
-		$codes = array_keys( LanguageStore::getLanguages() );
+		$codes = array_keys( ProjectStore::getProjects() );
 		sort( $codes );
 		$options = [];
 		foreach ( $codes as $code ) {
@@ -153,26 +153,26 @@ final class TagFormatter {
 		);
 	}
 
-	/** Cell contents of an inactive registration, dimmed (the cell itself isn't, to keep its background). */
+	/** Cell contents of an inactive project, dimmed (the cell itself isn't, to keep its background). */
 	public function dimmed( string $html ): string {
 		return $html !== '' ? Html::rawElement( 'div', [ 'class' => 'ext-hermes-inactive-content' ], $html ) : '';
 	}
 
 	/** @return array<string, string> Options for a wiki multiselect, wiki => wiki */
 	public function wikiOptions(): array {
-		$wikis = LanguageStore::getWikiIds();
+		$wikis = ProjectStore::getWikiIds();
 		sort( $wikis );
 		return array_combine( $wikis, $wikis );
 	}
 
 	/**
-	 * @param string $id Registration ID, labelling the row; inactive ones are dimmed
+	 * @param string $id Project ID, labelling the row; inactive ones are dimmed
 	 * @param string[] $cells HTML of the other cells, their contents dimmed for inactive ones
 	 * @return string HTML
 	 */
-	public function languageRow( string $id, array $cells ): string {
+	public function projectRow( string $id, array $cells ): string {
 		$inactive = str_contains( $id, '@' );
-		$label = htmlspecialchars( $this->registrationLabel( $id ) );
+		$label = htmlspecialchars( $this->projectLabel( $id ) );
 		return Html::rawElement( 'tr', [ 'class' => $inactive ? 'ext-hermes-inactive' : null ],
 			Html::rawElement( 'th', [ 'scope' => 'row' ], $inactive ? $this->dimmed( $label ) : $label ) .
 				implode( '', $cells )

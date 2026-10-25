@@ -3,7 +3,7 @@
 namespace MediaWiki\Extension\Hermes\Tests\ProjectTitle;
 
 use LogicException;
-use MediaWiki\Extension\Hermes\LanguageStore;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 use MediaWiki\MainConfigNames;
@@ -19,10 +19,10 @@ class ToTitleTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		// Simulates InitHooks::onBeforeInitialize()'s real-request self-registration, which
-		// addProjectLanguage() alone doesn't trigger for the *current* wiki's base language.
-		LanguageStore::init();
-		LanguageStore::addProjectLanguage( WikiMap::getCurrentWikiId(), 'eo' );
+		// Simulates InitHooks::onBeforeInitialize()'s real-request base project setup, which
+		// addTranslationProject() alone doesn't trigger for the *current* wiki.
+		ProjectStore::init();
+		ProjectStore::addTranslationProject( WikiMap::getCurrentWikiId(), 'eo' );
 		$this->overrideConfigValue( MainConfigNames::CapitalLinks, true );
 	}
 

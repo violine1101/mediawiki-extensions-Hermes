@@ -18,17 +18,17 @@
 		"pk": [ "ht_wiki", "ht_page_id", "ht_tag" ]
 	},
 	{
-		"name": "hermes_languages",
+		"name": "hermes_projects",
 		"columns": [
-			{ "name": "hl_language", "type": "binary", "options": { "length": 35, "notnull": true } },
-			{ "name": "hl_wiki", "type": "binary", "options": { "length": 64, "notnull": true } },
-			{ "name": "hl_base", "type": "mwtinyint", "options": { "notnull": true, "length": 1, "default": 1 } },
-			{ "name": "hl_active", "type": "mwtinyint", "options": { "notnull": true, "length": 1, "default": 1 } },
-			{ "name": "hl_url", "type": "binary", "options": { "length": 255, "notnull": false } }
+			{ "name": "hp_language", "type": "binary", "options": { "length": 35, "notnull": true } },
+			{ "name": "hp_wiki", "type": "binary", "options": { "length": 64, "notnull": true } },
+			{ "name": "hp_base", "type": "mwtinyint", "options": { "notnull": true, "length": 1, "default": 1 } },
+			{ "name": "hp_active", "type": "mwtinyint", "options": { "notnull": true, "length": 1, "default": 1 } },
+			{ "name": "hp_url", "type": "binary", "options": { "length": 255, "notnull": false } }
 		],
 		"indexes": [
-			{ "name": "hl_wiki", "columns": [ "hl_wiki" ], "unique": false }
+			{ "name": "hp_wiki", "columns": [ "hp_wiki" ], "unique": false }
 		],
-		"pk": [ "hl_language", "hl_wiki" ]
+		"pk": [ "hp_language", "hp_wiki" ]
 	}
 ]

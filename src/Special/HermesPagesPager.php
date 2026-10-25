@@ -11,7 +11,7 @@ use Wikimedia\Rdbms\Subquery;
 
 /**
  * Lists the pages of the whole wiki family that have Hermes tags, one column per fallback priority;
- * tags in a conflict are highlighted, and pages of inactive registrations (if shown) dimmed. To make every
+ * tags in a conflict are highlighted, and pages of inactive projects (if shown) dimmed. To make every
  * column sortable, a subquery groups hermes_tags by page, with the tag, section, conflict flag and a sort key
  * per priority.
  */
@@ -29,7 +29,7 @@ class HermesPagesPager extends TablePager {
 	 * @param string $titleFilter Only base titles containing this, in DB key form, if not empty
 	 * @param string[] $languages Only these languages, or all if empty
 	 * @param string[] $wikis Only pages on these wikis, or all if empty
-	 * @param bool $withInactive Whether to include pages of inactive registrations
+	 * @param bool $withInactive Whether to include pages of inactive projects
 	 * @param bool $conflictsOnly Only pages with a tag in a conflict
 	 */
 	public function __construct(
@@ -61,16 +61,16 @@ class HermesPagesPager extends TablePager {
 			't.ht_wiki', 't.ht_page_id', 't.ht_namespace_id', 't.ht_namespace_text',
 			't.ht_translation_project', 't.ht_base_title',
 		];
-		$query = TagQuery::joinLanguages(
-			$dbr->newSelectQueryBuilder()->from( 'hermes_tags', 't' ), 't', 'l', $this->withInactive
+		$query = TagQuery::joinProjects(
+			$dbr->newSelectQueryBuilder()->from( 'hermes_tags', 't' ), 't', 'p', $this->withInactive
 		)
 			->select( $pageFields )
 			->select( [
 				'language' => TagQuery::language(),
-				'is_active' => 'l.hl_active',
+				'is_active' => 'p.hp_active',
 				'has_conflict' => 'MAX(CASE WHEN ' . TagQuery::inConflict( $dbr ) . ' THEN 1 ELSE 0 END)',
 			] )
-			->groupBy( [ ...$pageFields, 'l.hl_language', 'l.hl_active' ] )
+			->groupBy( [ ...$pageFields, 'p.hp_language', 'p.hp_active' ] )
 			->caller( __METHOD__ );
 		foreach ( $this->priorityFields as $priority ) {
 			$tag = "MAX(CASE WHEN t.ht_priority = $priority THEN t.ht_tag END)";
@@ -136,8 +136,8 @@ class HermesPagesPager extends TablePager {
 			return $this->formatter->pageLink( PageInfo::fromRow( $row ) );
 		}
 		if ( $name === 'language' ) {
-			$id = PageInfo::fromRow( $row )->title->getRegistration()?->toId() ?? $value;
-			return htmlspecialchars( $this->formatter->registrationLabel( $id ) );
+			$id = PageInfo::fromRow( $row )->title->getProject()?->toId() ?? $value;
+			return htmlspecialchars( $this->formatter->projectLabel( $id ) );
 		}
 
 		$priority = $this->priorityFields[ $name ];

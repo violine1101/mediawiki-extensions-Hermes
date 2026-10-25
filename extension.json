@@ -129,8 +129,8 @@
 		"HermesPages": {
 			"class": "MediaWiki\\Extension\\Hermes\\Special\\SpecialHermesPages"
 		},
-		"HermesLanguages": {
-			"class": "MediaWiki\\Extension\\Hermes\\Special\\SpecialHermesLanguages",
+		"HermesProjects": {
+			"class": "MediaWiki\\Extension\\Hermes\\Special\\SpecialHermesProjects",
 			"services": [ "LanguageNameUtils" ]
 		},
 		"HermesTranslate": {

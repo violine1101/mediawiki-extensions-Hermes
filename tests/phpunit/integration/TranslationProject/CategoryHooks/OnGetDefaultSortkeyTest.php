@@ -3,7 +3,7 @@
 namespace MediaWiki\Extension\Hermes\Tests\TranslationProject\CategoryHooks;
 
 use MediaWiki\Extension\Hermes\Hooks\TranslationProject\CategoryHooks;
-use MediaWiki\Extension\Hermes\LanguageStore;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 use MediaWiki\Title\Title;
 use MediaWiki\WikiMap\WikiMap;
@@ -16,10 +16,10 @@ class OnGetDefaultSortkeyTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		// Simulates InitHooks::onBeforeInitialize()'s real-request self-registration, which
-		// addProjectLanguage() alone doesn't trigger for the *current* wiki's base language.
-		LanguageStore::init();
-		LanguageStore::addProjectLanguage( WikiMap::getCurrentWikiId(), 'eo' );
+		// Simulates InitHooks::onBeforeInitialize()'s real-request base project setup, which
+		// addTranslationProject() alone doesn't trigger for the *current* wiki.
+		ProjectStore::init();
+		ProjectStore::addTranslationProject( WikiMap::getCurrentWikiId(), 'eo' );
 	}
 
 	public function testStripsProjectPrefixFromSortkey() {

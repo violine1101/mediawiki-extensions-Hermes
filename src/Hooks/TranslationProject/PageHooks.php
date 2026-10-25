@@ -5,7 +5,7 @@ namespace MediaWiki\Extension\Hermes\Hooks\TranslationProject;
 use MediaWiki\Content\Hook\PageContentLanguageHook;
 use MediaWiki\Context\Hook\UserGetLanguageObjectHook;
 use MediaWiki\Extension\Hermes\DisplayLanguage;
-use MediaWiki\Extension\Hermes\LanguageStore;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Hook\BeforeInitializeHook;
 use MediaWiki\Html\Html;
@@ -79,7 +79,7 @@ class PageHooks implements
 
 		$title = $context->getTitle();
 		$contentLanguage = ( $title ? ProjectTitle::newFromLinkTarget( $title )->project : null )
-			?? LanguageStore::getLocalBaseLanguage();
+			?? ProjectStore::getLocalBaseLanguage();
 		// Core's "language" option (the incoming $code) is hidden in favor of Hermes's own; users whose
 		// options can't be loaded yet get the content language, like logged-out users.
 		$code = $user->isSafeToLoad() ? DisplayLanguage::forUser( $user, $contentLanguage ) : $contentLanguage;

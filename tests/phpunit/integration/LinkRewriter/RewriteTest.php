@@ -2,8 +2,8 @@
 
 namespace MediaWiki\Extension\Hermes\Tests\LinkRewriter;
 
-use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\LinkRewriter;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 use MediaWiki\WikiMap\WikiMap;
@@ -16,12 +16,12 @@ class RewriteTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		// Simulates InitHooks::onBeforeInitialize()'s real-request self-registration, which
-		// addProjectLanguage() alone doesn't trigger for the *current* wiki's base language.
-		LanguageStore::init();
-		LanguageStore::addProjectLanguage( WikiMap::getCurrentWikiId(), 'eo' );
+		// Simulates InitHooks::onBeforeInitialize()'s real-request base project setup, which
+		// addTranslationProject() alone doesn't trigger for the *current* wiki.
+		ProjectStore::init();
+		ProjectStore::addTranslationProject( WikiMap::getCurrentWikiId(), 'eo' );
 		// A second project, for references to other local projects.
-		LanguageStore::addProjectLanguage( WikiMap::getCurrentWikiId(), 'de' );
+		ProjectStore::addTranslationProject( WikiMap::getCurrentWikiId(), 'de' );
 	}
 
 	private function eoPage(): ProjectTitle {

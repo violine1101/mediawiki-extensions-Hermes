@@ -10,7 +10,7 @@ use MediaWiki\Html\Html;
 /**
  * Special:HermesTags: all Hermes tags in the wiki family, filterable by tag name, language and wiki, optionally
  * with inactive projects, with conflicts highlighted. Special:HermesTags/<tag> shows a single tag, one row per
- * language (inactive registrations dimmed) and one column per priority.
+ * language (inactive projects dimmed) and one column per priority.
  */
 class SpecialHermesTags extends HermesSpecialPage {
 
@@ -82,7 +82,7 @@ class SpecialHermesTags extends HermesSpecialPage {
 					$inactive ? $formatter->dimmed( $pages ) : $pages
 				);
 			}
-			$rows[] = $formatter->languageRow( $id, $cells );
+			$rows[] = $formatter->projectRow( $id, $cells );
 		}
 
 		// With a single column, there's nothing for a priority header to tell apart.

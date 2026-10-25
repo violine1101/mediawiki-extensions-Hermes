@@ -4,7 +4,7 @@ namespace MediaWiki\Extension\Hermes\Tests\TranslationProject\PageHooks;
 
 use MediaWiki\Context\RequestContext;
 use MediaWiki\Extension\Hermes\Hooks\TranslationProject\PageHooks;
-use MediaWiki\Extension\Hermes\LanguageStore;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 use MediaWiki\MainConfigNames;
 use MediaWiki\Request\FauxRequest;
@@ -22,10 +22,10 @@ class OnBeforeInitializeTest extends HermesIntegrationTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$this->overrideConfigValue( MainConfigNames::CapitalLinks, true );
-		// Simulates InitHooks::onBeforeInitialize()'s real-request self-registration, which
-		// addProjectLanguage() alone doesn't trigger for the *current* wiki's base language.
-		LanguageStore::init();
-		LanguageStore::addProjectLanguage( WikiMap::getCurrentWikiId(), 'eo' );
+		// Simulates InitHooks::onBeforeInitialize()'s real-request base project setup, which
+		// addTranslationProject() alone doesn't trigger for the *current* wiki.
+		ProjectStore::init();
+		ProjectStore::addTranslationProject( WikiMap::getCurrentWikiId(), 'eo' );
 	}
 
 	private function runHook( string $titleText, array $query = [] ): bool {

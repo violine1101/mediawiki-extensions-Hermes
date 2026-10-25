@@ -15,9 +15,9 @@ class GetTranslationsOfPageTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->registerBaseLanguage( 'dewiki', 'de' );
-		$this->registerBaseLanguage( 'frwiki', 'fr' );
-		$this->registerBaseLanguage( 'eswiki', 'es' );
+		$this->registerBaseProject( 'dewiki', 'de' );
+		$this->registerBaseProject( 'frwiki', 'fr' );
+		$this->registerBaseProject( 'eswiki', 'es' );
 	}
 
 	public function testOnlyMainTagAtPriorityZero() {

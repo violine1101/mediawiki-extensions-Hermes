@@ -4,8 +4,8 @@ namespace MediaWiki\Extension\Hermes\Special;
 
 use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\Hooks\TranslationProject\TranslateHooks;
-use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Html\Html;
@@ -34,7 +34,7 @@ class SpecialHermesTranslate extends HermesSpecialPage {
 		$pageName = trim( $request->getText( 'page', $par ) );
 		$language = $request->getVal( 'language' );
 		$translation = $request->getVal( 'translation' );
-		$projects = LanguageStore::getActiveLocalProjectLanguages();
+		$projects = ProjectStore::getActiveLocalTranslationProjects();
 
 		$page = null;
 		if ( $pageName !== '' ) {
@@ -119,7 +119,7 @@ class SpecialHermesTranslate extends HermesSpecialPage {
 	 * @return string[]
 	 */
 	public static function getUntranslatedProjects( ProjectTitle $page ): array {
-		$projects = LanguageStore::getActiveLocalProjectLanguages();
+		$projects = ProjectStore::getActiveLocalTranslationProjects();
 		$translated = $projects ? TagStore::getTranslationsOfPage( PageInfo::fromLocalPage( $page->toTitle() ) ) : [];
 		return array_values( array_filter( $projects, static fn ( string $project ) =>
 			!isset( $translated[ $project ] ) && !$page->withProject( $project )->toTitle()->exists()

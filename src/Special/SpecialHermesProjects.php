@@ -4,8 +4,8 @@ namespace MediaWiki\Extension\Hermes\Special;
 
 use MediaWiki\Extension\Hermes\Exceptions\LanguageConflictException;
 use MediaWiki\Extension\Hermes\Hermes;
-use MediaWiki\Extension\Hermes\HermesLanguage;
-use MediaWiki\Extension\Hermes\LanguageStore;
+use MediaWiki\Extension\Hermes\Project;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Html\Html;
 use MediaWiki\Languages\LanguageNameUtils;
 use MediaWiki\Logging\ManualLogEntry;
@@ -16,19 +16,19 @@ use OOUI\ButtonInputWidget;
 use OOUI\DropdownInputWidget;
 
 /**
- * Special:HermesLanguages: the wikis of the family with their languages (highlighting active ones), and how many
- * pages with Hermes tags each language has there. Users with the hermes-local-admin right can add translation
+ * Special:HermesProjects: the wikis of the family with their projects (highlighting active ones), and how many
+ * pages with Hermes tags each project has. Users with the hermes-local-admin right can add translation
  * projects to this wiki, and activate or deactivate those whose language no other wiki has; those with
- * hermes-global-admin can add them to any wiki, and activate or deactivate any language on any wiki. Changes are
+ * hermes-global-admin can add them to any wiki, and activate or deactivate any project. Changes are
  * logged in the "hermes" log.
  */
-class SpecialHermesLanguages extends HermesSpecialPage {
+class SpecialHermesProjects extends HermesSpecialPage {
 
 	private const LOCAL_RIGHT = 'hermes-local-admin';
 	private const GLOBAL_RIGHT = 'hermes-global-admin';
 
 	public function __construct( private readonly LanguageNameUtils $languageNameUtils ) {
-		parent::__construct( 'HermesLanguages' );
+		parent::__construct( 'HermesProjects' );
 	}
 
 	/** @inheritDoc */
@@ -42,10 +42,10 @@ class SpecialHermesLanguages extends HermesSpecialPage {
 			$this->getOutput()->enableOOUI();
 			$this->handlePost();
 		}
-		$this->getOutput()->addHTML( $this->languagesTable() );
+		$this->getOutput()->addHTML( $this->projectsTable() );
 	}
 
-	/** Whether the user may manage $wiki's languages: their own wiki as a local admin, any as a global one. */
+	/** Whether the user may manage $wiki's projects: their own wiki as a local admin, any as a global one. */
 	private function canManage( string $wiki ): bool {
 		$authority = $this->getAuthority();
 		return $authority->isAllowed( self::GLOBAL_RIGHT )
@@ -53,87 +53,87 @@ class SpecialHermesLanguages extends HermesSpecialPage {
 	}
 
 	/**
-	 * Whether the user may activate or deactivate $language: any as a global admin, or as a local admin a project
-	 * of their own wiki whose language no other wiki has, as that doesn't affect which wiki others link to.
+	 * Whether the user may activate or deactivate $project: any as a global admin, or as a local admin a translation
+	 * project of their own wiki whose language no other wiki has, as that doesn't affect which wiki others link to.
 	 */
-	private function canActivate( HermesLanguage $language ): bool {
+	private function canActivate( Project $project ): bool {
 		$authority = $this->getAuthority();
 		return $authority->isAllowed( self::GLOBAL_RIGHT ) || (
 			$authority->isAllowed( self::LOCAL_RIGHT )
-			&& $language->isLocalProject()
-			&& count( LanguageStore::getLanguages()[ $language->code ] ) === 1
+			&& $project->isLocalTranslationProject()
+			&& count( ProjectStore::getProjects()[ $project->code ] ) === 1
 		);
 	}
 
 	/**
-	 * One row per language, grouped by wiki: its base language first (in bold), then its translation projects,
+	 * One row per project, grouped by wiki: its base project first (in bold), then its translation projects,
 	 * and for wikis the user can manage the form adding one, unless there's nothing left to add. Global admins get
 	 * a button (de)activating each.
 	 */
-	private function languagesTable(): string {
+	private function projectsTable(): string {
 		$formatter = $this->getFormatter();
 		$counts = TagQuery::countPages( Hermes::getDB() );
 		$byWiki = [];
-		foreach ( LanguageStore::getLanguages() as $code => $registrations ) {
-			foreach ( $registrations as $wiki => $language ) {
-				$byWiki[ $wiki ][ $language->isBase ? '' : $code ] = $language;
+		foreach ( ProjectStore::getProjects() as $code => $ofLanguage ) {
+			foreach ( $ofLanguage as $wiki => $project ) {
+				$byWiki[ $wiki ][ $project->isBase ? '' : $code ] = $project;
 			}
 		}
 		ksort( $byWiki );
 		$hasActions = false;
-		foreach ( $byWiki as $languages ) {
-			foreach ( $languages as $language ) {
-				$hasActions = $hasActions || $this->canActivate( $language );
+		foreach ( $byWiki as $projects ) {
+			foreach ( $projects as $project ) {
+				$hasActions = $hasActions || $this->canActivate( $project );
 			}
 		}
 
 		$headerMsgs = [
-			'hermeslanguages-header-wiki', 'hermeslanguages-header-language', 'hermeslanguages-header-pages',
-			'hermeslanguages-header-active',
+			'hermesprojects-header-wiki', 'hermesprojects-header-language', 'hermesprojects-header-pages',
+			'hermesprojects-header-active',
 		];
 		if ( $hasActions ) {
-			$headerMsgs[] = 'hermeslanguages-header-actions';
+			$headerMsgs[] = 'hermesprojects-header-actions';
 		}
 		$headers = array_map(
 			fn ( string $msg ) => Html::element( 'th', [], $this->msg( $msg )->text() ), $headerMsgs
 		);
 		$headers[ 3 ] = Html::rawElement( 'th', [],
-			Html::element( 'abbr', [ 'title' => $this->msg( 'hermeslanguages-header-active-tooltip' )->text() ],
-				$this->msg( 'hermeslanguages-header-active' )->text()
+			Html::element( 'abbr', [ 'title' => $this->msg( 'hermesprojects-header-active-tooltip' )->text() ],
+				$this->msg( 'hermesprojects-header-active' )->text()
 			)
 		);
 		$rows = [];
-		foreach ( $byWiki as $wiki => $languages ) {
-			ksort( $languages );
+		foreach ( $byWiki as $wiki => $projects ) {
+			ksort( $projects );
 			$addable = $this->canManage( $wiki ) ? $this->getAddableLanguages( $wiki ) : [];
 			$addRow = (bool)$addable;
 			$wikiCell = Html::rawElement( 'th',
-				[ 'scope' => 'rowgroup', 'rowspan' => count( $languages ) + (int)$addRow ],
+				[ 'scope' => 'rowgroup', 'rowspan' => count( $projects ) + (int)$addRow ],
 				$this->wikiLink( $wiki )
 			);
-			foreach ( $languages as $key => $language ) {
-				$code = $language->code;
+			foreach ( $projects as $key => $project ) {
+				$code = $project->code;
 				$count = $this->getLanguage()->formatNum( $counts[ $wiki ][ $code ] ?? 0 );
 				$classes = [
-					'ext-hermes-base-language' => $key === '',
-					'ext-hermes-active-language' => $language->isActive,
+					'ext-hermes-base-project' => $key === '',
+					'ext-hermes-active-project' => $project->isActive,
 				];
 				$rows[] = Html::rawElement( 'tr', [ 'class' => $classes ],
 					$wikiCell .
 					Html::element( 'td', [], $formatter->languageLabel( $code ) ) .
 					Html::rawElement( 'td',
-						[ 'class' => 'ext-hermes-language-pages' ],
+						[ 'class' => 'ext-hermes-project-pages' ],
 						$this->getLinkRenderer()->makeKnownLink( SpecialPage::getTitleFor( 'HermesPages',
-							$language->toId()
+							$project->toId()
 						), $count )
 					) .
-					Html::element( 'td', [ 'class' => 'ext-hermes-language-active' ],
-						$this->msg( $language->isActive ? 'hermeslanguages-active-yes' : 'hermeslanguages-active-no' )
+					Html::element( 'td', [ 'class' => 'ext-hermes-project-active' ],
+						$this->msg( $project->isActive ? 'hermesprojects-active-yes' : 'hermesprojects-active-no' )
 							->text()
 					) .
 					( $hasActions
-						? Html::rawElement( 'td', [ 'class' => 'ext-hermes-language-actions' ],
-							$this->canActivate( $language ) ? $this->activeButton( $language ) : ''
+						? Html::rawElement( 'td', [ 'class' => 'ext-hermes-project-actions' ],
+							$this->canActivate( $project ) ? $this->activeButton( $project ) : ''
 						)
 						: '' )
 				);
@@ -147,25 +147,25 @@ class SpecialHermesLanguages extends HermesSpecialPage {
 				);
 			}
 		}
-		return $formatter->table( $headers, $rows, false, [ 'ext-hermes-languages' ] );
+		return $formatter->table( $headers, $rows, false, [ 'ext-hermes-projects' ] );
 	}
 
 	/** A link to the wiki's main page, or just its ID if it has no registered URL. */
 	private function wikiLink( string $wiki ): string {
-		$url = LanguageStore::getUrlTemplate( $wiki );
+		$url = ProjectStore::getUrlTemplate( $wiki );
 		return $url !== null
 			? Html::element( 'a', [ 'href' => str_replace( '$1', '', $url ), 'class' => 'extiw' ], $wiki )
 			: htmlspecialchars( $wiki );
 	}
 
 	/**
-	 * @return array<string, string> Languages MediaWiki supports that aren't registered on $wiki yet,
+	 * @return array<string, string> Languages MediaWiki supports that $wiki has no project in yet,
 	 *   code => autonym
 	 */
 	private function getAddableLanguages( string $wiki ): array {
 		$codes = array_keys( array_filter(
 			$this->languageNameUtils->getLanguageNames( LanguageNameUtils::AUTONYMS, LanguageNameUtils::SUPPORTED ),
-			static fn ( string $code ) => !isset( LanguageStore::getLanguages()[ $code ][ $wiki ] ),
+			static fn ( string $code ) => !isset( ProjectStore::getProjects()[ $code ][ $wiki ] ),
 			ARRAY_FILTER_USE_KEY
 		) );
 		sort( $codes );
@@ -178,32 +178,32 @@ class SpecialHermesLanguages extends HermesSpecialPage {
 	 * @return string HTML
 	 */
 	private function addForm( string $wiki, array $addable ): string {
-		$options = [ [ 'data' => '', 'label' => $this->msg( 'hermeslanguages-add-placeholder' )->text() ] ];
+		$options = [ [ 'data' => '', 'label' => $this->msg( 'hermesprojects-add-placeholder' )->text() ] ];
 		foreach ( $addable as $code => $name ) {
 			$options[] = [ 'data' => $code, 'label' => "$name ($code)" ];
 		}
 		return $this->postForm( $wiki, [],
 			new ActionFieldLayout(
-				new DropdownInputWidget( [ 'name' => 'add-language', 'options' => $options ] ),
+				new DropdownInputWidget( [ 'name' => 'add-project', 'options' => $options ] ),
 				new ButtonInputWidget( [
 					'type' => 'submit',
-					'label' => $this->msg( 'hermeslanguages-add-submit' )->text(),
+					'label' => $this->msg( 'hermesprojects-add-submit' )->text(),
 					'flags' => [ 'progressive' ],
 				] ),
-				[ 'label' => $this->msg( 'hermeslanguages-add-placeholder' )->text(), 'invisibleLabel' => true ]
+				[ 'label' => $this->msg( 'hermesprojects-add-placeholder' )->text(), 'invisibleLabel' => true ]
 			)
 		);
 	}
 
-	/** A button making $language inactive if it's active, active otherwise. */
-	private function activeButton( HermesLanguage $language ): string {
-		$action = $language->isActive ? 'deactivate' : 'activate';
-		return $this->postForm( $language->wiki, [],
+	/** A button making $project inactive if it's active, active otherwise. */
+	private function activeButton( Project $project ): string {
+		$action = $project->isActive ? 'deactivate' : 'activate';
+		return $this->postForm( $project->wiki, [],
 			new ButtonInputWidget( [
 				'type' => 'submit',
-				'name' => "$action-language",
-				'value' => $language->code,
-				'label' => $this->msg( "hermeslanguages-$action" )->text(),
+				'name' => "$action-project",
+				'value' => $project->code,
+				'label' => $this->msg( "hermesprojects-$action" )->text(),
 				'flags' => [ 'progressive' ],
 			] )
 		);
@@ -222,9 +222,9 @@ class SpecialHermesLanguages extends HermesSpecialPage {
 	private function handlePost(): void {
 		$request = $this->getRequest();
 		$wiki = $request->getVal( 'wiki', WikiMap::getCurrentWikiId() );
-		$add = $this->canManage( $wiki ) ? $request->getVal( 'add-language', '' ) : '';
-		$activate = $request->getVal( 'activate-language', '' );
-		$deactivate = $request->getVal( 'deactivate-language', '' );
+		$add = $this->canManage( $wiki ) ? $request->getVal( 'add-project', '' ) : '';
+		$activate = $request->getVal( 'activate-project', '' );
+		$deactivate = $request->getVal( 'deactivate-project', '' );
 		if ( !$request->wasPosted() || ( $add === '' && $activate === '' && $deactivate === '' ) ) {
 			return;
 		}
@@ -235,29 +235,29 @@ class SpecialHermesLanguages extends HermesSpecialPage {
 		}
 		$this->checkReadOnly();
 
-		$registered = in_array( $wiki, LanguageStore::getWikiIds(), true );
+		$registered = in_array( $wiki, ProjectStore::getWikiIds(), true );
 		if ( $add !== '' && $registered && isset( $this->getAddableLanguages( $wiki )[ $add ] ) ) {
 			try {
-				if ( LanguageStore::addProjectLanguage( $wiki, $add ) ) {
+				if ( ProjectStore::addTranslationProject( $wiki, $add ) ) {
 					$this->log( 'add-project', $add, $wiki );
 				}
 			} catch ( LanguageConflictException ) {
 				// Impossible, because getAddableLanguages excludes the wiki's base language
 			}
 		}
-		$toActivate = LanguageStore::getLanguages()[ $activate ][ $wiki ] ?? null;
+		$toActivate = ProjectStore::getProjects()[ $activate ][ $wiki ] ?? null;
 		if ( $toActivate !== null && $this->canActivate( $toActivate ) ) {
-			$previous = LanguageStore::getWikiForLanguage( $activate );
-			if ( LanguageStore::activate( $activate, $wiki ) ) {
+			$previous = ProjectStore::getWikiForLanguage( $activate );
+			if ( ProjectStore::activate( $activate, $wiki ) ) {
 				if ( $previous !== null ) {
 					$this->log( 'deactivate', $activate, $previous );
 				}
 				$this->log( 'activate', $activate, $wiki );
 			}
 		}
-		$toDeactivate = LanguageStore::getLanguages()[ $deactivate ][ $wiki ] ?? null;
+		$toDeactivate = ProjectStore::getProjects()[ $deactivate ][ $wiki ] ?? null;
 		if ( $toDeactivate !== null && $toDeactivate->isActive && $this->canActivate( $toDeactivate ) ) {
-			LanguageStore::deactivate( $deactivate );
+			ProjectStore::deactivate( $deactivate );
 			$this->log( 'deactivate', $deactivate, $wiki );
 		}
 	}

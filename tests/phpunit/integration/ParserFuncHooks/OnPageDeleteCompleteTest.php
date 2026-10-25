@@ -14,7 +14,7 @@ use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 class OnPageDeleteCompleteTest extends HermesIntegrationTestCase {
 
 	public function testRemovesTags() {
-		$this->registerBaseLanguage( 'dewiki', 'de' );
+		$this->registerBaseProject( 'dewiki', 'de' );
 		$page = $this->getExistingTestPage( 'OnPageDeleteCompleteTest' );
 		$this->editPage( $page, '{{#hermes:some_tag}}' );
 

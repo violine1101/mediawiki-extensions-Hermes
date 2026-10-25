@@ -3,13 +3,13 @@
 namespace MediaWiki\Extension\Hermes\Special;
 
 use MediaWiki\Extension\Hermes\Hermes;
-use MediaWiki\Extension\Hermes\HermesLanguage;
+use MediaWiki\Extension\Hermes\Project;
 use MediaWiki\Extension\Hermes\TagLink;
 use MediaWiki\Html\Html;
 
 /**
  * Special:HermesPages[/<id>]: all pages in the wiki family with Hermes tags, filterable by title, language and
- * wiki, optionally with inactive projects; the sub-page is a registration ID (HermesLanguage::toId()), where
+ * wiki, optionally with inactive projects; the sub-page is a project ID (Project::toId()), where
  * "<code>@<wiki>" also selects the wiki and shows inactive projects. Special:HermesPages/<id>/<title> shows
  * which pages one page's tags link to.
  */
@@ -22,9 +22,9 @@ class SpecialHermesPages extends HermesSpecialPage {
 	/** @inheritDoc */
 	protected function showList( string $par ): void {
 		$titleFilter = strtr( trim( $this->getRequest()->getText( 'title-contains' ) ), ' ', '_' );
-		$parRegistration = HermesLanguage::parseId( rtrim( $par, '/' ) );
-		$parWiki = str_contains( $par, '@' ) ? $parRegistration?->wiki : null;
-		$languages = $this->getLanguageFilter( $parRegistration !== null ? [ $parRegistration->code ] : [] );
+		$parProject = Project::parseId( rtrim( $par, '/' ) );
+		$parWiki = str_contains( $par, '@' ) ? $parProject?->wiki : null;
+		$languages = $this->getLanguageFilter( $parProject !== null ? [ $parProject->code ] : [] );
 		$wikis = $this->getWikiFilter( $parWiki !== null ? [ $parWiki ] : [] );
 		$withInactive = $this->getInactiveFilter( $parWiki !== null, 'title-contains' );
 		$conflictsOnly = $this->getRequest()->getBool( 'conflicts' );
@@ -49,7 +49,7 @@ class SpecialHermesPages extends HermesSpecialPage {
 
 	/** @inheritDoc */
 	protected function showDetails( string $par ): bool {
-		if ( HermesLanguage::parseId( rtrim( $par, '/' ) ) !== null ) {
+		if ( Project::parseId( rtrim( $par, '/' ) ) !== null ) {
 			return false;
 		}
 
@@ -65,18 +65,18 @@ class SpecialHermesPages extends HermesSpecialPage {
 
 		$page = $tags[ 0 ]->page->title->withSection( null );
 		$out->setPageTitleMsg( $this->msg( 'hermespages-single', $page->getDisplayTitle( true ) ) );
-		$out->addHTML( $this->linksTable( $tags, $page->getRegistration()->toId() ) );
+		$out->addHTML( $this->linksTable( $tags, $page->getProject()->toId() ) );
 		return true;
 	}
 
 	/**
-	 * One row per language (and per inactive registration, dimmed), one column per tag of the page in
+	 * One row per active language (and per inactive project, dimmed), one column per tag of the page in
 	 * fallback order, each cell listing the pages with that tag. In other active languages, the cell the language
 	 * link is taken from (the first non-empty one) is marked, and only it can be in conflict; the page's own row is
 	 * marked as such, except where it's in conflict.
 	 *
 	 * @param TagLink[] $tags The page's tags
-	 * @param string $ownId The page's registration ID
+	 * @param string $ownId The page's project ID
 	 * @return string HTML
 	 */
 	private function linksTable( array $tags, string $ownId ): string {
@@ -117,7 +117,7 @@ class SpecialHermesPages extends HermesSpecialPage {
 				if ( $resolved && TagFormatter::hasConflict( $byPriority ) ) {
 					$classes[] = 'ext-hermes-tag-conflict';
 				} elseif ( $isOwn ) {
-					$classes[] = 'ext-hermes-own-language';
+					$classes[] = 'ext-hermes-own-project';
 				}
 				$lines = $formatter->priorityLines( $byPriority, $resolved );
 				$html = implode( Html::element( 'br' ), $lines );
@@ -125,7 +125,7 @@ class SpecialHermesPages extends HermesSpecialPage {
 					$isActive ? $html : $formatter->dimmed( $html )
 				);
 			}
-			$rows[] = $formatter->languageRow( $id, $cells );
+			$rows[] = $formatter->projectRow( $id, $cells );
 		}
 		return $formatter->table( $headers, $rows );
 	}

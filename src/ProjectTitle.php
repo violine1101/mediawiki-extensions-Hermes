@@ -101,21 +101,21 @@ final class ProjectTitle {
 	/** The project's language code, else the wiki's base language, else this wiki's. */
 	public function getLanguageCode(): string {
 		return $this->project
-			?? ( $this->wiki !== null ? LanguageStore::getBaseLanguageForWiki( $this->wiki ) : null )
-			?? LanguageStore::getLocalBaseLanguage();
+			?? ( $this->wiki !== null ? ProjectStore::getBaseLanguageForWiki( $this->wiki ) : null )
+			?? ProjectStore::getLocalBaseLanguage();
 	}
 
-	/** The registration of this title's language on its wiki, if any. */
-	public function getRegistration(): ?HermesLanguage {
+	/** The project of this title's language on its wiki, if any. */
+	public function getProject(): ?Project {
 		if ( $this->wiki === null ) {
 			return null;
 		}
-		return LanguageStore::getLanguages()[ $this->getLanguageCode() ][ $this->wiki ] ?? null;
+		return ProjectStore::getProjects()[ $this->getLanguageCode() ][ $this->wiki ] ?? null;
 	}
 
-	/** Whether this title's language is active on its wiki, so that other languages link to it. */
+	/** Whether this title's project is active, so that other languages link to it. */
 	public function isActive(): bool {
-		return $this->getRegistration()?->isActive ?? false;
+		return $this->getProject()?->isActive ?? false;
 	}
 
 	public function getLanguage(): Language {
@@ -212,11 +212,11 @@ final class ProjectTitle {
 	}
 
 	/**
-	 * The URL of this title on its own wiki, as registered in LanguageStore (so possibly
+	 * The URL of this title on its own wiki, as registered in ProjectStore (so possibly
 	 * protocol-relative), or null if that wiki has none.
 	 */
 	public function getUrl(): ?string {
-		$template = $this->wiki !== null ? LanguageStore::getUrlTemplate( $this->wiki ) : null;
+		$template = $this->wiki !== null ? ProjectStore::getUrlTemplate( $this->wiki ) : null;
 		if ( $template === null ) {
 			return null;
 		}
@@ -251,8 +251,8 @@ final class ProjectTitle {
 	 *   (e.g. from Title::getText() or getDBkey())
 	 * @return array{0: ?string, 1: string} A tuple of (lang code, title in DB key form).
 	 * 	 If the lang code is null, this article is not part of a translation project,
-	 *   either because it doesn't have a "!xx:" prefix, or because the corresponding language
-	 *   is not registered as a project language.
+	 *   either because it doesn't have a "!xx:" prefix, or because the wiki has no translation project
+	 *   in that language.
 	 */
 	public static function parse( string $baseTitle ): array {
 		$baseTitle = strtr( $baseTitle, ' ', '_' );
@@ -260,7 +260,7 @@ final class ProjectTitle {
 		if ( preg_match( '/^!([a-z0-9-]+):(.+)$/', $baseTitle, $match ) ) {
 			$lang = $match[ 1 ];
 			$title = $match[ 2 ];
-			if ( LanguageStore::isLocalProjectLanguage( $lang ) ) {
+			if ( ProjectStore::isLocalTranslationProject( $lang ) ) {
 				return [ $lang, $title ];
 			}
 		}

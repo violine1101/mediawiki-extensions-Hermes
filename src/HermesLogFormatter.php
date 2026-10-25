@@ -6,7 +6,7 @@ use MediaWiki\Logging\LogFormatter;
 use MediaWiki\WikiMap\WikiMap;
 
 /**
- * Formats the "hermes" log of Special:HermesLanguages, naming the affected wiki only if it isn't this one.
+ * Formats the "hermes" log of Special:HermesProjects, naming the affected wiki only if it isn't this one.
  */
 class HermesLogFormatter extends LogFormatter {
 

@@ -14,7 +14,7 @@ use MediaWiki\WikiMap\WikiMap;
 class DeleteTagsForPageTest extends HermesIntegrationTestCase {
 
 	public function testRemovesTags() {
-		$this->registerBaseLanguage( 'dewiki', 'de' );
+		$this->registerBaseProject( 'dewiki', 'de' );
 		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
 		$de = $this->makePageInfo( 'dewiki' );
 

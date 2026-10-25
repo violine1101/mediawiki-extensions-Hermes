@@ -3,7 +3,7 @@
 namespace MediaWiki\Extension\Hermes\Special;
 
 use MediaWiki\Extension\Hermes\Hermes;
-use MediaWiki\Extension\Hermes\HermesLanguage;
+use MediaWiki\Extension\Hermes\Project;
 use MediaWiki\Extension\Hermes\TagLink;
 use Wikimedia\Rdbms\IExpression;
 use Wikimedia\Rdbms\IReadableDatabase;
@@ -11,31 +11,30 @@ use Wikimedia\Rdbms\LikeValue;
 use Wikimedia\Rdbms\SelectQueryBuilder;
 
 /**
- * SQL for the Hermes special pages, on the shared Hermes DB. Registrations (a language on a wiki) are identified
- * as in HermesLanguage::toId().
+ * SQL for the Hermes special pages, on the shared Hermes DB. Projects are identified as in Project::toId().
  */
 final class TagQuery {
 
-	/** A hermes_tags row's language: its translation project, else its wiki's base language. */
-	public static function language( string $tags = 't', string $languages = 'l' ): string {
-		return "COALESCE($tags.ht_translation_project, $languages.hl_language)";
+	/** A hermes_tags row's language: its translation project's, else its wiki's base language. */
+	public static function language( string $tags = 't', string $projects = 'p' ): string {
+		return "COALESCE($tags.ht_translation_project, $projects.hp_language)";
 	}
 
 	/**
-	 * Joins the registration of each hermes_tags row's language (its project, else its wiki's base language)
-	 * as $languages, for language(). Rows without one are left out, and without $withInactive, so are rows whose
-	 * language isn't active on their wiki.
+	 * Joins the project of each hermes_tags row (its translation project, else its wiki's base project) as
+	 * $projects, for language(). Rows without one are left out, and without $withInactive, so are rows of
+	 * inactive projects.
 	 */
-	public static function joinLanguages(
-		SelectQueryBuilder $query, string $tags = 't', string $languages = 'l', bool $withInactive = false
+	public static function joinProjects(
+		SelectQueryBuilder $query, string $tags = 't', string $projects = 'p', bool $withInactive = false
 	): SelectQueryBuilder {
 		$conds = [
-			"$languages.hl_wiki = $tags.ht_wiki",
-			"($languages.hl_language = $tags.ht_translation_project"
-				. " OR ($tags.ht_translation_project IS NULL AND $languages.hl_base = 1))",
+			"$projects.hp_wiki = $tags.ht_wiki",
+			"($projects.hp_language = $tags.ht_translation_project"
+				. " OR ($tags.ht_translation_project IS NULL AND $projects.hp_base = 1))",
 		];
-		return $query->join( 'hermes_languages', $languages, $withInactive ? $conds : [
-			...$conds, "$languages.hl_active" => 1,
+		return $query->join( 'hermes_projects', $projects, $withInactive ? $conds : [
+			...$conds, "$projects.hp_active" => 1,
 		] );
 	}
 
@@ -44,14 +43,14 @@ final class TagQuery {
 		return self::language() . ' IN (' . $dbr->makeList( $languages ) . ')';
 	}
 
-	/** Rows of the registration with this ID. */
-	public static function inRegistration( IReadableDatabase $dbr, string $id ): string {
-		$registration = HermesLanguage::parseId( $id );
-		if ( $registration === null ) {
+	/** Rows of the project with this ID. */
+	public static function inProject( IReadableDatabase $dbr, string $id ): string {
+		$project = Project::parseId( $id );
+		if ( $project === null ) {
 			return '0 = 1';
 		}
-		return self::language() . ' = ' . $dbr->addQuotes( $registration->code )
-			. ' AND t.ht_wiki = ' . $dbr->addQuotes( $registration->wiki );
+		return self::language() . ' = ' . $dbr->addQuotes( $project->code )
+			. ' AND t.ht_wiki = ' . $dbr->addQuotes( $project->wiki );
 	}
 
 	/** Rows whose $field contains $text. */
@@ -64,23 +63,23 @@ final class TagQuery {
 	 * language, and no active page sets it there with a lower priority (which links would resolve to instead).
 	 */
 	public static function inConflict( IReadableDatabase $dbr ): string {
-		$sameTag = static fn ( string $tags, string $languages ) => [
+		$sameTag = static fn ( string $tags, string $projects ) => [
 			"$tags.ht_tag = t.ht_tag",
-			self::language( $tags, $languages ) . ' = ' . self::language(),
+			self::language( $tags, $projects ) . ' = ' . self::language(),
 		];
-		$tie = self::joinLanguages( $dbr->newSelectQueryBuilder()->from( 'hermes_tags', 'o' ), 'o', 'ol' )
+		$tie = self::joinProjects( $dbr->newSelectQueryBuilder()->from( 'hermes_tags', 'o' ), 'o', 'op' )
 			->select( '1' )
 			->where( [
-				...$sameTag( 'o', 'ol' ),
+				...$sameTag( 'o', 'op' ),
 				'o.ht_priority = t.ht_priority',
 				'NOT (o.ht_wiki = t.ht_wiki AND o.ht_page_id = t.ht_page_id)',
 			] )
 			->caller( __METHOD__ );
-		$lower = self::joinLanguages( $dbr->newSelectQueryBuilder()->from( 'hermes_tags', 'b' ), 'b', 'bl' )
+		$lower = self::joinProjects( $dbr->newSelectQueryBuilder()->from( 'hermes_tags', 'b' ), 'b', 'bp' )
 			->select( '1' )
-			->where( [ ...$sameTag( 'b', 'bl' ), 'b.ht_priority < t.ht_priority' ] )
+			->where( [ ...$sameTag( 'b', 'bp' ), 'b.ht_priority < t.ht_priority' ] )
 			->caller( __METHOD__ );
-		return '(l.hl_active = 1 AND EXISTS(' . $tie->getSQL() . ') AND NOT EXISTS(' . $lower->getSQL() . '))';
+		return '(p.hp_active = 1 AND EXISTS(' . $tie->getSQL() . ') AND NOT EXISTS(' . $lower->getSQL() . '))';
 	}
 
 	/**
@@ -94,12 +93,12 @@ final class TagQuery {
 
 	/** @return array<string, array<string, int>> Number of pages with tags, active or not, by wiki and language */
 	public static function countPages( IReadableDatabase $dbr ): array {
-		$pages = self::joinLanguages( $dbr->newSelectQueryBuilder()->from( 'hermes_tags', 't' ), 't', 'l', true )
+		$pages = self::joinProjects( $dbr->newSelectQueryBuilder()->from( 'hermes_tags', 't' ), 't', 'p', true )
 			->select( [ 't.ht_wiki', 't.ht_page_id', 'language' => self::language() ] )
 			->distinct();
 		$rows = $dbr->newSelectQueryBuilder()
 			->select( [ 'ht_wiki', 'language', 'pages' => 'COUNT(*)' ] )
-			->from( $pages, 'p' )
+			->from( $pages, 'pages' )
 			->groupBy( [ 'ht_wiki', 'language' ] )
 			->caller( __METHOD__ )
 			->fetchResultSet();
@@ -114,9 +113,9 @@ final class TagQuery {
 	/**
 	 * @param IReadableDatabase $dbr
 	 * @param string[] $tags
-	 * @param bool $withInactive Whether to include pages of inactive registrations too
+	 * @param bool $withInactive Whether to include pages of inactive projects too
 	 * @param string[] $wikis Only pages on these wikis, or all if empty
-	 * @return array<string, array<string, array<int, TagLink[]>>> tag => registration ID => priority => links,
+	 * @return array<string, array<string, array<int, TagLink[]>>> tag => project ID => priority => links,
 	 *   priorities ascending
 	 */
 	public static function loadLinks(
@@ -137,9 +136,9 @@ final class TagQuery {
 		$links = [];
 		foreach ( $rows as $row ) {
 			$link = TagLink::fromRow( $row );
-			$registration = $link->page->title->getRegistration();
-			if ( $registration !== null && ( $registration->isActive || $withInactive ) ) {
-				$links[ $link->tag->name ][ $registration->toId() ][ $link->tag->priority ][] = $link;
+			$project = $link->page->title->getProject();
+			if ( $project !== null && ( $project->isActive || $withInactive ) ) {
+				$links[ $link->tag->name ][ $project->toId() ][ $link->tag->priority ][] = $link;
 			}
 		}
 		return $links;
@@ -148,14 +147,14 @@ final class TagQuery {
 	/**
 	 * The tags of a page, given as in TagFormatter::detailsTitle().
 	 *
-	 * @param string $id The page's registration ID, which determines its wiki and translation project
+	 * @param string $id The page's project ID, which determines its wiki and translation project
 	 * @param string $title Namespace name as stored, and base title
 	 * @return TagLink[] In fallback order; none if there's no such page with tags
 	 */
 	public static function findPage( string $id, string $title ): array {
-		$registration = HermesLanguage::parseId( $id );
+		$project = Project::parseId( $id );
 		$title = strtr( trim( $title ), ' ', '_' );
-		if ( $registration === null || $title === '' ) {
+		if ( $project === null || $title === '' ) {
 			return [];
 		}
 
@@ -172,8 +171,8 @@ final class TagQuery {
 			->select( '*' )
 			->from( 'hermes_tags' )
 			->where( [
-				'ht_wiki' => $registration->wiki,
-				'ht_translation_project' => $registration->isBase ? null : $registration->code,
+				'ht_wiki' => $project->wiki,
+				'ht_translation_project' => $project->isBase ? null : $project->code,
 				$dbr->makeList( $titleConds, LIST_OR ),
 			] )
 			->orderBy( [ 'ht_priority', 'ht_tag' ] )

@@ -3,8 +3,8 @@
 namespace MediaWiki\Extension\Hermes\Tests\PageInfo;
 
 use MediaWiki\Extension\Hermes\Hermes;
-use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
@@ -19,10 +19,10 @@ class FromRowTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		// Simulates InitHooks::onBeforeInitialize()'s real-request self-registration, which
-		// addProjectLanguage() alone doesn't trigger for the *current* wiki's base language.
-		LanguageStore::init();
-		LanguageStore::addProjectLanguage( WikiMap::getCurrentWikiId(), 'eo' );
+		// Simulates InitHooks::onBeforeInitialize()'s real-request base project setup, which
+		// addTranslationProject() alone doesn't trigger for the *current* wiki.
+		ProjectStore::init();
+		ProjectStore::addTranslationProject( WikiMap::getCurrentWikiId(), 'eo' );
 	}
 
 	private function fetchRow( PageInfo $page ) {

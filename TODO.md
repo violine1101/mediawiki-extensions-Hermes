@@ -10,7 +10,7 @@ Phase 4.1: Fix language conflicts
 - When a language exists both as a translation project and as a wiki, the extension currently breaks
 - It'd be great if the extension had built-in support for migrating a translation project to a new wiki (and subsequently wouldn't break if a new wiki has the same language as a translation project)
 - Maybe support for exporting all pages of a translation project?
-- Special:HermesLanguages: add support for removing translation projects in Special:HermesLanguages, auto-deleting all pages. Only works with mass delete rights
+- Special:HermesProjects: add support for removing translation projects in Special:HermesProjects, auto-deleting all pages. Only works with mass delete rights
 - On Hermes special pages, show all pages, nut just those tagged with `{{#hermes:}}`
 
 Phase 5: Improved Cache Handling

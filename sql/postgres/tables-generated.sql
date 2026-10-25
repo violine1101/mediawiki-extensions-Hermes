@@ -18,13 +18,13 @@ CREATE TABLE hermes_tags (
 CREATE INDEX ht_wiki_page ON hermes_tags (ht_wiki, ht_page_id);
 
 
-CREATE TABLE hermes_languages (
-  hl_language TEXT NOT NULL,
-  hl_wiki TEXT NOT NULL,
-  hl_base SMALLINT DEFAULT 1 NOT NULL,
-  hl_active SMALLINT DEFAULT 1 NOT NULL,
-  hl_url TEXT DEFAULT NULL,
-  PRIMARY KEY(hl_language, hl_wiki)
+CREATE TABLE hermes_projects (
+  hp_language TEXT NOT NULL,
+  hp_wiki TEXT NOT NULL,
+  hp_base SMALLINT DEFAULT 1 NOT NULL,
+  hp_active SMALLINT DEFAULT 1 NOT NULL,
+  hp_url TEXT DEFAULT NULL,
+  PRIMARY KEY(hp_language, hp_wiki)
 );
 
-CREATE INDEX hl_wiki ON hermes_languages (hl_wiki);
+CREATE INDEX hp_wiki ON hermes_projects (hp_wiki);

@@ -2,7 +2,7 @@
 
 namespace MediaWiki\Extension\Hermes\Special;
 
-use MediaWiki\Extension\Hermes\LanguageStore;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\HTMLForm\HTMLForm;
 use MediaWiki\Pager\TablePager;
 use MediaWiki\Parser\ParserOptions;
@@ -48,25 +48,25 @@ abstract class HermesSpecialPage extends SpecialPage {
 	}
 
 	/**
-	 * The registered languages selected in the request's language filter.
+	 * The languages with projects selected in the request's language filter.
 	 *
 	 * @param string[] $default If the request doesn't have the filter
 	 * @return string[]
 	 */
 	protected function getLanguageFilter( array $default = [] ): array {
 		$languages = $this->getRequest()->getArray( 'language' ) ?? $default;
-		return array_values( array_intersect( $languages, array_keys( LanguageStore::getLanguages() ) ) );
+		return array_values( array_intersect( $languages, array_keys( ProjectStore::getProjects() ) ) );
 	}
 
 	/**
-	 * The registered wikis selected in the request's wiki filter.
+	 * The wikis with projects selected in the request's wiki filter.
 	 *
 	 * @param string[] $default If the request doesn't have the filter
 	 * @return string[]
 	 */
 	protected function getWikiFilter( array $default = [] ): array {
 		$wikis = $this->getRequest()->getArray( 'wiki' ) ?? $default;
-		return array_values( array_intersect( $wikis, LanguageStore::getWikiIds() ) );
+		return array_values( array_intersect( $wikis, ProjectStore::getWikiIds() ) );
 	}
 
 	/**

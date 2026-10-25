@@ -13,7 +13,7 @@ class GetUrlTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->registerBaseLanguage( 'trwiki', 'en', url: 'https://translate.example.org/wiki/$1' );
+		$this->registerBaseProject( 'trwiki', 'en', url: 'https://translate.example.org/wiki/$1' );
 	}
 
 	public function testBasePage() {

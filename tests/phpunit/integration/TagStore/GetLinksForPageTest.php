@@ -15,8 +15,8 @@ class GetLinksForPageTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->activateLocalBaseLanguage();
-		$this->registerBaseLanguage( 'dewiki', 'de' );
+		$this->activateLocalBaseProject();
+		$this->registerBaseProject( 'dewiki', 'de' );
 	}
 
 	public function testFindsOtherLanguage() {
@@ -98,8 +98,8 @@ class GetLinksForPageTest extends HermesIntegrationTestCase {
 
 	public function testSkipsInactivePages() {
 		$wiki = WikiMap::getCurrentWikiId();
-		$this->registerProjectLanguage( $wiki, 'eo', false );
-		$this->registerProjectLanguage( $wiki, 'de', false );
+		$this->registerTranslationProject( $wiki, 'eo', false );
+		$this->registerTranslationProject( $wiki, 'de', false );
 		$en = $this->makePageInfo( $wiki );
 		$de = $this->makePageInfo( 'dewiki' );
 
@@ -116,7 +116,7 @@ class GetLinksForPageTest extends HermesIntegrationTestCase {
 
 	public function testInactivePageLinksToActivePages() {
 		$wiki = WikiMap::getCurrentWikiId();
-		$this->registerProjectLanguage( $wiki, 'de', false );
+		$this->registerTranslationProject( $wiki, 'de', false );
 		$inactive = $this->makePageInfo( $wiki, '!de:Foo' );
 
 		TagStore::setTagsForPage( $inactive, Tag::fromArgs( [ 'shared_tag' ] ) );

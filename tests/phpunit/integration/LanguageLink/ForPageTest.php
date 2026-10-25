@@ -17,8 +17,8 @@ use MediaWiki\WikiMap\WikiMap;
 class ForPageTest extends HermesIntegrationTestCase {
 
 	public function testBuildsLinksForRegisteredWikis() {
-		$this->registerBaseLanguage( 'dewiki', 'de', url: 'https://de.example.org/wiki/$1' );
-		$this->registerProjectLanguage( 'trwiki', 'eo', url: 'https://translate.example.org/wiki/$1' );
+		$this->registerBaseProject( 'dewiki', 'de', url: 'https://de.example.org/wiki/$1' );
+		$this->registerTranslationProject( 'trwiki', 'eo', url: 'https://translate.example.org/wiki/$1' );
 
 		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
 		$de = $this->makePageInfo( 'dewiki', 'Stein' );
@@ -42,7 +42,7 @@ class ForPageTest extends HermesIntegrationTestCase {
 	}
 
 	public function testSkipsWikisWithoutUrl() {
-		$this->registerBaseLanguage( 'dewiki', 'de' );
+		$this->registerBaseProject( 'dewiki', 'de' );
 
 		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
 		$de = $this->makePageInfo( 'dewiki' );

@@ -3,7 +3,7 @@
 namespace MediaWiki\Extension\Hermes\Special;
 
 use MediaWiki\Extension\Hermes\Hermes;
-use MediaWiki\Extension\Hermes\LanguageStore;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\HTMLForm\HTMLForm;
 use MediaWiki\SpecialPage\WantedQueryPage;
@@ -25,7 +25,7 @@ abstract class WantedTranslationsPage extends WantedQueryPage {
 	/** @inheritDoc */
 	public function execute( $par ) {
 		$language = $this->getRequest()->getVal( 'language' ) ?? $par;
-		if ( in_array( $language, LanguageStore::getActiveLocalProjectLanguages(), true ) ) {
+		if ( in_array( $language, ProjectStore::getActiveLocalTranslationProjects(), true ) ) {
 			$this->project = $language;
 		}
 		parent::execute( $par );
@@ -39,7 +39,7 @@ abstract class WantedTranslationsPage extends WantedQueryPage {
 	 * @return IExpression|string Matching nothing if this wiki has no active translation projects
 	 */
 	protected function inProject( IReadableDatabase $dbr, string $title ): IExpression|string {
-		$projects = $this->project !== null ? [ $this->project ] : LanguageStore::getActiveLocalProjectLanguages();
+		$projects = $this->project !== null ? [ $this->project ] : ProjectStore::getActiveLocalTranslationProjects();
 		return $projects ? ProjectTitle::projectSqlCondition( $dbr, $title, $projects ) : '0 = 1';
 	}
 
@@ -67,7 +67,7 @@ abstract class WantedTranslationsPage extends WantedQueryPage {
 
 	/** @inheritDoc */
 	protected function getPageHeader() {
-		$projects = LanguageStore::getActiveLocalProjectLanguages();
+		$projects = ProjectStore::getActiveLocalTranslationProjects();
 		if ( !$projects ) {
 			return '';
 		}

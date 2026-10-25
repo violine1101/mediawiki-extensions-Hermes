@@ -16,7 +16,7 @@ class SetTagsForPageTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->registerBaseLanguage( 'dewiki', 'de' );
+		$this->registerBaseProject( 'dewiki', 'de' );
 	}
 
 	public function testOverwritesPreviousTags() {

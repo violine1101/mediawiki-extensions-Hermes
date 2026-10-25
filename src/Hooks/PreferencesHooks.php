@@ -4,7 +4,7 @@ namespace MediaWiki\Extension\Hermes\Hooks;
 
 use MediaWiki\Extension\Hermes\DisplayLanguage;
 use MediaWiki\Extension\Hermes\Hermes;
-use MediaWiki\Extension\Hermes\LanguageStore;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Languages\LanguageConverterFactory;
 use MediaWiki\Languages\LanguageNameUtils;
 use MediaWiki\Preferences\Hook\GetPreferencesHook;
@@ -89,7 +89,7 @@ class PreferencesHooks implements
 		}
 		// This wiki's languages, and those (or a variant of which) the user has saved as spoken. Others keep
 		// their value (and core's 'api' field), as unsubmitted fields aren't saved.
-		$shown = [ LanguageStore::getLocalBaseLanguage(), ...LanguageStore::getLocalProjectLanguages() ];
+		$shown = [ ProjectStore::getLocalBaseLanguage(), ...ProjectStore::getLocalTranslationProjects() ];
 		$spoken = $this->getSavedSpokenLanguages( $user );
 		foreach ( $variantLanguages as $code => $variants ) {
 			if ( !in_array( $code, $shown, true ) && DisplayLanguage::findVariant( $code, $spoken ) === null ) {
@@ -148,7 +148,7 @@ class PreferencesHooks implements
 
 	/** @inheritDoc */
 	public function onLoadUserOptions( $user, array &$options ): void {
-		$option = 'variant-' . LanguageStore::getLocalBaseLanguage();
+		$option = 'variant-' . ProjectStore::getLocalBaseLanguage();
 		if ( isset( $options[ $option ] ) ) {
 			$options['variant'] = $options[ $option ];
 		}
@@ -159,7 +159,7 @@ class PreferencesHooks implements
 		if ( !array_key_exists( 'variant', $modifiedOptions ) ) {
 			return;
 		}
-		$option = 'variant-' . LanguageStore::getLocalBaseLanguage();
+		$option = 'variant-' . ProjectStore::getLocalBaseLanguage();
 		if ( isset( $originalOptions[ $option ] ) && !array_key_exists( $option, $modifiedOptions ) ) {
 			$modifiedOptions[ $option ] = $modifiedOptions['variant'];
 		}
@@ -181,7 +181,7 @@ class PreferencesHooks implements
 
 	/** @return array<string, string[]> The variants of each family language that has any, by language code */
 	private static function getLanguagesWithVariants(): array {
-		$codes = array_keys( LanguageStore::getLanguages() );
+		$codes = array_keys( ProjectStore::getProjects() );
 		sort( $codes );
 		$variants = array_map( DisplayLanguage::getVariants( ... ), array_combine( $codes, $codes ) );
 		return array_filter( $variants );

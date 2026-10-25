@@ -28,7 +28,7 @@ class InterwikiSync {
 	 */
 	public static function sync( bool $dryRun = false ): array {
 		$targets = [];
-		foreach ( LanguageStore::getBaseLanguages() as $code => $language ) {
+		foreach ( ProjectStore::getBaseProjects() as $code => $language ) {
 			if ( !$language->isLocal() && $language->urlTemplate !== null ) {
 				$targets[ $code ] = [ 'iw_url' => $language->urlTemplate, 'iw_wikiid' => $language->wiki ];
 			}
@@ -36,7 +36,7 @@ class InterwikiSync {
 
 		$services = MediaWikiServices::getInstance();
 		$dbw = $services->getConnectionProvider()->getPrimaryDatabase();
-		$hermesWikis = LanguageStore::getWikiIds();
+		$hermesWikis = ProjectStore::getWikiIds();
 		$conds = [ 'iw_wikiid' => $hermesWikis ];
 		if ( $targets ) {
 			$conds = $dbw->orExpr( [ 'iw_prefix' => array_keys( $targets ), 'iw_wikiid' => $hermesWikis ] );

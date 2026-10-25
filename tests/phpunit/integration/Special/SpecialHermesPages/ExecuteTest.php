@@ -2,8 +2,8 @@
 
 namespace MediaWiki\Extension\Hermes\Tests\Special\SpecialHermesPages;
 
-use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Extension\Hermes\TagStore;
@@ -21,8 +21,8 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->registerBaseLanguage( 'dewiki', 'de' );
-		$this->registerBaseLanguage( 'frwiki', 'fr' );
+		$this->registerBaseProject( 'dewiki', 'de' );
+		$this->registerBaseProject( 'frwiki', 'fr' );
 	}
 
 	private function execute( array $query = [], ?string $par = null ): string {
@@ -47,7 +47,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 			preg_match_all( '/<t[hd]([^>]*)>(.*?)<\/t[hd]>/s', $row, $cells, PREG_SET_ORDER );
 			return implode( ' | ', array_map(
 				static fn ( $cell ) => ( str_contains( $cell[ 1 ], 'ext-hermes-link-target' ) ? '[T]' : '' )
-					. ( str_contains( $cell[ 1 ], 'ext-hermes-own-language' ) ? '[O]' : '' )
+					. ( str_contains( $cell[ 1 ], 'ext-hermes-own-project' ) ? '[O]' : '' )
 					. ( str_contains( $cell[ 1 ], 'ext-hermes-tag-conflict' ) ? '[C]' : '' )
 					. trim( preg_replace( '/[\s\x{a0}]+/u', ' ', strip_tags(
 						preg_replace( [ '/<i>/', '/<br>/' ], [ '*', '; ' ], $cell[ 2 ] )
@@ -194,7 +194,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		$this->setTags( 'frwiki', 'Golem_de_fer', [ 'iron_golem' ] );
 		$this->setTags( 'frwiki', 'Golem', [ 'golem' ] );
 		$this->setTags( 'frwiki', 'Golem_2', [ 'golem' ] );
-		$this->registerBaseLanguage( 'eswiki', 'es' );
+		$this->registerBaseProject( 'eswiki', 'es' );
 		$this->setTags( 'eswiki', 'Golem', [ 'other', 'golem' ] );
 		// Same language as the page itself: not a language link, but a conflict.
 		$this->setTags( 'dewiki', 'Eisengolem', [ 'iron_golem' ] );
@@ -248,7 +248,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	public function testDetailsOfProjectPage() {
 		$wiki = WikiMap::getCurrentWikiId();
-		$this->registerProjectLanguage( $wiki, 'eo' );
+		$this->registerTranslationProject( $wiki, 'eo' );
 		$this->setTags( $wiki, '!eo:Golem', [ 'golem' ] );
 		$this->setTags( $wiki, 'Golem', [ 'other' ] );
 		$this->setTags( 'dewiki', 'A', [ 'golem' ] );
@@ -268,7 +268,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	}
 
 	public function testSkipsInactivePages() {
-		$this->registerProjectLanguage( WikiMap::getCurrentWikiId(), 'de', false );
+		$this->registerTranslationProject( WikiMap::getCurrentWikiId(), 'de', false );
 		$this->setTags( 'dewiki', 'Golem', [ 'golem' ] );
 		$this->setTags( WikiMap::getCurrentWikiId(), '!de:Golem', [ 'golem' ] );
 
@@ -277,12 +277,12 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	public function testShowsInactivePages() {
 		$wiki = WikiMap::getCurrentWikiId();
-		$this->registerProjectLanguage( $wiki, 'de', false );
+		$this->registerTranslationProject( $wiki, 'de', false );
 		$this->setTags( 'dewiki', 'Golem', [ 'golem' ] );
 		$this->setTags( $wiki, '!de:Golem', [ 'golem' ] );
 
 		$this->assertSame(
-			[ 'Golem | Deutsch (de) | golem', "Golem | (hermes-inactive-registration: Deutsch (de), $wiki) | golem" ],
+			[ 'Golem | Deutsch (de) | golem', "Golem | (hermes-inactive-project: Deutsch (de), $wiki) | golem" ],
 			$this->list( [ 'title-contains' => '', 'inactive' => '1' ] )
 		);
 		$html = $this->execute( [ 'title-contains' => '', 'inactive' => '1' ] );
@@ -296,23 +296,23 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		$this->assertSame( [ 'Golem | Français (fr) | golem' ], $this->list( [ 'wiki' => [ 'frwiki' ] ] ) );
 	}
 
-	public function testRegistrationSubpage() {
+	public function testProjectSubpage() {
 		$wiki = WikiMap::getCurrentWikiId();
-		$this->registerProjectLanguage( $wiki, 'de', false );
+		$this->registerTranslationProject( $wiki, 'de', false );
 		$this->setTags( 'dewiki', 'Golem', [ 'golem' ] );
 		$this->setTags( $wiki, '!de:Golem', [ 'golem' ] );
 
-		$html = $this->execute( [], LanguageStore::getLanguages()[ 'de' ][ $wiki ]->toId() );
+		$html = $this->execute( [], ProjectStore::getProjects()[ 'de' ][ $wiki ]->toId() );
 		preg_match( '/<tbody>(.*)<\/tbody>/s', $html, $body );
 		$this->assertSame(
-			[ "Golem | (hermes-inactive-registration: Deutsch (de), $wiki) | golem" ], self::rows( $body[ 1 ] )
+			[ "Golem | (hermes-inactive-project: Deutsch (de), $wiki) | golem" ], self::rows( $body[ 1 ] )
 		);
 		$this->assertMatchesRegularExpression( '/name=.inactive.[^>]*checked|checked[^>]*name=.inactive./', $html );
 	}
 
 	public function testDetailsOfInactivePage() {
 		$wiki = WikiMap::getCurrentWikiId();
-		$this->registerProjectLanguage( $wiki, 'de', false );
+		$this->registerTranslationProject( $wiki, 'de', false );
 		$this->setTags( 'dewiki', 'Golem', [ 'golem' ] );
 		$this->setTags( 'frwiki', 'Golem', [ 'golem' ] );
 		$this->setTags( $wiki, '!de:Golem', [ 'golem' ] );
@@ -322,23 +322,23 @@ class ExecuteTest extends HermesIntegrationTestCase {
 				'(hermespages-header-language) | golem',
 				// Not linked: the page's own language.
 				'de | Golem',
-				"(hermes-inactive-registration: Deutsch (de), $wiki) | [O]Golem",
+				"(hermes-inactive-project: Deutsch (de), $wiki) | [O]Golem",
 				'fr | [T]Golem',
 			],
-			$this->links( LanguageStore::getLanguages()[ 'de' ][ $wiki ]->toId() . '/Golem' )
+			$this->links( ProjectStore::getProjects()[ 'de' ][ $wiki ]->toId() . '/Golem' )
 		);
 	}
 
 	public function testDetailsShowInactiveRows() {
 		$wiki = WikiMap::getCurrentWikiId();
-		$this->registerProjectLanguage( $wiki, 'de', false );
+		$this->registerTranslationProject( $wiki, 'de', false );
 		$this->setTags( 'frwiki', 'Golem', [ 'golem' ] );
 		$this->setTags( $wiki, '!de:Golem', [ 'golem' ] );
 
 		$this->assertSame(
 			[
 				'(hermespages-header-language) | golem',
-				"(hermes-inactive-registration: Deutsch (de), $wiki) | Golem",
+				"(hermes-inactive-project: Deutsch (de), $wiki) | Golem",
 				'fr | [O]Golem',
 			],
 			$this->links( 'fr/Golem' )

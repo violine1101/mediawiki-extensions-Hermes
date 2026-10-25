@@ -3,9 +3,9 @@
 namespace MediaWiki\Extension\Hermes\Hooks\TranslationProject;
 
 use MediaWiki\Extension\Hermes\Hermes;
-use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\LinkRewriter;
 use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Html\Html;
@@ -86,7 +86,7 @@ class LinkHooks implements
 			return true;
 		}
 
-		$fallbackLinks = [ $linkRenderer->makeKnownLink( $baseTitle, LanguageStore::getLocalBaseLanguage() ) ];
+		$fallbackLinks = [ $linkRenderer->makeKnownLink( $baseTitle, ProjectStore::getLocalBaseLanguage() ) ];
 		// The translation may exist under another title, linked by tags.
 		$basePage = PageInfo::fromLocalPage( $baseTitle );
 		$translation = TagStore::getLinksForPage( $basePage )[ $projectTitle->project ] ?? null;

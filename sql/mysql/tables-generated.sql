@@ -17,12 +17,12 @@ CREATE TABLE /*_*/hermes_tags (
 ) /*$wgDBTableOptions*/;
 
 
-CREATE TABLE /*_*/hermes_languages (
-  hl_language VARBINARY(35) NOT NULL,
-  hl_wiki VARBINARY(64) NOT NULL,
-  hl_base TINYINT(1) DEFAULT 1 NOT NULL,
-  hl_active TINYINT(1) DEFAULT 1 NOT NULL,
-  hl_url VARBINARY(255) DEFAULT NULL,
-  INDEX hl_wiki (hl_wiki),
-  PRIMARY KEY(hl_language, hl_wiki)
+CREATE TABLE /*_*/hermes_projects (
+  hp_language VARBINARY(35) NOT NULL,
+  hp_wiki VARBINARY(64) NOT NULL,
+  hp_base TINYINT(1) DEFAULT 1 NOT NULL,
+  hp_active TINYINT(1) DEFAULT 1 NOT NULL,
+  hp_url VARBINARY(255) DEFAULT NULL,
+  INDEX hp_wiki (hp_wiki),
+  PRIMARY KEY(hp_language, hp_wiki)
 ) /*$wgDBTableOptions*/;

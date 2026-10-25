@@ -23,7 +23,7 @@ class FindConflictsTest extends HermesIntegrationTestCase {
 	}
 
 	public function testDetectsConflict() {
-		$this->registerBaseLanguage( 'frwiki', 'fr' );
+		$this->registerBaseProject( 'frwiki', 'fr' );
 		$existing = $this->makePageInfo( 'frwiki', 'ExistingPage' );
 		TagStore::setTagsForPage( $existing, Tag::fromArgs( [ 'golem' ] ) );
 
@@ -38,7 +38,7 @@ class FindConflictsTest extends HermesIntegrationTestCase {
 	}
 
 	public function testAllConflictingPages() {
-		$this->registerBaseLanguage( 'frwiki', 'fr' );
+		$this->registerBaseProject( 'frwiki', 'fr' );
 		$existingA = $this->makePageInfo( 'frwiki', 'ExistingPageA' );
 		$existingB = $this->makePageInfo( 'frwiki', 'ExistingPageB' );
 		TagStore::setTagsForPage( $existingA, Tag::fromArgs( [ 'golem' ] ) );
@@ -55,7 +55,7 @@ class FindConflictsTest extends HermesIntegrationTestCase {
 	}
 
 	public function testEmptyWithoutConflict() {
-		$this->registerBaseLanguage( 'frwiki', 'fr' );
+		$this->registerBaseProject( 'frwiki', 'fr' );
 		$page = $this->makePageInfo( 'frwiki', 'SomePage' );
 		$tags = Tag::fromArgs( [ 'golem' ] );
 
@@ -63,7 +63,7 @@ class FindConflictsTest extends HermesIntegrationTestCase {
 	}
 
 	public function testIgnoresOwnPriorTags() {
-		$this->registerBaseLanguage( 'frwiki', 'fr' );
+		$this->registerBaseProject( 'frwiki', 'fr' );
 		$page = $this->makePageInfo( 'frwiki', 'SomePage' );
 		TagStore::setTagsForPage( $page, Tag::fromArgs( [ 'golem' ] ) );
 
@@ -74,7 +74,7 @@ class FindConflictsTest extends HermesIntegrationTestCase {
 	}
 
 	public function testIgnoresDifferentPriority() {
-		$this->registerBaseLanguage( 'frwiki', 'fr' );
+		$this->registerBaseProject( 'frwiki', 'fr' );
 		$existing = $this->makePageInfo( 'frwiki', 'ExistingPage' );
 		// 'golem' is existing's *second* tag (priority 1).
 		TagStore::setTagsForPage( $existing, Tag::fromArgs( [ 'unrelated', 'golem' ] ) );
@@ -87,8 +87,8 @@ class FindConflictsTest extends HermesIntegrationTestCase {
 	}
 
 	public function testIgnoresDifferentLanguage() {
-		$this->registerBaseLanguage( 'frwiki', 'fr' );
-		$this->registerBaseLanguage( 'dewiki', 'de' );
+		$this->registerBaseProject( 'frwiki', 'fr' );
+		$this->registerBaseProject( 'dewiki', 'de' );
 		$existing = $this->makePageInfo( 'frwiki', 'ExistingPage' );
 		TagStore::setTagsForPage( $existing, Tag::fromArgs( [ 'golem' ] ) );
 
@@ -101,7 +101,7 @@ class FindConflictsTest extends HermesIntegrationTestCase {
 	}
 
 	public function testDetectsAmbiguity() {
-		$this->registerBaseLanguage( 'dewiki', 'de' );
+		$this->registerBaseProject( 'dewiki', 'de' );
 		$dePrimary = $this->makePageInfo( 'dewiki', 'DePrimary' );
 		$deSecondary = $this->makePageInfo( 'dewiki', 'DeSecondary' );
 		TagStore::setTagsForPage( $dePrimary, Tag::fromArgs( [ 'golem' ] ) );
@@ -121,7 +121,7 @@ class FindConflictsTest extends HermesIntegrationTestCase {
 	}
 
 	public function testIgnoresTieBehindLowerPriority() {
-		$this->registerBaseLanguage( 'frwiki', 'fr' );
+		$this->registerBaseProject( 'frwiki', 'fr' );
 		TagStore::setTagsForPage( $this->makePageInfo( 'frwiki', 'Main' ), Tag::fromArgs( [ 'golem' ] ) );
 		TagStore::setTagsForPage( $this->makePageInfo( 'frwiki', 'Other' ), Tag::fromArgs( [ 'other', 'golem' ] ) );
 
@@ -131,7 +131,7 @@ class FindConflictsTest extends HermesIntegrationTestCase {
 	}
 
 	public function testAmbiguityAtLowestPriority() {
-		$this->registerBaseLanguage( 'dewiki', 'de' );
+		$this->registerBaseProject( 'dewiki', 'de' );
 		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'DeA' ), Tag::fromArgs( [ 'a', 'golem' ] ) );
 		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'DeB' ), Tag::fromArgs( [ 'b', 'golem' ] ) );
 
@@ -142,7 +142,7 @@ class FindConflictsTest extends HermesIntegrationTestCase {
 	}
 
 	public function testNoAmbiguityBehindEarlierTag() {
-		$this->registerBaseLanguage( 'dewiki', 'de' );
+		$this->registerBaseProject( 'dewiki', 'de' );
 		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'DeA' ), Tag::fromArgs( [ 'golem' ] ) );
 		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'DeB' ), Tag::fromArgs( [ 'golem' ] ) );
 		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'DeC' ), Tag::fromArgs( [ 'iron_golem' ] ) );
@@ -154,7 +154,7 @@ class FindConflictsTest extends HermesIntegrationTestCase {
 	}
 
 	public function testEmptyWithoutClaimant() {
-		$this->registerBaseLanguage( 'dewiki', 'de' );
+		$this->registerBaseProject( 'dewiki', 'de' );
 		$page = $this->makePageInfo( 'dewiki', 'SomePage' );
 		$tags = Tag::fromArgs( [ 'golem' ] );
 
@@ -162,8 +162,8 @@ class FindConflictsTest extends HermesIntegrationTestCase {
 	}
 
 	public function testIgnoresInactivePages() {
-		$this->registerBaseLanguage( 'dewiki', 'de' );
-		$this->registerProjectLanguage( WikiMap::getCurrentWikiId(), 'de', false );
+		$this->registerBaseProject( 'dewiki', 'de' );
+		$this->registerTranslationProject( WikiMap::getCurrentWikiId(), 'de', false );
 		TagStore::setTagsForPage(
 			$this->makePageInfo( WikiMap::getCurrentWikiId(), '!de:Golem' ), Tag::fromArgs( [ 'golem' ] )
 		);
@@ -174,8 +174,8 @@ class FindConflictsTest extends HermesIntegrationTestCase {
 	}
 
 	public function testNoOwnLanguageConflictForInactivePage() {
-		$this->registerBaseLanguage( 'dewiki', 'de' );
-		$this->registerProjectLanguage( WikiMap::getCurrentWikiId(), 'de', false );
+		$this->registerBaseProject( 'dewiki', 'de' );
+		$this->registerTranslationProject( WikiMap::getCurrentWikiId(), 'de', false );
 		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'Golem' ), Tag::fromArgs( [ 'golem' ] ) );
 
 		$page = $this->makePageInfo( WikiMap::getCurrentWikiId(), '!de:Golem' );

@@ -67,7 +67,7 @@ class DisplayLanguage {
 	): string {
 		$withVariant = static fn ( string $code ) => $variantOf( $code ) ?? $code;
 		if ( $mode === self::BASE ) {
-			return $withVariant( LanguageStore::getLocalBaseLanguage() );
+			return $withVariant( ProjectStore::getLocalBaseLanguage() );
 		}
 		if ( $mode !== self::SPOKEN ) {
 			return $withVariant( $contentLanguage );
@@ -114,7 +114,7 @@ class DisplayLanguage {
 
 	/** The preferred language from its option value: the wiki's base language if not chosen (or invalid) */
 	public static function getPreferred( string $value ): string {
-		return self::isLanguage( $value ) ? $value : LanguageStore::getLocalBaseLanguage();
+		return self::isLanguage( $value ) ? $value : ProjectStore::getLocalBaseLanguage();
 	}
 
 	/** @return string[] Language codes, from the newline-separated option value */

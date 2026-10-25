@@ -2,7 +2,7 @@
 
 namespace MediaWiki\Extension\Hermes\Tests\Special\SpecialHermesTags;
 
-use MediaWiki\Extension\Hermes\LanguageStore;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
@@ -19,9 +19,9 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->activateLocalBaseLanguage();
-		$this->registerBaseLanguage( 'dewiki', 'de' );
-		$this->registerBaseLanguage( 'frwiki', 'fr' );
+		$this->activateLocalBaseProject();
+		$this->registerBaseProject( 'dewiki', 'de' );
+		$this->registerBaseProject( 'frwiki', 'fr' );
 	}
 
 	private function execute( array $query = [], ?string $par = null ): string {
@@ -168,7 +168,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	public function testProjectPageConflictsOnlyWithinProject() {
 		$wiki = WikiMap::getCurrentWikiId();
-		$this->registerProjectLanguage( $wiki, 'eo' );
+		$this->registerTranslationProject( $wiki, 'eo' );
 		$this->setTags( $wiki, '!eo:A', [ 'golem' ] );
 		$this->setTags( $wiki, 'B', [ 'golem' ] );
 
@@ -335,7 +335,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	}
 
 	public function testSkipsInactivePages() {
-		$this->registerProjectLanguage( WikiMap::getCurrentWikiId(), 'de', false );
+		$this->registerTranslationProject( WikiMap::getCurrentWikiId(), 'de', false );
 		$this->setTags( 'dewiki', 'Golem_de', [ 'golem' ] );
 		$this->setTags( WikiMap::getCurrentWikiId(), '!de:Golem', [ 'golem', 'other' ] );
 
@@ -344,13 +344,13 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	public function testShowsInactiveColumns() {
 		$wiki = WikiMap::getCurrentWikiId();
-		$this->registerProjectLanguage( $wiki, 'de', false );
+		$this->registerTranslationProject( $wiki, 'de', false );
 		$this->setTags( 'dewiki', 'Golem_de', [ 'golem' ] );
 		$this->setTags( $wiki, '!de:Golem', [ 'golem' ] );
 		$this->setTags( $wiki, '!de:Golem_2', [ 'golem' ] );
 
 		$html = $this->execute( [ 'tag' => '', 'inactive' => '1' ] );
-		$key = LanguageStore::getLanguages()[ 'de' ][ $wiki ]->toId();
+		$key = ProjectStore::getProjects()[ 'de' ][ $wiki ]->toId();
 		$this->assertSame( [ 'golem' => [ 'de' => 'Golem de', $key => 'Golem / Golem 2' ] ], self::table( $html ) );
 		$this->assertStringContainsString( "TablePager_col_lang-$key ext-hermes-inactive", $html );
 	}
@@ -367,14 +367,14 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	public function testSubpageShowsInactiveRows() {
 		$wiki = WikiMap::getCurrentWikiId();
-		$this->registerProjectLanguage( $wiki, 'de', false );
+		$this->registerTranslationProject( $wiki, 'de', false );
 		$this->setTags( 'dewiki', 'A', [ 'golem' ] );
 		$this->setTags( $wiki, '!de:B', [ 'golem' ] );
 		$this->setTags( $wiki, '!de:C', [ 'golem' ] );
 
 		$this->assertSame(
 			// Inactive pages don't conflict.
-			[ 'de' => [ 'A' ], "~(hermes-inactive-registration: Deutsch (de), $wiki)" => [ 'B<br>C' ] ],
+			[ 'de' => [ 'A' ], "~(hermes-inactive-project: Deutsch (de), $wiki)" => [ 'B<br>C' ] ],
 			self::details( $this->execute( [], 'golem' ) )
 		);
 	}

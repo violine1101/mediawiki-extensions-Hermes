@@ -5,7 +5,7 @@ namespace MediaWiki\Extension\Hermes\Tests\PreferencesHooks;
 use MediaWiki\Context\RequestContext;
 use MediaWiki\Extension\Hermes\DisplayLanguage;
 use MediaWiki\Extension\Hermes\Hooks\PreferencesHooks;
-use MediaWiki\Extension\Hermes\LanguageStore;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 use MediaWiki\HTMLForm\HTMLForm;
 use MediaWiki\WikiMap\WikiMap;
@@ -19,9 +19,9 @@ class PreferencesHooksTest extends HermesIntegrationTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$this->overrideConfigValues( [ 'LanguageCode' => 'en', 'UsePigLatinVariant' => true ] );
-		LanguageStore::init();
-		LanguageStore::addProjectLanguage( WikiMap::getCurrentWikiId(), 'zh' );
-		LanguageStore::addProjectLanguage( WikiMap::getCurrentWikiId(), 'eo' );
+		ProjectStore::init();
+		ProjectStore::addTranslationProject( WikiMap::getCurrentWikiId(), 'zh' );
+		ProjectStore::addTranslationProject( WikiMap::getCurrentWikiId(), 'eo' );
 	}
 
 	private function makeHooks(): PreferencesHooks {
@@ -68,7 +68,7 @@ class PreferencesHooksTest extends HermesIntegrationTestCase {
 	public function testVariantShownForOtherWikiOnlyIfSpoken(
 		string $mode, string $preferred, string $spoken, bool $shown
 	) {
-		$this->registerBaseLanguage( 'otherwiki', 'sr' );
+		$this->registerBaseProject( 'otherwiki', 'sr' );
 		$user = $this->getTestUser()->getUser();
 		$manager = $this->getServiceContainer()->getUserOptionsManager();
 		$manager->setOption( $user, DisplayLanguage::OPTION, $mode );

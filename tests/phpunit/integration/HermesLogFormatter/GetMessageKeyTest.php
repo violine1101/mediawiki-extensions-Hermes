@@ -17,7 +17,7 @@ class GetMessageKeyTest extends HermesIntegrationTestCase {
 	private function format( string $action, string $wiki ): string {
 		$entry = new ManualLogEntry( 'hermes', $action );
 		$entry->setPerformer( $this->getTestUser()->getUser() );
-		$entry->setTarget( SpecialPage::getTitleFor( 'HermesLanguages' ) );
+		$entry->setTarget( SpecialPage::getTitleFor( 'HermesProjects' ) );
 		$entry->setParameters( [ '4::language' => 'eo', '5::wiki' => $wiki ] );
 		$formatter = $this->getServiceContainer()->getLogFormatterFactory()->newFromEntry( $entry );
 		$context = new RequestContext();

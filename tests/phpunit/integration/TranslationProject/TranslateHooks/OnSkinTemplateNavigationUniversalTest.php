@@ -5,7 +5,7 @@ namespace MediaWiki\Extension\Hermes\Tests\TranslationProject\TranslateHooks;
 use MediaWiki\Context\RequestContext;
 use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\Hooks\TranslationProject\TranslateHooks;
-use MediaWiki\Extension\Hermes\LanguageStore;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
@@ -15,7 +15,7 @@ use MediaWiki\WikiMap\WikiMap;
 /**
  * @group Database
  * @covers \MediaWiki\Extension\Hermes\Hooks\TranslationProject\TranslateHooks::onSkinTemplateNavigation__Universal
- * @covers \MediaWiki\Extension\Hermes\LanguageStore::getLocalProjectLanguages
+ * @covers \MediaWiki\Extension\Hermes\ProjectStore::getLocalTranslationProjects
  */
 class OnSkinTemplateNavigationUniversalTest extends HermesIntegrationTestCase {
 
@@ -24,10 +24,10 @@ class OnSkinTemplateNavigationUniversalTest extends HermesIntegrationTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$this->wiki = WikiMap::getCurrentWikiId();
-		$this->registerBaseLanguage( 'dewiki', 'de' );
-		$this->registerProjectLanguage( 'dewiki', 'es' );
-		$this->registerProjectLanguage( $this->wiki, 'eo' );
-		$this->registerProjectLanguage( $this->wiki, 'fr' );
+		$this->registerBaseProject( 'dewiki', 'de' );
+		$this->registerTranslationProject( 'dewiki', 'es' );
+		$this->registerTranslationProject( $this->wiki, 'eo' );
+		$this->registerTranslationProject( $this->wiki, 'fr' );
 		$this->insertPage( 'Foo' );
 	}
 
@@ -96,11 +96,11 @@ class OnSkinTemplateNavigationUniversalTest extends HermesIntegrationTestCase {
 
 	public function testNoProjects() {
 		Hermes::getDB( DB_PRIMARY )->newDeleteQueryBuilder()
-			->deleteFrom( 'hermes_languages' )
-			->where( [ 'hl_wiki' => $this->wiki, 'hl_base' => 0 ] )
+			->deleteFrom( 'hermes_projects' )
+			->where( [ 'hp_wiki' => $this->wiki, 'hp_base' => 0 ] )
 			->caller( __METHOD__ )
 			->execute();
-		LanguageStore::clearCacheForTesting();
+		ProjectStore::clearCacheForTesting();
 
 		$this->assertNull( $this->getAction( 'Foo' ) );
 	}

@@ -3,7 +3,7 @@
 namespace MediaWiki\Extension\Hermes\Tests\Special\SpecialHermesTranslate;
 
 use MediaWiki\Extension\Hermes\Hermes;
-use MediaWiki\Extension\Hermes\LanguageStore;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
@@ -20,10 +20,10 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->registerBaseLanguage( 'dewiki', 'de' );
-		$this->registerProjectLanguage( 'dewiki', 'es' );
-		$this->registerProjectLanguage( WikiMap::getCurrentWikiId(), 'fr' );
-		$this->registerProjectLanguage( WikiMap::getCurrentWikiId(), 'eo' );
+		$this->registerBaseProject( 'dewiki', 'de' );
+		$this->registerTranslationProject( 'dewiki', 'es' );
+		$this->registerTranslationProject( WikiMap::getCurrentWikiId(), 'fr' );
+		$this->registerTranslationProject( WikiMap::getCurrentWikiId(), 'eo' );
 		$this->insertPage( 'Foo' );
 	}
 
@@ -168,11 +168,11 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	public function testNoProjects() {
 		Hermes::getDB( DB_PRIMARY )->newDeleteQueryBuilder()
-			->deleteFrom( 'hermes_languages' )
-			->where( [ 'hl_base' => 0 ] )
+			->deleteFrom( 'hermes_projects' )
+			->where( [ 'hp_base' => 0 ] )
 			->caller( __METHOD__ )
 			->execute();
-		LanguageStore::clearCacheForTesting();
+		ProjectStore::clearCacheForTesting();
 
 		[ $html ] = $this->execute( 'Foo' );
 

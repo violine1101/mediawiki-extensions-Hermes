@@ -2,7 +2,7 @@
 
 namespace MediaWiki\Extension\Hermes\Hooks;
 
-use MediaWiki\Extension\Hermes\LanguageStore;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Hook\BeforeInitializeHook;
 use MediaWiki\Hook\UnitTestsAfterDatabaseSetupHook;
 use MediaWiki\Installer\Hook\LoadExtensionSchemaUpdatesHook;
@@ -15,8 +15,8 @@ class InitHooks implements LoadExtensionSchemaUpdatesHook, UnitTestsAfterDatabas
 
 	/** @inheritDoc */
 	public function onBeforeInitialize( $title, $unused, $output, $user, $request, $mediaWiki ) {
-		// Ensure this wiki's base language and URL template are registered.
-		LanguageStore::init();
+		// Ensure this wiki's base project and URL template are stored.
+		ProjectStore::init();
 	}
 
 	/** @inheritDoc */
@@ -36,7 +36,7 @@ class InitHooks implements LoadExtensionSchemaUpdatesHook, UnitTestsAfterDatabas
 	 * infrastructure doesn't know how to clone (it only clones tables that already exist on
 	 * the local connection, per T384238). $wgVirtualDomainsMapping is forced empty for tests,
 	 * so "virtual-hermes" resolves to this same local connection; create the tables here so
-	 * LanguageStore/TagStore find them.
+	 * ProjectStore/TagStore find them.
 	 *
 	 * @param IMaintainableDatabase $database
 	 * @param string $prefix
