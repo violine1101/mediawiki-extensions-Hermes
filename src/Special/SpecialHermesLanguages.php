@@ -121,13 +121,11 @@ class SpecialHermesLanguages extends HermesSpecialPage {
 				$rows[] = Html::rawElement( 'tr', [ 'class' => $classes ],
 					$wikiCell .
 					Html::element( 'td', [], $formatter->languageLabel( $code ) ) .
-					// Special:HermesPages only lists active pages.
 					Html::rawElement( 'td',
 						[ 'class' => 'ext-hermes-language-pages' ],
-						$language->isActive ? $this->getLinkRenderer()->makeKnownLink(
-							SpecialPage::getTitleFor( 'HermesPages', $code ), $count
-						)
-						: htmlspecialchars( $count )
+						$this->getLinkRenderer()->makeKnownLink( SpecialPage::getTitleFor( 'HermesPages',
+							$language->toId()
+						), $count )
 					) .
 					Html::element( 'td', [ 'class' => 'ext-hermes-language-active' ],
 						$this->msg( $language->isActive ? 'hermeslanguages-active-yes' : 'hermeslanguages-active-no' )

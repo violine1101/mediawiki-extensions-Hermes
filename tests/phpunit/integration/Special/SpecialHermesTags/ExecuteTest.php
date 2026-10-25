@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\Hermes\Tests\Special\SpecialHermesTags;
 
+use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
@@ -45,7 +46,8 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		foreach ( $rows[ 1 ] as $row ) {
 			preg_match( '/TablePager_col_ht_tag">(.*?)<\/td>/s', $row, $tag );
 			preg_match_all(
-				'/<td class="TablePager_col_lang-(\w+)( ext-hermes-tag-conflict)?"[^>]*>(.*?)<\/td>/s',
+				'/<td class="TablePager_col_lang-([^ "]+)( ext-hermes-tag-conflict| ext-hermes-inactive)?"[^>]*>'
+					. '(.*?)<\/td>/s',
 				$row,
 				$cells,
 				PREG_SET_ORDER
@@ -55,7 +57,8 @@ class ExecuteTest extends HermesIntegrationTestCase {
 			foreach ( $cells as [ , $language, $conflict, $cell ] ) {
 				preg_match_all( '/<li>(.*?)<\/li>/s', $cell, $pages );
 				if ( $pages[ 1 ] ) {
-					$table[ $tagName ][ ( $conflict ? '!' : '' ) . $language ] = implode( ', ', array_map(
+					$mark = $conflict === ' ext-hermes-tag-conflict' ? '!' : '';
+					$table[ $tagName ][ $mark . $language ] = implode( ', ', array_map(
 						static fn ( $line ) => ( str_contains( $line, '<i>' ) ? '*' : '' )
 							. ( str_contains( $line, '<b>' ) ? '+' : '' )
 							. trim( preg_replace( '/\s+/', ' ', strip_tags( $line ) ) ),
@@ -227,14 +230,17 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	}
 
 	/**
-	 * @return array<string, string[]> language code => one cell per priority, marked like in table();
-	 *   conflict cells start with "!"
+	 * @return array<string, string[]> language code (or label, starting with "~" if inactive) => one cell per
+	 *   priority, marked like in table(); conflict cells start with "!"
 	 */
 	private static function details( string $html ): array {
-		preg_match_all( '/<tr><th scope="row">(.*?)<\/th>(.*?)<\/tr>/s', $html, $rows, PREG_SET_ORDER );
+		preg_match_all(
+			'/<tr( class="ext-hermes-inactive")?><th scope="row">(.*?)<\/th>(.*?)<\/tr>/s', $html, $rows, PREG_SET_ORDER
+		);
 		$details = [];
-		foreach ( $rows as [ , $label, $cells ] ) {
-			preg_match( '/\((\w+)\)$/', $label, $code );
+		foreach ( $rows as [ , $inactive, $label, $cells ] ) {
+			$label = ( $inactive ? '~' : '' ) . strip_tags( $label );
+			preg_match( '/^[^~].*\((\w+)\)$/', $label, $code );
 			preg_match_all(
 				'/<td( class="ext-hermes-tag-conflict")?[^>]*>(.*?)<\/td>/s', $cells, $tds, PREG_SET_ORDER
 			);
@@ -334,5 +340,42 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		$this->setTags( WikiMap::getCurrentWikiId(), '!de:Golem', [ 'golem', 'other' ] );
 
 		$this->assertSame( [ 'golem' => [ 'de' => 'Golem de' ] ], self::table( $this->execute() ) );
+	}
+
+	public function testShowsInactiveColumns() {
+		$wiki = WikiMap::getCurrentWikiId();
+		$this->registerProjectLanguage( $wiki, 'de', false );
+		$this->setTags( 'dewiki', 'Golem_de', [ 'golem' ] );
+		$this->setTags( $wiki, '!de:Golem', [ 'golem' ] );
+		$this->setTags( $wiki, '!de:Golem_2', [ 'golem' ] );
+
+		$html = $this->execute( [ 'tag' => '', 'inactive' => '1' ] );
+		$key = LanguageStore::getLanguages()[ 'de' ][ $wiki ]->toId();
+		$this->assertSame( [ 'golem' => [ 'de' => 'Golem de', $key => 'Golem / Golem 2' ] ], self::table( $html ) );
+		$this->assertStringContainsString( "TablePager_col_lang-$key ext-hermes-inactive", $html );
+	}
+
+	public function testFiltersByWiki() {
+		$this->setTags( 'dewiki', 'A', [ 'golem' ] );
+		$this->setTags( 'frwiki', 'B', [ 'golem' ] );
+		$this->setTags( 'frwiki', 'C', [ 'other' ] );
+
+		$this->assertSame(
+			[ 'golem' => [ 'de' => 'A' ] ], self::table( $this->execute( [ 'wiki' => [ 'dewiki' ] ] ) )
+		);
+	}
+
+	public function testSubpageShowsInactiveRows() {
+		$wiki = WikiMap::getCurrentWikiId();
+		$this->registerProjectLanguage( $wiki, 'de', false );
+		$this->setTags( 'dewiki', 'A', [ 'golem' ] );
+		$this->setTags( $wiki, '!de:B', [ 'golem' ] );
+		$this->setTags( $wiki, '!de:C', [ 'golem' ] );
+
+		$this->assertSame(
+			// Inactive pages don't conflict.
+			[ 'de' => [ 'A' ], "~(hermes-inactive-registration: Deutsch (de), $wiki)" => [ 'B<br>C' ] ],
+			self::details( $this->execute( [], 'golem' ) )
+		);
 	}
 }

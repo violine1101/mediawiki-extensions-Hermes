@@ -8,9 +8,9 @@ use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Html\Html;
 
 /**
- * Special:HermesTags: all Hermes tags in the wiki family, filterable by tag name and language, with
- * conflicts highlighted. Special:HermesTags/<tag> shows a single tag, one row per language and one
- * column per priority.
+ * Special:HermesTags: all Hermes tags in the wiki family, filterable by tag name, language and wiki, optionally
+ * with inactive projects, with conflicts highlighted. Special:HermesTags/<tag> shows a single tag, one row per
+ * language (inactive registrations dimmed) and one column per priority.
  */
 class SpecialHermesTags extends HermesSpecialPage {
 
@@ -24,6 +24,8 @@ class SpecialHermesTags extends HermesSpecialPage {
 		// Normalized like tag names, but partial names are fine here.
 		$tagFilter = trim( preg_replace( '/[\s_]+/', '_', strtolower( $request->getText( 'tag' ) ) ), '_' );
 		$languages = $this->getLanguageFilter();
+		$wikis = $this->getWikiFilter();
+		$withInactive = $this->getInactiveFilter( false, 'tag' );
 		$conflictsOnly = $request->getBool( 'conflicts' );
 
 		$this->showForm( [
@@ -34,11 +36,13 @@ class SpecialHermesTags extends HermesSpecialPage {
 				'default' => $tagFilter,
 			],
 			'language' => $this->getLanguageField( $languages ),
+			'wiki' => $this->getWikiField( $wikis ),
+			'inactive' => $this->getInactiveField( $withInactive ),
 			'conflicts' => $this->getConflictsField( $conflictsOnly ),
 		], 'hermestags-legend' );
 
 		$this->showPager( new HermesTagsPager(
-			$this->getContext(), $this->getFormatter(), $tagFilter, $languages, $conflictsOnly
+			$this->getContext(), $this->getFormatter(), $tagFilter, $languages, $wikis, $withInactive, $conflictsOnly
 		) );
 	}
 
@@ -54,7 +58,7 @@ class SpecialHermesTags extends HermesSpecialPage {
 		$out->setPageTitleMsg( $this->msg( 'hermestags-single', $tag ) );
 		$out->addBacklinkSubtitle( $this->getPageTitle() );
 
-		$byLanguage = TagQuery::loadLinks( Hermes::getDB(), [ $tag ] )[ $tag ] ?? [];
+		$byLanguage = TagQuery::loadLinks( Hermes::getDB(), [ $tag ], true )[ $tag ] ?? [];
 		if ( !$byLanguage ) {
 			$out->addWikiMsg( 'hermestags-empty' );
 			return true;
@@ -65,17 +69,20 @@ class SpecialHermesTags extends HermesSpecialPage {
 
 		$formatter = $this->getFormatter();
 		$rows = [];
-		foreach ( $byLanguage as $language => $links ) {
-			$conflict = TagFormatter::conflictPriority( $links );
+		foreach ( $byLanguage as $id => $links ) {
+			$inactive = str_contains( $id, '@' );
+			// Nothing links to inactive pages, so they can't conflict.
+			$conflict = $inactive ? null : TagFormatter::conflictPriority( $links );
 			$cells = [];
 			foreach ( $priorities as $priority ) {
+				$pages = $formatter->pages( $links[ $priority ] ?? [], $priority === $conflict, Html::element( 'br' ) );
 				$cells[] = Html::rawElement(
 					'td',
 					[ 'class' => $priority === $conflict ? 'ext-hermes-tag-conflict' : null ],
-					$formatter->pages( $links[ $priority ] ?? [], $priority === $conflict, Html::element( 'br' ) )
+					$inactive ? $formatter->dimmed( $pages ) : $pages
 				);
 			}
-			$rows[] = $formatter->languageRow( $language, $cells );
+			$rows[] = $formatter->languageRow( $id, $cells );
 		}
 
 		// With a single column, there's nothing for a priority header to tell apart.

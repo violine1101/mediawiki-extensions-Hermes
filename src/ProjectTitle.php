@@ -105,9 +105,17 @@ final class ProjectTitle {
 			?? LanguageStore::getLocalBaseLanguage();
 	}
 
+	/** The registration of this title's language on its wiki, if any. */
+	public function getRegistration(): ?HermesLanguage {
+		if ( $this->wiki === null ) {
+			return null;
+		}
+		return LanguageStore::getLanguages()[ $this->getLanguageCode() ][ $this->wiki ] ?? null;
+	}
+
 	/** Whether this title's language is active on its wiki, so that other languages link to it. */
 	public function isActive(): bool {
-		return $this->wiki !== null && LanguageStore::isActive( $this->getLanguageCode(), $this->wiki );
+		return $this->getRegistration()?->isActive ?? false;
 	}
 
 	public function getLanguage(): Language {

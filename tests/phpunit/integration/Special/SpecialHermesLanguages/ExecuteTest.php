@@ -232,6 +232,8 @@ class ExecuteTest extends HermesIntegrationTestCase {
 			'Deutsch (de) | 1 | (hermeslanguages-active-no)',
 		], self::rows( $html ) );
 		$this->assertSame( 1, preg_match_all( '/href="[^"]*Special:HermesPages\/de"/', $html ) );
+		$key = LanguageStore::getLanguages()[ 'de' ][ $this->wiki ]->toId();
+		$this->assertMatchesRegularExpression( "/href=\"[^\"]*Special:HermesPages\\/$key\"[^>]*>1<\\/a>/", $html );
 	}
 
 	public function testGlobalAdminManagesEveryWiki() {

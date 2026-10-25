@@ -55,7 +55,29 @@ abstract class HermesSpecialPage extends SpecialPage {
 	 */
 	protected function getLanguageFilter( array $default = [] ): array {
 		$languages = $this->getRequest()->getArray( 'language' ) ?? $default;
-		return array_values( array_intersect( $languages, array_keys( LanguageStore::getActiveLanguages() ) ) );
+		return array_values( array_intersect( $languages, array_keys( LanguageStore::getLanguages() ) ) );
+	}
+
+	/**
+	 * The registered wikis selected in the request's wiki filter.
+	 *
+	 * @param string[] $default If the request doesn't have the filter
+	 * @return string[]
+	 */
+	protected function getWikiFilter( array $default = [] ): array {
+		$wikis = $this->getRequest()->getArray( 'wiki' ) ?? $default;
+		return array_values( array_intersect( $wikis, LanguageStore::getWikiIds() ) );
+	}
+
+	/**
+	 * Whether the request asks for inactive projects too (`inactive=1`).
+	 *
+	 * @param bool $default If the form wasn't submitted
+	 * @param string $formField A field the form always submits, telling an unchecked box from no form
+	 */
+	protected function getInactiveFilter( bool $default, string $formField ): bool {
+		$request = $this->getRequest();
+		return $request->getCheck( $formField ) ? $request->getBool( 'inactive' ) : $default;
 	}
 
 	/**
@@ -70,6 +92,31 @@ abstract class HermesSpecialPage extends SpecialPage {
 			'label-message' => 'hermestags-language',
 			'options' => $this->getFormatter()->languageOptions(),
 			'default' => $selected,
+		];
+	}
+
+	/**
+	 * @param string[] $selected
+	 * @return array HTMLForm field for the wiki filter
+	 */
+	protected function getWikiField( array $selected ): array {
+		return [
+			'type' => 'multiselect',
+			'dropdown' => true,
+			'name' => 'wiki',
+			'label-message' => 'hermestags-wiki',
+			'options' => $this->getFormatter()->wikiOptions(),
+			'default' => $selected,
+		];
+	}
+
+	/** @return array HTMLForm field for the "show inactive projects" filter (`inactive=1`) */
+	protected function getInactiveField( bool $checked ): array {
+		return [
+			'type' => 'check',
+			'name' => 'inactive',
+			'label-message' => 'hermestags-inactive',
+			'default' => $checked,
 		];
 	}
 

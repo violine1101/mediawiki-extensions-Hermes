@@ -43,6 +43,28 @@ final class HermesLanguage {
 		];
 	}
 
+	/**
+	 * Identifies this registration, e.g. in Special:HermesPages sub-pages: the language code if it's active, else
+	 * "<code>@<wiki>", with the wiki ID in title form, as titles can't keep e.g. a trailing "_" of it.
+	 */
+	public function toId(): string {
+		return $this->isActive ? $this->code : "{$this->code}@" . self::normalizeWiki( $this->wiki );
+	}
+
+	/** The registration an ID identifies (as toId(); "<code>@<wiki>" works for an active one too), if any. */
+	public static function parseId( string $id ): ?self {
+		if ( !str_contains( $id, '@' ) ) {
+			return LanguageStore::getActiveLanguages()[ $id ] ?? null;
+		}
+		[ $code, $wiki ] = explode( '@', $id, 2 );
+		foreach ( LanguageStore::getLanguages()[ $code ] ?? [] as $registeredWiki => $registration ) {
+			if ( self::normalizeWiki( $registeredWiki ) === self::normalizeWiki( $wiki ) ) {
+				return $registration;
+			}
+		}
+		return null;
+	}
+
 	public function isLocal(): bool {
 		return $this->wiki === WikiMap::getCurrentWikiId();
 	}
@@ -57,5 +79,9 @@ final class HermesLanguage {
 
 	public function withUrlTemplate( ?string $urlTemplate ): self {
 		return new self( $this->code, $this->wiki, $this->isBase, $this->isActive, $urlTemplate );
+	}
+
+	private static function normalizeWiki( string $wiki ): string {
+		return trim( preg_replace( '/[ _]+/', '_', $wiki ), '_' );
 	}
 }

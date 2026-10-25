@@ -11,8 +11,9 @@ use Wikimedia\Rdbms\Subquery;
 
 /**
  * Lists the pages of the whole wiki family that have Hermes tags, one column per fallback priority;
- * tags in a conflict are highlighted. To make every column sortable, a subquery groups hermes_tags by
- * page, with the tag, section, conflict flag and a sort key per priority.
+ * tags in a conflict are highlighted, and pages of inactive registrations (if shown) dimmed. To make every
+ * column sortable, a subquery groups hermes_tags by page, with the tag, section, conflict flag and a sort key
+ * per priority.
  */
 class HermesPagesPager extends TablePager {
 
@@ -27,6 +28,8 @@ class HermesPagesPager extends TablePager {
 	 * @param TagFormatter $formatter
 	 * @param string $titleFilter Only base titles containing this, in DB key form, if not empty
 	 * @param string[] $languages Only these languages, or all if empty
+	 * @param string[] $wikis Only pages on these wikis, or all if empty
+	 * @param bool $withInactive Whether to include pages of inactive registrations
 	 * @param bool $conflictsOnly Only pages with a tag in a conflict
 	 */
 	public function __construct(
@@ -34,6 +37,8 @@ class HermesPagesPager extends TablePager {
 		private readonly TagFormatter $formatter,
 		private readonly string $titleFilter,
 		private readonly array $languages,
+		private readonly array $wikis,
+		private readonly bool $withInactive,
 		private readonly bool $conflictsOnly,
 	) {
 		$this->mDb = Hermes::getDB();
@@ -56,13 +61,16 @@ class HermesPagesPager extends TablePager {
 			't.ht_wiki', 't.ht_page_id', 't.ht_namespace_id', 't.ht_namespace_text',
 			't.ht_translation_project', 't.ht_base_title',
 		];
-		$query = TagQuery::joinLanguages( $dbr->newSelectQueryBuilder()->from( 'hermes_tags', 't' ) )
+		$query = TagQuery::joinLanguages(
+			$dbr->newSelectQueryBuilder()->from( 'hermes_tags', 't' ), 't', 'l', $this->withInactive
+		)
 			->select( $pageFields )
 			->select( [
-				'language' => 'COALESCE(' . TagQuery::language() . ", '')",
+				'language' => TagQuery::language(),
+				'is_active' => 'l.hl_active',
 				'has_conflict' => 'MAX(CASE WHEN ' . TagQuery::inConflict( $dbr ) . ' THEN 1 ELSE 0 END)',
 			] )
-			->groupBy( [ ...$pageFields, 'l.hl_language' ] )
+			->groupBy( [ ...$pageFields, 'l.hl_language', 'l.hl_active' ] )
 			->caller( __METHOD__ );
 		foreach ( $this->priorityFields as $priority ) {
 			$tag = "MAX(CASE WHEN t.ht_priority = $priority THEN t.ht_tag END)";
@@ -80,6 +88,9 @@ class HermesPagesPager extends TablePager {
 		}
 		if ( $this->languages ) {
 			$query->where( TagQuery::inLanguages( $dbr, $this->languages ) );
+		}
+		if ( $this->wikis ) {
+			$query->where( [ 't.ht_wiki' => $this->wikis ] );
 		}
 
 		return [
@@ -115,12 +126,18 @@ class HermesPagesPager extends TablePager {
 
 	/** @inheritDoc */
 	public function formatValue( $name, $value ) {
+		$html = $this->formatCell( $name, $value );
+		return $this->mCurrentRow->is_active ? $html : $this->formatter->dimmed( $html );
+	}
+
+	private function formatCell( string $name, ?string $value ): string {
 		$row = $this->mCurrentRow;
 		if ( $name === 'ht_base_title' ) {
 			return $this->formatter->pageLink( PageInfo::fromRow( $row ) );
 		}
 		if ( $name === 'language' ) {
-			return $value !== '' ? htmlspecialchars( $this->formatter->languageLabel( $value ) ) : '';
+			$id = PageInfo::fromRow( $row )->title->getRegistration()?->toId() ?? $value;
+			return htmlspecialchars( $this->formatter->registrationLabel( $id ) );
 		}
 
 		$priority = $this->priorityFields[ $name ];
@@ -151,6 +168,11 @@ class HermesPagesPager extends TablePager {
 			$attrs[ 'class' ] .= ' ext-hermes-tag-conflict';
 		}
 		return $attrs;
+	}
+
+	/** @inheritDoc */
+	protected function getRowClass( $row ) {
+		return $row->is_active ? '' : 'ext-hermes-inactive';
 	}
 
 	/** @inheritDoc */

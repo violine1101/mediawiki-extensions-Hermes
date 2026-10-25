@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\Hermes\Special;
 
 use MediaWiki\Context\IContextSource;
 use MediaWiki\Extension\Hermes\Hermes;
+use MediaWiki\Extension\Hermes\HermesLanguage;
 use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\TagLink;
@@ -24,13 +25,14 @@ final class TagFormatter {
 	}
 
 	/**
-	 * Special:HermesPages/<language>/<title> for a page: its language identifies the wiki and translation
-	 * project, the title is the namespace name as stored and the base title.
+	 * Special:HermesPages/<id>/<title> for a page: its registration ID (HermesLanguage::toId()) identifies the wiki
+	 * and translation project, the title is the namespace name as stored and the base title.
 	 */
 	public static function detailsTitle( PageInfo $page ): Title {
 		$title = $page->title;
 		$namespace = $title->getNamespaceText() !== '' ? $title->getNamespaceText() . ':' : '';
-		return SpecialPage::getTitleFor( 'HermesPages', "{$title->getLanguageCode()}/$namespace{$title->baseTitle}" );
+		$id = $title->getRegistration()?->toId() ?? $title->getLanguageCode();
+		return SpecialPage::getTitleFor( 'HermesPages', "$id/$namespace{$title->baseTitle}" );
 	}
 
 	/** A link to the page itself, followed by an icon linking to its details on Special:HermesPages. */
@@ -114,9 +116,19 @@ final class TagFormatter {
 		return $name !== '' ? "$name ($code)" : $code;
 	}
 
+	/** "Autonym (code)" for a registration ID, followed by the wiki if it's an inactive registration. */
+	public function registrationLabel( string $id ): string {
+		$registration = HermesLanguage::parseId( $id );
+		if ( $registration === null || $registration->isActive ) {
+			return $this->languageLabel( $registration->code ?? $id );
+		}
+		return $this->context->msg( 'hermes-inactive-registration' )
+			->plaintextParams( $this->languageLabel( $registration->code ), $registration->wiki )->text();
+	}
+
 	/** @return array<string, string> Options for a language multiselect, label => code */
 	public function languageOptions(): array {
-		$codes = array_keys( LanguageStore::getActiveLanguages() );
+		$codes = array_keys( LanguageStore::getLanguages() );
 		sort( $codes );
 		$options = [];
 		foreach ( $codes as $code ) {
@@ -141,14 +153,29 @@ final class TagFormatter {
 		);
 	}
 
+	/** Cell contents of an inactive registration, dimmed (the cell itself isn't, to keep its background). */
+	public function dimmed( string $html ): string {
+		return $html !== '' ? Html::rawElement( 'div', [ 'class' => 'ext-hermes-inactive-content' ], $html ) : '';
+	}
+
+	/** @return array<string, string> Options for a wiki multiselect, wiki => wiki */
+	public function wikiOptions(): array {
+		$wikis = LanguageStore::getWikiIds();
+		sort( $wikis );
+		return array_combine( $wikis, $wikis );
+	}
+
 	/**
-	 * @param string $language Language code, labelling the row
-	 * @param string[] $cells HTML of the other cells
+	 * @param string $id Registration ID, labelling the row; inactive ones are dimmed
+	 * @param string[] $cells HTML of the other cells, their contents dimmed for inactive ones
 	 * @return string HTML
 	 */
-	public function languageRow( string $language, array $cells ): string {
-		return Html::rawElement( 'tr', [],
-			Html::element( 'th', [ 'scope' => 'row' ], $this->languageLabel( $language ) ) . implode( '', $cells )
+	public function languageRow( string $id, array $cells ): string {
+		$inactive = str_contains( $id, '@' );
+		$label = htmlspecialchars( $this->registrationLabel( $id ) );
+		return Html::rawElement( 'tr', [ 'class' => $inactive ? 'ext-hermes-inactive' : null ],
+			Html::rawElement( 'th', [ 'scope' => 'row' ], $inactive ? $this->dimmed( $label ) : $label ) .
+				implode( '', $cells )
 		);
 	}
 }

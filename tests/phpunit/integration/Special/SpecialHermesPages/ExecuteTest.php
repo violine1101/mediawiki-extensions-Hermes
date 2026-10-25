@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\Hermes\Tests\Special\SpecialHermesPages;
 
+use MediaWiki\Extension\Hermes\LanguageStore;
 use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\Tag;
@@ -272,5 +273,75 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		$this->setTags( WikiMap::getCurrentWikiId(), '!de:Golem', [ 'golem' ] );
 
 		$this->assertSame( [ 'Golem | Deutsch (de) | golem' ], $this->list() );
+	}
+
+	public function testShowsInactivePages() {
+		$wiki = WikiMap::getCurrentWikiId();
+		$this->registerProjectLanguage( $wiki, 'de', false );
+		$this->setTags( 'dewiki', 'Golem', [ 'golem' ] );
+		$this->setTags( $wiki, '!de:Golem', [ 'golem' ] );
+
+		$this->assertSame(
+			[ 'Golem | Deutsch (de) | golem', "Golem | (hermes-inactive-registration: Deutsch (de), $wiki) | golem" ],
+			$this->list( [ 'title-contains' => '', 'inactive' => '1' ] )
+		);
+		$html = $this->execute( [ 'title-contains' => '', 'inactive' => '1' ] );
+		$this->assertSame( 1, preg_match_all( '/<tr class="[^"]*\bext-hermes-inactive\b/', $html ) );
+	}
+
+	public function testFiltersByWiki() {
+		$this->setTags( 'dewiki', 'Golem', [ 'golem' ] );
+		$this->setTags( 'frwiki', 'Golem', [ 'golem' ] );
+
+		$this->assertSame( [ 'Golem | Français (fr) | golem' ], $this->list( [ 'wiki' => [ 'frwiki' ] ] ) );
+	}
+
+	public function testRegistrationSubpage() {
+		$wiki = WikiMap::getCurrentWikiId();
+		$this->registerProjectLanguage( $wiki, 'de', false );
+		$this->setTags( 'dewiki', 'Golem', [ 'golem' ] );
+		$this->setTags( $wiki, '!de:Golem', [ 'golem' ] );
+
+		$html = $this->execute( [], LanguageStore::getLanguages()[ 'de' ][ $wiki ]->toId() );
+		preg_match( '/<tbody>(.*)<\/tbody>/s', $html, $body );
+		$this->assertSame(
+			[ "Golem | (hermes-inactive-registration: Deutsch (de), $wiki) | golem" ], self::rows( $body[ 1 ] )
+		);
+		$this->assertMatchesRegularExpression( '/name=.inactive.[^>]*checked|checked[^>]*name=.inactive./', $html );
+	}
+
+	public function testDetailsOfInactivePage() {
+		$wiki = WikiMap::getCurrentWikiId();
+		$this->registerProjectLanguage( $wiki, 'de', false );
+		$this->setTags( 'dewiki', 'Golem', [ 'golem' ] );
+		$this->setTags( 'frwiki', 'Golem', [ 'golem' ] );
+		$this->setTags( $wiki, '!de:Golem', [ 'golem' ] );
+
+		$this->assertSame(
+			[
+				'(hermespages-header-language) | golem',
+				// Not linked: the page's own language.
+				'de | Golem',
+				"(hermes-inactive-registration: Deutsch (de), $wiki) | [O]Golem",
+				'fr | [T]Golem',
+			],
+			$this->links( LanguageStore::getLanguages()[ 'de' ][ $wiki ]->toId() . '/Golem' )
+		);
+	}
+
+	public function testDetailsShowInactiveRows() {
+		$wiki = WikiMap::getCurrentWikiId();
+		$this->registerProjectLanguage( $wiki, 'de', false );
+		$this->setTags( 'frwiki', 'Golem', [ 'golem' ] );
+		$this->setTags( $wiki, '!de:Golem', [ 'golem' ] );
+
+		$this->assertSame(
+			[
+				'(hermespages-header-language) | golem',
+				"(hermes-inactive-registration: Deutsch (de), $wiki) | Golem",
+				'fr | [O]Golem',
+			],
+			$this->links( 'fr/Golem' )
+		);
 	}
 }
