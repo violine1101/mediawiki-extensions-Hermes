@@ -4,7 +4,22 @@
 	background-color: @background-color-success-subtle;
 }
 
-.ext-hermes-details td.ext-hermes-own-language {
+.ext-hermes-base-language td {
+	font-weight: bold;
+}
+
+// The height of the buttons, so that rows with and without them line up.
+.ext-hermes-languages td {
+	height: @min-size-interactive-pointer;
+
+	form,
+	.oo-ui-fieldLayout {
+		margin: 0;
+	}
+}
+
+.ext-hermes-details td.ext-hermes-own-language,
+.ext-hermes-details tr.ext-hermes-active-language td {
 	background-color: @background-color-progressive-subtle;
 }
 
@@ -24,6 +39,12 @@
 	.cdx-mixin-css-icon( @cdx-icon-search, @color-subtle, @size-icon-small );
 }
 
-.ext-hermes-base-language td {
-	font-weight: bold;
+.ext-hermes-language-actions,
+.ext-hermes-language-active,
+.ext-hermes-language-pages {
+	text-align: center;
+}
+
+.ext-hermes-language-actions button {
+	width: 120px;
 }

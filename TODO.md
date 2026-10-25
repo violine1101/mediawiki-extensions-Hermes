@@ -22,6 +22,7 @@ Phase 5: Improved Cache Handling
 Phase 6: Keep languages isolated
 - Restrict search by language with `hermesproject:`
 - Make logo (+ sidebar) link to pages in the project language, if they exist
+- Add filters to recent changes
 
 Phase 7: Lua + Javascript interop
 - Not sure if needed but would be nice.

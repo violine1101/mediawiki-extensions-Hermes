@@ -196,27 +196,27 @@ class LanguageStore {
 	}
 
 	/**
-	 * Register a new translation project language for a given wiki.
+	 * Register a new translation project language for a given wiki: active, unless the language is already
+	 * active on another wiki.
 	 *
 	 * @param string $wiki Wiki ID, as configured in $wgHermesWikis.
 	 * @param string $language Language code of the project language.
 	 * @return bool True if newly registered, false if it was already registered on $wiki.
-	 * @throws LanguageConflictException If the language is already registered on any other wiki,
-	 *   or registered as a base language.
+	 * @throws LanguageConflictException If the language is $wiki's base language.
 	 */
 	public static function addProjectLanguage( string $wiki, string $language ): bool {
 		return self::withLock( static function () use ( $wiki, $language ) {
-			$byWiki = self::$languages[ $language ] ?? [];
-			if ( !$byWiki ) {
-				self::insert( new HermesLanguage( $language, $wiki, false, true, self::getUrlTemplate( $wiki ) ) );
-				return true;
+			$existing = self::$languages[ $language ][ $wiki ] ?? null;
+			if ( $existing?->isBase ) {
+				throw new LanguageConflictException( $language, $wiki, $wiki );
 			}
-			if ( isset( $byWiki[ $wiki ] ) && !$byWiki[ $wiki ]->isBase ) {
+			if ( $existing !== null ) {
 				return false;
 			}
 
-			$existingWiki = self::getWikiForLanguage( $language ) ?? array_key_first( $byWiki );
-			throw new LanguageConflictException( $language, $existingWiki, $wiki );
+			$isActive = self::getWikiForLanguage( $language ) === null;
+			self::insert( new HermesLanguage( $language, $wiki, false, $isActive, self::getUrlTemplate( $wiki ) ) );
+			return true;
 		} );
 	}
 
@@ -237,6 +237,22 @@ class LanguageStore {
 			}
 			self::setActive( $language, $wiki );
 			return true;
+		} );
+	}
+
+	/**
+	 * Makes $language inactive on every wiki.
+	 *
+	 * @return string|null The wiki it was active on, or null if none.
+	 */
+	public static function deactivate( string $language ): ?string {
+		return self::withLock( static function () use ( $language ) {
+			$wiki = self::getWikiForLanguage( $language );
+			if ( $wiki === null ) {
+				return null;
+			}
+			self::setActive( $language, null );
+			return $wiki;
 		} );
 	}
 
@@ -301,7 +317,8 @@ class LanguageStore {
 		}
 	}
 
-	private static function setActive( string $language, string $wiki ): void {
+	/** Makes $language active on $wiki only, or on none if null. */
+	private static function setActive( string $language, ?string $wiki ): void {
 		$dbw = Hermes::getDB( DB_PRIMARY );
 		$dbw->newUpdateQueryBuilder()
 			->update( self::TABLE_NAME )
@@ -309,12 +326,14 @@ class LanguageStore {
 			->where( [ 'hl_language' => $language ] )
 			->caller( __METHOD__ )
 			->execute();
-		$dbw->newUpdateQueryBuilder()
-			->update( self::TABLE_NAME )
-			->set( [ 'hl_active' => 1 ] )
-			->where( [ 'hl_language' => $language, 'hl_wiki' => $wiki ] )
-			->caller( __METHOD__ )
-			->execute();
+		if ( $wiki !== null ) {
+			$dbw->newUpdateQueryBuilder()
+				->update( self::TABLE_NAME )
+				->set( [ 'hl_active' => 1 ] )
+				->where( [ 'hl_language' => $language, 'hl_wiki' => $wiki ] )
+				->caller( __METHOD__ )
+				->execute();
+		}
 
 		foreach ( self::$languages[ $language ] as $otherWiki => $registration ) {
 			self::$languages[ $language ][ $otherWiki ] = $registration->withActive( $otherWiki === $wiki );

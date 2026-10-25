@@ -33,41 +33,26 @@ class AddProjectLanguageTest extends HermesIntegrationTestCase {
 		$this->assertSame( $wiki, LanguageStore::getWikiForLanguage( 'eo' ) );
 	}
 
-	public function testThrowsOnConflictWithAnotherWikisBaseLanguage() {
+	public function testInactiveWhenActiveElsewhere() {
 		$this->registerBaseLanguage( 'dewiki', 'de' );
+		$this->registerProjectLanguage( 'frwiki', 'eo' );
+		$wiki = WikiMap::getCurrentWikiId();
 
-		try {
-			LanguageStore::addProjectLanguage( WikiMap::getCurrentWikiId(), 'de' );
-			$this->fail( 'Expected LanguageConflictException to be thrown' );
-		} catch ( LanguageConflictException $e ) {
-			$this->assertSame( 'de', $e->language );
-			$this->assertSame( 'dewiki', $e->existingWiki );
-			$this->assertSame( WikiMap::getCurrentWikiId(), $e->requestedWiki );
-		}
+		$this->assertTrue( LanguageStore::addProjectLanguage( $wiki, 'de' ) );
+		$this->assertTrue( LanguageStore::addProjectLanguage( $wiki, 'eo' ) );
+
+		$this->assertTrue( LanguageStore::isLocalProjectLanguage( 'de' ) );
+		$this->assertFalse( LanguageStore::isActive( 'de', $wiki ) );
+		$this->assertFalse( LanguageStore::isActive( 'eo', $wiki ) );
+		$this->assertSame( 'dewiki', LanguageStore::getWikiForLanguage( 'de' ) );
 	}
 
-	public function testThrowsOnConflictWithAnotherWikisLocalProjectLanguage() {
-		$this->registerProjectLanguage( 'dewiki', 'eo' );
-
-		try {
-			LanguageStore::addProjectLanguage( WikiMap::getCurrentWikiId(), 'eo' );
-			$this->fail( 'Expected LanguageConflictException to be thrown' );
-		} catch ( LanguageConflictException $e ) {
-			$this->assertSame( 'eo', $e->language );
-			$this->assertSame( 'dewiki', $e->existingWiki );
-			$this->assertSame( WikiMap::getCurrentWikiId(), $e->requestedWiki );
-		}
-	}
-
-	public function testThrowsOnConflictWithInactiveRegistration() {
+	public function testActiveWhenOnlyInactiveElsewhere() {
 		$this->registerBaseLanguage( 'dewiki', 'de', false );
 
-		try {
-			LanguageStore::addProjectLanguage( WikiMap::getCurrentWikiId(), 'de' );
-			$this->fail( 'Expected LanguageConflictException to be thrown' );
-		} catch ( LanguageConflictException $e ) {
-			$this->assertSame( 'dewiki', $e->existingWiki );
-		}
+		LanguageStore::addProjectLanguage( WikiMap::getCurrentWikiId(), 'de' );
+
+		$this->assertSame( WikiMap::getCurrentWikiId(), LanguageStore::getWikiForLanguage( 'de' ) );
 	}
 
 	public function testThrowsOnConflictWithOwnBaseLanguage() {

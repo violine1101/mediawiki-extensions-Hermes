@@ -68,8 +68,15 @@
 		"wgQueryPages": "translationproject-wanted"
 	},
 	"AvailableRights": [
-		"hermes-add-translation-project"
+		"hermes-local-admin",
+		"hermes-global-admin"
 	],
+	"LogTypes": [
+		"hermes"
+	],
+	"LogActionsHandlers": {
+		"hermes/*": "MediaWiki\\Extension\\Hermes\\HermesLogFormatter"
+	},
 	"AuthManagerAutoConfig": {
 		"preauth": {
 			"MediaWiki\\Extension\\Hermes\\Auth\\ReservedUsernamePreAuthenticationProvider": {

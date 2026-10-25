@@ -40,7 +40,11 @@ class AddProjectLanguage extends Maintenance {
 			$this->fatalError( $e->getMessage() );
 		}
 
-		if ( $isNew ) {
+		$activeWiki = LanguageStore::getWikiForLanguage( $language );
+		if ( $isNew && $activeWiki !== $wiki ) {
+			$this->output( "Registered translation project \"$language\" on this wiki ($wiki), inactive, as it's " .
+				"active on $activeWiki.\n" );
+		} elseif ( $isNew ) {
 			$this->output( "Registered translation project \"$language\" on this wiki ($wiki).\n" );
 		} else {
 			$this->output( "Translation project \"$language\" is already registered on this wiki ($wiki).\n" );
