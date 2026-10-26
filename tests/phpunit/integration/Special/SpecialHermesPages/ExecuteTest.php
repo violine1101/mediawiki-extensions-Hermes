@@ -232,7 +232,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	public function testDetailsOfNamespacedPage() {
 		TagStore::setTagsForPage(
 			new PageInfo(
-				ProjectTitle::makeTitle( self::getProject( null, 'dewiki' ), NS_CATEGORY, 'Golems', null, 'Kategorie' ),
+				ProjectTitle::makeTitle( self::getProject( null, 'dewiki' ), NS_CATEGORY, 'Golems', 'Kategorie' ),
 				100
 			),
 			Tag::fromArgs( [ 'golems' ] )

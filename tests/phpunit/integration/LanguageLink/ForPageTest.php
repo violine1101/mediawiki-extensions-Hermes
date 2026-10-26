@@ -22,7 +22,7 @@ class ForPageTest extends HermesIntegrationTestCase {
 
 		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
 		$de = $this->makePageInfo( 'dewiki', 'Stein' );
-		$eoTitle = ProjectTitle::makeTitle( self::getProject( 'eo', 'trwiki' ), NS_MAIN, 'Ŝtono', null, '' );
+		$eoTitle = ProjectTitle::makeTitle( self::getProject( 'eo', 'trwiki' ), NS_MAIN, 'Ŝtono', '' );
 		$eo = new PageInfo( $eoTitle, 1000 );
 		foreach ( [ $en, $de, $eo ] as $page ) {
 			TagStore::setTagsForPage( $page, Tag::fromArgs( [ 'stone' ] ) );
@@ -40,6 +40,20 @@ class ForPageTest extends HermesIntegrationTestCase {
 		$this->assertSame( 'https://translate.example.org/wiki/!eo:%C5%9Ctono', $links['eo']->url );
 		$this->assertSame( 'Ŝtono', $links['eo']->getDisplayTitle() );
 		$this->assertTrue( $links['eo']->isProject() );
+	}
+
+	public function testLinksToTaggedSection() {
+		$this->registerBaseProject( 'de', 'dewiki', url: 'https://de.example.org/wiki/$1' );
+
+		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
+		$de = $this->makePageInfo( 'dewiki', 'Golem' );
+		TagStore::setTagsForPage( $en, Tag::fromArgs( [ 'iron_golem' ] ) );
+		TagStore::setTagsForPage( $de, Tag::fromArgs( [ 'iron_golem=#Eisengolem' ] ) );
+
+		$links = LanguageLink::forPage( $en );
+
+		$this->assertSame( 'https://de.example.org/wiki/Golem#Eisengolem', $links['de']->url );
+		$this->assertSame( 'Golem#Eisengolem', $links['de']->getDisplayTitle() );
 	}
 
 	public function testSkipsWikisWithoutUrl() {

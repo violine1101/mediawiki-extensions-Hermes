@@ -92,7 +92,7 @@ class LinkHooks implements
 		$translation = TagStore::getLinksForPage( $basePage )[ $projectTitle->project->code ] ?? null;
 		$redirectTo = null;
 		if ( $translation !== null && $translation->page->title->project->isLocal() ) {
-			$translationTitle = $translation->page->title->toTitle();
+			$translationTitle = $translation->page->title->toTitle( $translation->tag->section );
 			$fallbackLinks[] = $linkRenderer->makeKnownLink( $translationTitle, $projectTitle->project->code );
 			// Only a redirect to a real translation, not a page it falls back to.
 			if ( isset( TagStore::getTranslationsOfPage( $basePage )[ $projectTitle->project->code ] ) ) {

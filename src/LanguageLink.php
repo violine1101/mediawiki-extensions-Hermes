@@ -8,23 +8,23 @@ namespace MediaWiki\Extension\Hermes;
 final class LanguageLink {
 
 	public function __construct(
-		public readonly PageInfo $page,
+		public readonly TagLink $link,
 		public readonly string $url,
 	) {
 	}
 
 	public function getLanguageCode(): string {
-		return $this->page->title->project->code;
+		return $this->link->page->title->project->code;
 	}
 
 	/** Whether the target is a translation project page rather than a page on a base wiki. */
 	public function isProject(): bool {
-		return !$this->page->title->project->isBase;
+		return !$this->link->page->title->project->isBase;
 	}
 
-	/** The target's title as shown to readers, e.g. "Kategorio:Foo". */
+	/** The target's title as shown to readers, e.g. "Kategorio:Foo#Section". */
 	public function getDisplayTitle(): string {
-		return $this->page->title->getDisplayTitle( true );
+		return $this->link->getDisplayTitle();
 	}
 
 	/**
@@ -37,9 +37,9 @@ final class LanguageLink {
 	public static function forPage( PageInfo $page ): array {
 		$links = [];
 		foreach ( TagStore::getLinksForPage( $page ) as $lang => $tagLink ) {
-			$url = $tagLink->page->title->getUrl();
+			$url = $tagLink->getUrl();
 			if ( $url !== null ) {
-				$links[ $lang ] = new self( $tagLink->page, $url );
+				$links[ $lang ] = new self( $tagLink, $url );
 			}
 		}
 		return $links;

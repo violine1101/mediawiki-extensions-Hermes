@@ -9,6 +9,7 @@ use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\Special\TagFormatter;
 use MediaWiki\Extension\Hermes\Tag;
+use MediaWiki\Extension\Hermes\TagLink;
 use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Hook\LinksUpdateCompleteHook;
 use MediaWiki\Hook\ParserFirstCallInitHook;
@@ -106,10 +107,10 @@ class ParserFuncHooks implements
 					$tagCode = $tagLink( $tag );
 					$pages = array_filter(
 						$pages,
-						static fn ( PageInfo $p ) => $p->title->project->wiki !== $page->title->project->wiki
-							|| $p->getId() !== $page->getId(),
+						static fn ( TagLink $l ) => $l->page->title->project->wiki !== $page->title->project->wiki
+							|| $l->page->getId() !== $page->getId(),
 					);
-					$links = array_map( static fn ( PageInfo $p ) => $p->buildLink(), $pages );
+					$links = array_map( static fn ( TagLink $l ) => $l->page->buildLink( $l->tag->section ), $pages );
 					$conflictItems[] = Html::rawElement( 'li', [], "{$tagCode}: " . implode( ', ', $links ) );
 				}
 				$list = Html::rawElement( 'ul', [], implode( '', $conflictItems ) );
@@ -127,7 +128,9 @@ class ParserFuncHooks implements
 					foreach ( $langEntries as $tag => $pages ) {
 						$tagCode = $tagLink( $tag );
 						$langName = htmlspecialchars( Hermes::getAutonym( $lang ) ?: $lang );
-						$links = array_map( static fn ( PageInfo $p ) => $p->buildLink(), $pages );
+						$links = array_map(
+							static fn ( TagLink $l ) => $l->page->buildLink( $l->tag->section ), $pages
+						);
 						$ambiguousItems[] = Html::rawElement(
 							'li', [], "{$tagCode} ({$langName}): " . implode( ', ', $links )
 						);

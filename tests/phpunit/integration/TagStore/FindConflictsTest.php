@@ -2,8 +2,8 @@
 
 namespace MediaWiki\Extension\Hermes\Tests\TagStore;
 
-use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\Tag;
+use MediaWiki\Extension\Hermes\TagLink;
 use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 use MediaWiki\WikiMap\WikiMap;
@@ -15,11 +15,11 @@ use MediaWiki\WikiMap\WikiMap;
 class FindConflictsTest extends HermesIntegrationTestCase {
 
 	/**
-	 * @param PageInfo[] $pages
+	 * @param TagLink[] $links
 	 * @return string[]
 	 */
-	private static function titlesOf( array $pages ): array {
-		return array_map( static fn ( PageInfo $page ) => $page->title->baseTitle, $pages );
+	private static function titlesOf( array $links ): array {
+		return array_map( static fn ( TagLink $link ) => $link->page->title->baseTitle, $links );
 	}
 
 	public function testDetectsConflict() {

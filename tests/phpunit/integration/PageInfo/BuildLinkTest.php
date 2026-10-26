@@ -15,7 +15,7 @@ class BuildLinkTest extends HermesIntegrationTestCase {
 
 	public function testWithoutUrlGivesPlainText() {
 		$project = new Project( 'de', 'dewiki', true, true, null );
-		$page = new PageInfo( ProjectTitle::makeTitle( $project, NS_MAIN, 'Foo_<b>', null, '' ) );
+		$page = new PageInfo( ProjectTitle::makeTitle( $project, NS_MAIN, 'Foo_<b>', '' ) );
 
 		$this->assertSame( 'Foo &lt;b&gt;', $page->buildLink() );
 	}
@@ -24,7 +24,7 @@ class BuildLinkTest extends HermesIntegrationTestCase {
 		$this->registerTranslationProject( 'eo', 'trwiki', url: 'https://translate.example.org/wiki/$1' );
 
 		$project = self::getProject( 'eo', 'trwiki' );
-		$title = ProjectTitle::makeTitle( $project, NS_MAIN, 'BuildLinkProjectTarget', null, '' );
+		$title = ProjectTitle::makeTitle( $project, NS_MAIN, 'BuildLinkProjectTarget', '' );
 		$page = new PageInfo( $title );
 
 		$this->assertSame(
@@ -38,7 +38,7 @@ class BuildLinkTest extends HermesIntegrationTestCase {
 		$this->registerTranslationProject( 'eo', 'trwiki', url: 'https://translate.example.org/wiki/$1' );
 
 		$title = ProjectTitle::makeTitle(
-			self::getProject( 'eo', 'trwiki' ), NS_CATEGORY, 'BuildLinkNamespacedProjectTarget', null, 'Category'
+			self::getProject( 'eo', 'trwiki' ), NS_CATEGORY, 'BuildLinkNamespacedProjectTarget', 'Category'
 		);
 		$page = new PageInfo( $title );
 

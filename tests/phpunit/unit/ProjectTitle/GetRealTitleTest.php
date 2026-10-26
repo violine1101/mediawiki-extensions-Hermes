@@ -14,12 +14,11 @@ class GetRealTitleTest extends MediaWikiUnitTestCase {
 	private static function makeTitle(
 		string $namespaceText,
 		?string $language,
-		string $title,
-		?string $section = null
+		string $title
 	): ProjectTitle {
 		$project = new Project( $language ?? 'en', 'testwiki', $language === null, true, null );
 		// The namespace ID isn't used for the real title.
-		return ProjectTitle::makeTitle( $project, NS_MAIN, $title, $section, $namespaceText );
+		return ProjectTitle::makeTitle( $project, NS_MAIN, $title, $namespaceText );
 	}
 
 	public function testOrdinaryPage() {
@@ -39,12 +38,6 @@ class GetRealTitleTest extends MediaWikiUnitTestCase {
 		$page = self::makeTitle( 'Category', 'eo', 'Foo' );
 
 		$this->assertSame( 'Category:!eo:Foo', $page->getRealTitle() );
-	}
-
-	public function testWithSection() {
-		$page = self::makeTitle( 'Category', 'eo', 'Foo', 'Bar' );
-
-		$this->assertSame( 'Category:!eo:Foo#Bar', $page->getRealTitle() );
 	}
 
 	public function testSpacesBecomeUnderscores() {

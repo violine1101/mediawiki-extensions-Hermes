@@ -35,10 +35,13 @@ final class TagFormatter {
 		return SpecialPage::getTitleFor( 'HermesPages', "$id/$namespace{$title->baseTitle}" );
 	}
 
-	/** A link to the page itself, followed by an icon linking to its details on Special:HermesPages. */
-	public function pageLink( PageInfo $page ): string {
+	/**
+	 * A link to the page itself (or its section $section), followed by an icon linking to its details on
+	 * Special:HermesPages.
+	 */
+	public function pageLink( PageInfo $page, ?string $section = null ): string {
 		$details = $this->context->msg( 'hermes-page-details' )->text();
-		return $page->buildLink() . ' ' . Html::element( 'a', [
+		return $page->buildLink( $section ) . ' ' . Html::element( 'a', [
 			'href' => self::detailsTitle( $page )->getLocalURL(),
 			'class' => 'ext-hermes-details-link',
 			'title' => $details,
@@ -64,7 +67,9 @@ final class TagFormatter {
 		if ( !$links ) {
 			return '';
 		}
-		$html = implode( $separator, array_map( fn ( TagLink $link ) => $this->pageLink( $link->page ), $links ) );
+		$html = implode( $separator, array_map(
+			fn ( TagLink $link ) => $this->pageLink( $link->page, $link->tag->section ), $links
+		) );
 		if ( $conflict ) {
 			$html = Html::rawElement( 'b', [], $html );
 		}

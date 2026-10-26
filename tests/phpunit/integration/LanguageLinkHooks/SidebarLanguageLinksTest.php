@@ -32,7 +32,7 @@ class SidebarLanguageLinksTest extends HermesIntegrationTestCase {
 
 	private function addPartners(): void {
 		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'Stein' ), Tag::fromArgs( [ 'stone' ] ) );
-		$eoTitle = ProjectTitle::makeTitle( self::getProject( 'eo', 'trwiki' ), NS_MAIN, 'Ŝtono', null, '' );
+		$eoTitle = ProjectTitle::makeTitle( self::getProject( 'eo', 'trwiki' ), NS_MAIN, 'Ŝtono', '' );
 		$eo = new PageInfo( $eoTitle, 1000 );
 		TagStore::setTagsForPage( $eo, Tag::fromArgs( [ 'stone' ] ) );
 	}

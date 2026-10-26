@@ -152,7 +152,7 @@ class HermesPagesPager extends TablePager {
 		}
 
 		$text = '#' . strtr( $section, '_', ' ' );
-		$url = PageInfo::fromRow( $this->mCurrentRow )->title->withSection( $section )->getUrl();
+		$url = PageInfo::fromRow( $this->mCurrentRow )->title->getUrl( $section );
 		$sectionLink = $url !== null
 			? Html::element( 'a', [ 'href' => $url, 'class' => 'extiw' ], $text )
 			: htmlspecialchars( $text );

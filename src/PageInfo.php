@@ -51,7 +51,6 @@ class PageInfo {
 			$project,
 			(int)$row->ht_namespace_id,
 			$baseTitle,
-			$row->ht_section,
 			$row->ht_namespace_text
 		);
 		return new PageInfo( $title, (int)$row->ht_page_id );
@@ -64,12 +63,12 @@ class PageInfo {
 	}
 
 	/**
-	 * Builds an HTML link to the page, or just its (escaped) title if its wiki has no
+	 * Builds an HTML link to the page or its section $section, or just its (escaped) title if its wiki has no
 	 * registered URL.
 	 */
-	public function buildLink(): string {
-		$displayTitle = $this->title->getDisplayTitle( true );
-		$url = $this->title->getUrl();
+	public function buildLink( ?string $section = null ): string {
+		$displayTitle = $this->title->getDisplayTitle( true, $section );
+		$url = $this->title->getUrl( $section );
 		if ( $url === null ) {
 			return htmlspecialchars( $displayTitle );
 		}

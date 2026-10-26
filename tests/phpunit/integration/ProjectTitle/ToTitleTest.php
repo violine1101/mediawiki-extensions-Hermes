@@ -75,7 +75,7 @@ class ToTitleTest extends HermesIntegrationTestCase {
 
 	public function testForeignTitleCannotBecomeLocalTitle() {
 		$project = new Project( 'eo', 'otherwiki', false, true, null );
-		$title = ProjectTitle::makeTitle( $project, NS_MAIN, 'Foo', null, '' );
+		$title = ProjectTitle::makeTitle( $project, NS_MAIN, 'Foo', '' );
 
 		$this->expectException( LogicException::class );
 		$title->toTitle();

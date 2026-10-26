@@ -40,7 +40,7 @@ abstract class HermesIntegrationTestCase extends MediaWikiIntegrationTestCase {
 		if ( preg_match( '/^!([a-z0-9-]+):(.+)$/', $baseTitle, $match ) ) {
 			[ , $language, $baseTitle ] = $match;
 		}
-		$title = ProjectTitle::makeTitle( self::getProject( $language, $wiki ), NS_MAIN, $baseTitle, null, '' );
+		$title = ProjectTitle::makeTitle( self::getProject( $language, $wiki ), NS_MAIN, $baseTitle, '' );
 		return new PageInfo( $title, $id );
 	}
 
@@ -57,13 +57,12 @@ abstract class HermesIntegrationTestCase extends MediaWikiIntegrationTestCase {
 		int $namespace,
 		string $baseTitle,
 		?string $language = null,
-		?string $section = null,
 		?string $namespaceText = null
 	): ProjectTitle {
 		$project = $language !== null
 			? new Project( $language, WikiMap::getCurrentWikiId(), false, true, null )
 			: ProjectStore::getLocalBaseProject();
-		return ProjectTitle::makeTitle( $project, $namespace, $baseTitle, $section, $namespaceText );
+		return ProjectTitle::makeTitle( $project, $namespace, $baseTitle, $namespaceText );
 	}
 
 	/**

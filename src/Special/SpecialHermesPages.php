@@ -65,7 +65,7 @@ class SpecialHermesPages extends HermesSpecialPage {
 			return true;
 		}
 
-		$page = $tags[ 0 ]->page->title->withSection( null );
+		$page = $tags[ 0 ]->page->title;
 		$out->setPageTitleMsg( $this->msg( 'hermespages-single', $page->getDisplayTitle( true ) ) );
 		$out->addHTML( $this->linksTable( $tags, $project ) );
 		return true;

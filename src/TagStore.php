@@ -89,7 +89,7 @@ class TagStore {
 	 *
 	 * @param PageInfo $page The page $tags is being set on.
 	 * @param Tag[] $tags The tags to check, each with its assigned priority, in fallback order.
-	 * @return array<string, array<string, PageInfo[]>> language => tag name => conflicted pages
+	 * @return array<string, array<string, TagLink[]>> language => tag name => conflicted pages
 	 */
 	public static function findConflicts( PageInfo $page, array $tags ): array {
 		if ( !$tags ) {
@@ -114,12 +114,13 @@ class TagStore {
 		// language => tag => priority => pages
 		$pages = [];
 		foreach ( $tags as $tag ) {
-			$pages[ $ownLanguage ][ $tag->name ][ $tag->priority ][] = $page;
+			$pages[ $ownLanguage ][ $tag->name ][ $tag->priority ][] = new TagLink( $page, $tag );
 		}
 		foreach ( $rows as $row ) {
-			$rowPage = PageInfo::fromRow( $row );
-			if ( $rowPage->title->project->isActive ) {
-				$pages[ $rowPage->title->project->code ][ $row->ht_tag ][ (int)$row->ht_priority ][] = $rowPage;
+			$link = TagLink::fromRow( $row );
+			$project = $link->page->title->project;
+			if ( $project->isActive ) {
+				$pages[ $project->code ][ $link->tag->name ][ $link->tag->priority ][] = $link;
 			}
 		}
 		// Nothing links to an inactive page, so it can't conflict in its own language.
