@@ -20,7 +20,7 @@ final class TagLink {
 	 * @return TagLink
 	 */
 	public static function fromRow( $row ): TagLink {
-		return new TagLink( ProjectTitle::newFromRow( $row ), Tag::fromRow( $row ) );
+		return new TagLink( ProjectTitle::fromRow( $row ), Tag::fromRow( $row ) );
 	}
 
 	/** The URL of the page's section, or null if its wiki has no registered URL. */

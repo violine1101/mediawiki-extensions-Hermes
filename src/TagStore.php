@@ -10,12 +10,11 @@ class TagStore {
 	 * Remove all tags for a page (e.g. when the page is deleted).
 	 */
 	public static function deleteTagsForPage( ProjectTitle $page ): void {
-		$dbw = Hermes::getDB( DB_PRIMARY );
-		$dbw->delete(
-			self::TABLE_NAME,
-			[ 'ht_wiki' => $page->project->wiki, 'ht_page_id' => $page->getId() ],
-			__METHOD__
-		);
+		Hermes::getDB( DB_PRIMARY )->newDeleteQueryBuilder()
+			->deleteFrom( self::TABLE_NAME )
+			->where( self::pageConds( $page ) )
+			->caller( __METHOD__ )
+			->execute();
 	}
 
 	/**
@@ -30,17 +29,15 @@ class TagStore {
 		$dbw->startAtomic( __METHOD__ );
 
 		// Clear old tags for this page first - priorities/tag set may have changed.
-		$dbw->delete(
-			self::TABLE_NAME,
-			[ 'ht_wiki' => $page->project->wiki, 'ht_page_id' => $page->getId() ],
-			__METHOD__
-		);
+		$dbw->newDeleteQueryBuilder()
+			->deleteFrom( self::TABLE_NAME )
+			->where( self::pageConds( $page ) )
+			->caller( __METHOD__ )
+			->execute();
 
 		$rows = [];
 		foreach ( $tags as $tag ) {
-			$rows[] = [
-				'ht_wiki' => $page->project->wiki,
-				'ht_page_id' => $page->getId(),
+			$rows[] = self::pageConds( $page ) + [
 				'ht_namespace_id' => $page->namespace,
 				'ht_namespace_text' => $page->getNamespaceText(),
 				'ht_language' => $project->isBase ? null : $project->code,
@@ -52,7 +49,11 @@ class TagStore {
 		}
 
 		if ( $rows ) {
-			$dbw->insert( self::TABLE_NAME, $rows, __METHOD__ );
+			$dbw->newInsertQueryBuilder()
+				->insertInto( self::TABLE_NAME )
+				->rows( $rows )
+				->caller( __METHOD__ )
+				->execute();
 		}
 
 		$dbw->endAtomic( __METHOD__ );
@@ -64,20 +65,13 @@ class TagStore {
 	 * @return string[] Names of the tags associated with the page, by priority.
 	 */
 	private static function getTagsForPage( ProjectTitle $page ): array {
-		$dbr = Hermes::getDB();
-		$res = $dbr->select(
-			self::TABLE_NAME,
-			[ 'ht_tag', 'ht_priority' ],
-			[ 'ht_wiki' => $page->project->wiki, 'ht_page_id' => $page->getId() ],
-			__METHOD__,
-			[ 'ORDER BY' => 'ht_priority ASC, ht_tag ASC' ]
-		);
-
-		$tags = [];
-		foreach ( $res as $row ) {
-			$tags[] = $row->ht_tag;
-		}
-		return $tags;
+		return Hermes::getDB()->newSelectQueryBuilder()
+			->select( 'ht_tag' )
+			->from( self::TABLE_NAME )
+			->where( self::pageConds( $page ) )
+			->orderBy( [ 'ht_priority', 'ht_tag' ] )
+			->caller( __METHOD__ )
+			->fetchFieldValues();
 	}
 
 	/**
@@ -96,19 +90,17 @@ class TagStore {
 			return [];
 		}
 
-		$rows = Hermes::getDB()->select(
-			self::TABLE_NAME,
-			'*',
-			[
+		$dbr = Hermes::getDB();
+		$rows = $dbr->newSelectQueryBuilder()
+			->select( '*' )
+			->from( self::TABLE_NAME )
+			->where( [
 				'ht_tag' => array_map( static fn ( Tag $tag ) => $tag->name, $tags ),
-				'NOT (' . Hermes::getDB()->makeList(
-					[ 'ht_wiki' => $page->project->wiki, 'ht_page_id' => $page->getId() ],
-					LIST_AND
-				) . ')',
-			],
-			__METHOD__,
-			[ 'ORDER BY' => 'ht_namespace_id ASC, ht_base_title ASC' ]
-		);
+				$dbr->expr( 'ht_wiki', '!=', $page->project->wiki )->or( 'ht_page_id', '!=', $page->getId() ),
+			] )
+			->orderBy( [ 'ht_namespace_id', 'ht_base_title' ] )
+			->caller( __METHOD__ )
+			->fetchResultSet();
 
 		$ownLanguage = $page->project->code;
 		// language => tag => priority => pages
@@ -163,18 +155,16 @@ class TagStore {
 			return [];
 		}
 
-		$dbr = Hermes::getDB();
-
 		// Get all matching pages, sorted by priority.
 		// In case of a conflict, use the page title as a tiebreak,
 		// so that it's deterministic which link gets displayed.
-		$rows = $dbr->select(
-			self::TABLE_NAME,
-			'*',
-			[ 'ht_tag' => $tags ],
-			__METHOD__,
-			[ 'ORDER BY' => 'ht_priority ASC, ht_namespace_id ASC, ht_base_title ASC' ]
-		);
+		$rows = Hermes::getDB()->newSelectQueryBuilder()
+			->select( '*' )
+			->from( self::TABLE_NAME )
+			->where( [ 'ht_tag' => $tags ] )
+			->orderBy( [ 'ht_priority', 'ht_namespace_id', 'ht_base_title' ] )
+			->caller( __METHOD__ )
+			->fetchResultSet();
 
 		// Convert rows, and sort them by tag
 		$links = [];
@@ -234,5 +224,10 @@ class TagStore {
 		return array_filter(
 			$links, static fn ( TagLink $link ) => $link->tag->name === $tags[0] && $link->tag->priority === 0
 		);
+	}
+
+	/** Conditions selecting $page's rows. */
+	private static function pageConds( ProjectTitle $page ): array {
+		return [ 'ht_wiki' => $page->project->wiki, 'ht_page_id' => $page->getId() ];
 	}
 }

@@ -15,9 +15,9 @@ use MediaWiki\WikiMap\WikiMap;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\Hermes\ProjectTitle::newFromRow
+ * @covers \MediaWiki\Extension\Hermes\ProjectTitle::fromRow
  */
-class NewFromRowTest extends HermesIntegrationTestCase {
+class FromRowTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
@@ -37,28 +37,28 @@ class NewFromRowTest extends HermesIntegrationTestCase {
 	}
 
 	public function testOrdinaryPage() {
-		$title = Title::newFromText( 'NewFromRowOrdinary' );
+		$title = Title::newFromText( 'FromRowOrdinary' );
 		$written = LocalProjectTitle::fromTitle( $title );
 		TagStore::setTagsForPage( $written, Tag::fromArgs( [ 'from_row_ordinary_tag' ] ) );
 
-		$read = ProjectTitle::newFromRow( $this->fetchRow( $written ) );
+		$read = ProjectTitle::fromRow( $this->fetchRow( $written ) );
 
 		$this->assertTrue( $read->project->isBase );
 		$this->assertSame( NS_MAIN, $read->namespace );
 		$this->assertSame( '', $read->getNamespaceText() );
-		$this->assertSame( 'NewFromRowOrdinary', $read->baseTitle );
+		$this->assertSame( 'FromRowOrdinary', $read->baseTitle );
 	}
 
 	public function testSubclassByWiki() {
 		$this->registerBaseProject( 'de', 'dewiki' );
-		$local = LocalProjectTitle::fromTitle( $this->getExistingTestPage( 'NewFromRowLocal' )->getTitle() );
+		$local = LocalProjectTitle::fromTitle( $this->getExistingTestPage( 'FromRowLocal' )->getTitle() );
 		$remote = $this->makePage( 'dewiki', 'Golem' );
 		TagStore::setTagsForPage( $local, Tag::fromArgs( [ 'from_row_subclass_tag' ] ) );
 		TagStore::setTagsForPage( $remote, Tag::fromArgs( [ 'from_row_subclass_tag' ] ) );
 
-		$this->assertInstanceOf( LocalProjectTitle::class, ProjectTitle::newFromRow( $this->fetchRow( $local ) ) );
-		$this->assertInstanceOf( RemoteProjectTitle::class, ProjectTitle::newFromRow( $this->fetchRow( $remote ) ) );
-		$this->assertSame( $remote->getId(), ProjectTitle::newFromRow( $this->fetchRow( $remote ) )->getId() );
+		$this->assertInstanceOf( LocalProjectTitle::class, ProjectTitle::fromRow( $this->fetchRow( $local ) ) );
+		$this->assertInstanceOf( RemoteProjectTitle::class, ProjectTitle::fromRow( $this->fetchRow( $remote ) ) );
+		$this->assertSame( $remote->getId(), ProjectTitle::fromRow( $this->fetchRow( $remote ) )->getId() );
 	}
 
 	/**
@@ -69,20 +69,20 @@ class NewFromRowTest extends HermesIntegrationTestCase {
 	 * already-split ht_language column at write time avoids that entirely.
 	 */
 	public function testNamespacedProjectPage() {
-		$title = Title::newFromText( 'Category:!eo:NewFromRowProject' );
+		$title = Title::newFromText( 'Category:!eo:FromRowProject' );
 		$written = LocalProjectTitle::fromTitle( $title );
 		TagStore::setTagsForPage( $written, Tag::fromArgs( [ 'from_row_project_tag' ] ) );
 
-		$read = ProjectTitle::newFromRow( $this->fetchRow( $written ) );
+		$read = ProjectTitle::fromRow( $this->fetchRow( $written ) );
 
 		$this->assertSame( 'eo', $read->project->code );
 		$this->assertSame( NS_CATEGORY, $read->namespace );
 		$this->assertSame( 'Category', $read->getNamespaceText() );
-		$this->assertSame( 'NewFromRowProject', $read->baseTitle );
+		$this->assertSame( 'FromRowProject', $read->baseTitle );
 	}
 
 	public function testPageOfRemovedProjectIsInvalidBasePage() {
-		$written = LocalProjectTitle::fromTitle( Title::newFromText( '!eo:NewFromRowRemoved' ) );
+		$written = LocalProjectTitle::fromTitle( Title::newFromText( '!eo:FromRowRemoved' ) );
 		TagStore::setTagsForPage( $written, Tag::fromArgs( [ 'from_row_removed_tag' ] ) );
 		Hermes::getDB( DB_PRIMARY )->newDeleteQueryBuilder()
 			->deleteFrom( 'hermes_projects' )
@@ -91,10 +91,10 @@ class NewFromRowTest extends HermesIntegrationTestCase {
 			->execute();
 		ProjectStore::clearCacheForTesting();
 
-		$read = ProjectTitle::newFromRow( $this->fetchRow( $written ) );
+		$read = ProjectTitle::fromRow( $this->fetchRow( $written ) );
 
 		$this->assertTrue( $read->project->isBase );
-		$this->assertSame( '!eo:NewFromRowRemoved', $read->baseTitle );
+		$this->assertSame( '!eo:FromRowRemoved', $read->baseTitle );
 		$this->assertTrue( $read->isInvalid() );
 	}
 }

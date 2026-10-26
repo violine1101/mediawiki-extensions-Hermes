@@ -6,22 +6,17 @@ use MediaWiki\Extension\Hermes\Exceptions\DuplicateTagException;
 use MediaWiki\Extension\Hermes\Exceptions\InvalidSectionException;
 use MediaWiki\Extension\Hermes\Exceptions\InvalidTagNameException;
 
-class Tag {
+final class Tag {
 
-	/** @var string The normalized tag name. */
-	public string $name;
-
-	/**
-	 * @var ?string The normalized name of the section this tag refers to,
-	 *   or null if the tag applies to the page as a whole.
-	 */
-	public ?string $section;
-
-	/**
-	 * @var int This tag's fallback chain priority, relative to the page's other tags
-	 *   regardless of section. 0 is the highest; defaults to 0 if unknown.
-	 */
-	public int $priority = 0;
+	public function __construct(
+		/** The normalized tag name */
+		public readonly string $name,
+		/** The normalized name of the section this tag refers to, or null if it applies to the page as a whole */
+		public readonly ?string $section = null,
+		/** Fallback chain priority, relative to the page's other tags regardless of section; 0 is the highest */
+		public readonly int $priority = 0,
+	) {
+	}
 
 	/**
 	 * Creates a Tag from a hermes_tags table row.
@@ -30,13 +25,7 @@ class Tag {
 	 * @return Tag The resulting tag object.
 	 */
 	public static function fromRow( $row ): Tag {
-		$self = new Tag();
-
-		$self->name = $row->ht_tag;
-		$self->section = $row->ht_section;
-		$self->priority = (int)$row->ht_priority;
-
-		return $self;
+		return new Tag( $row->ht_tag, $row->ht_section, (int)$row->ht_priority );
 	}
 
 	/**
@@ -66,19 +55,14 @@ class Tag {
 				}
 				$section = substr( $section, 1 );
 			}
-			$tags[] = self::fromArg( $name, $section );
-		}
-
-		$seenNames = [];
-		foreach ( $tags as $priority => $tag ) {
-			if ( isset( $seenNames[ $tag->name ] ) ) {
+			$tag = self::fromArg( $name, $section, count( $tags ) );
+			if ( isset( $tags[ $tag->name ] ) ) {
 				throw new DuplicateTagException( $tag->name );
 			}
-			$seenNames[ $tag->name ] = true;
-			$tag->priority = $priority;
+			$tags[ $tag->name ] = $tag;
 		}
 
-		return $tags;
+		return array_values( $tags );
 	}
 
 	/**
@@ -86,15 +70,12 @@ class Tag {
 	 *
 	 * @param string $name The non-normalized tag name.
 	 * @param ?string $section The non-normalized section, or null for the page as a whole.
-	 * @return Tag The tag, but without a meaningful priority.
+	 * @param int $priority
+	 * @return Tag The tag.
 	 * @throws InvalidTagNameException If the name is not a valid tag.
 	 */
-	public static function fromArg( string $name, ?string $section = null ): Tag {
-		$self = new Tag();
-		$self->name = self::normalizeName( $name );
-		$self->section = self::normalizeSection( $section );
-
-		return $self;
+	public static function fromArg( string $name, ?string $section = null, int $priority = 0 ): Tag {
+		return new Tag( self::normalizeName( $name ), self::normalizeSection( $section ), $priority );
 	}
 
 	/**
@@ -104,12 +85,7 @@ class Tag {
 	 * @return Tag The tag.
 	 */
 	public static function fromJson( \stdClass $obj ): Tag {
-		$self = new Tag();
-		$self->name = $obj->name;
-		$self->section = $obj->section ?? null;
-		$self->priority = $obj->priority ?? 0;
-
-		return $self;
+		return new Tag( $obj->name, $obj->section ?? null, $obj->priority ?? 0 );
 	}
 
 	/**

@@ -23,6 +23,9 @@ class HermesPagesPager extends TablePager {
 	/** @var array<string, int> Priority column field => priority */
 	private array $priorityFields = [];
 
+	/** The page of the row being formatted */
+	private ProjectTitle $currentPage;
+
 	/**
 	 * @param IContextSource $context
 	 * @param TagFormatter $formatter
@@ -125,6 +128,12 @@ class HermesPagesPager extends TablePager {
 	}
 
 	/** @inheritDoc */
+	public function formatRow( $row ) {
+		$this->currentPage = ProjectTitle::fromRow( $row );
+		return parent::formatRow( $row );
+	}
+
+	/** @inheritDoc */
 	public function formatValue( $name, $value ) {
 		$html = $this->formatCell( $name, $value );
 		return $this->mCurrentRow->is_active ? $html : $this->formatter->dimmed( $html );
@@ -133,10 +142,10 @@ class HermesPagesPager extends TablePager {
 	private function formatCell( string $name, ?string $value ): string {
 		$row = $this->mCurrentRow;
 		if ( $name === 'ht_base_title' ) {
-			return $this->formatter->pageLink( ProjectTitle::newFromRow( $row ) );
+			return $this->formatter->pageLink( $this->currentPage );
 		}
 		if ( $name === 'language' ) {
-			return htmlspecialchars( $this->formatter->projectLabel( ProjectTitle::newFromRow( $row )->project ) );
+			return htmlspecialchars( $this->formatter->projectLabel( $this->currentPage->project ) );
 		}
 
 		$priority = $this->priorityFields[ $name ];
@@ -152,7 +161,7 @@ class HermesPagesPager extends TablePager {
 		}
 
 		$text = '#' . strtr( $section, '_', ' ' );
-		$url = ProjectTitle::newFromRow( $this->mCurrentRow )->getUrl( $section );
+		$url = $this->currentPage->getUrl( $section );
 		$sectionLink = $url !== null
 			? Html::element( 'a', [ 'href' => $url, 'class' => 'extiw' ], $text )
 			: htmlspecialchars( $text );

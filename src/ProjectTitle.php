@@ -44,7 +44,7 @@ abstract class ProjectTitle {
 	 *
 	 * @param \stdClass $row Database row object. Assumed to have the relevant ht_ properties.
 	 */
-	public static function newFromRow( $row ): self {
+	public static function fromRow( $row ): self {
 		$baseTitle = $row->ht_base_title;
 		$project = $row->ht_language !== null ? ProjectStore::getProject( $row->ht_language, $row->ht_wiki ) : null;
 		if ( $project === null || $project->isBase ) {
