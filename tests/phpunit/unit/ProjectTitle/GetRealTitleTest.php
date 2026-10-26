@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\Hermes\Tests\ProjectTitle;
 
+use MediaWiki\Extension\Hermes\Project;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWikiUnitTestCase;
 
@@ -12,12 +13,13 @@ class GetRealTitleTest extends MediaWikiUnitTestCase {
 
 	private static function makeTitle(
 		string $namespaceText,
-		?string $project,
+		?string $language,
 		string $title,
 		?string $section = null
 	): ProjectTitle {
+		$project = new Project( $language ?? 'en', 'testwiki', $language === null, true, null );
 		// The namespace ID isn't used for the real title.
-		return ProjectTitle::makeTitle( NS_MAIN, $title, $project, $section, $namespaceText );
+		return ProjectTitle::makeTitle( $project, NS_MAIN, $title, $section, $namespaceText );
 	}
 
 	public function testOrdinaryPage() {

@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\Hermes\Special;
 
 use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\Project;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\TagLink;
 use MediaWiki\Html\Html;
 
@@ -22,7 +23,7 @@ class SpecialHermesPages extends HermesSpecialPage {
 	/** @inheritDoc */
 	protected function showList( string $par ): void {
 		$titleFilter = strtr( trim( $this->getRequest()->getText( 'title-contains' ) ), ' ', '_' );
-		$parProject = Project::parseId( rtrim( $par, '/' ) );
+		$parProject = ProjectStore::getProjectById( rtrim( $par, '/' ) );
 		$parWiki = str_contains( $par, '@' ) ? $parProject?->wiki : null;
 		$languages = $this->getLanguageFilter( $parProject !== null ? [ $parProject->code ] : [] );
 		$wikis = $this->getWikiFilter( $parWiki !== null ? [ $parWiki ] : [] );
@@ -49,7 +50,7 @@ class SpecialHermesPages extends HermesSpecialPage {
 
 	/** @inheritDoc */
 	protected function showDetails( string $par ): bool {
-		if ( Project::parseId( rtrim( $par, '/' ) ) !== null ) {
+		if ( ProjectStore::getProjectById( rtrim( $par, '/' ) ) !== null ) {
 			return false;
 		}
 
@@ -57,7 +58,8 @@ class SpecialHermesPages extends HermesSpecialPage {
 		$out->addBacklinkSubtitle( $this->getPageTitle() );
 
 		[ $id, $title ] = array_pad( explode( '/', $par, 2 ), 2, '' );
-		$tags = TagQuery::findPage( $id, $title );
+		$project = ProjectStore::getProjectById( $id );
+		$tags = $project !== null ? TagQuery::findPage( $project, $title ) : [];
 		if ( !$tags ) {
 			$out->addWikiMsg( 'hermespages-notfound', $par );
 			return true;
@@ -65,7 +67,7 @@ class SpecialHermesPages extends HermesSpecialPage {
 
 		$page = $tags[ 0 ]->page->title->withSection( null );
 		$out->setPageTitleMsg( $this->msg( 'hermespages-single', $page->getDisplayTitle( true ) ) );
-		$out->addHTML( $this->linksTable( $tags, $page->getProject()->toId() ) );
+		$out->addHTML( $this->linksTable( $tags, $project ) );
 		return true;
 	}
 
@@ -76,20 +78,21 @@ class SpecialHermesPages extends HermesSpecialPage {
 	 * marked as such, except where it's in conflict.
 	 *
 	 * @param TagLink[] $tags The page's tags
-	 * @param string $ownId The page's project ID
+	 * @param Project $own The page's project
 	 * @return string HTML
 	 */
-	private function linksTable( array $tags, string $ownId ): string {
+	private function linksTable( array $tags, Project $own ): string {
 		$formatter = $this->getFormatter();
 		$chain = array_map( static fn ( TagLink $link ) => $link->tag->name, $tags );
 		$links = TagQuery::loadLinks( Hermes::getDB(), $chain, true );
 
-		$ids = [ $ownId ];
+		$projects = [ $own->toId() => $own ];
 		foreach ( $links as $byId ) {
-			$ids = array_merge( $ids, array_keys( $byId ) );
+			foreach ( array_keys( $byId ) as $id ) {
+				$projects[ $id ] ??= ProjectStore::getProjectById( $id );
+			}
 		}
-		$ids = array_unique( $ids );
-		sort( $ids );
+		ksort( $projects );
 
 		$headers = [ Html::element( 'th', [], $this->msg( 'hermespages-header-language' )->text() ) ];
 		foreach ( $chain as $tag ) {
@@ -97,12 +100,11 @@ class SpecialHermesPages extends HermesSpecialPage {
 		}
 
 		$rows = [];
-		$ownCode = explode( '@', $ownId )[ 0 ];
-		foreach ( $ids as $id ) {
-			$isOwn = $id === $ownId;
-			$isActive = !str_contains( $id, '@' );
+		foreach ( $projects as $id => $project ) {
+			$isOwn = $id === $own->toId();
+			$isActive = $project->isActive;
 			// The page doesn't link to its own language (even if it's inactive itself), nor to inactive pages.
-			$linked = $isOwn || !$isActive || $id === $ownCode;
+			$linked = $isOwn || !$isActive || $project->code === $own->code;
 			$cells = [];
 			foreach ( $chain as $tag ) {
 				$byPriority = $links[ $tag ][ $id ] ?? [];
@@ -125,7 +127,7 @@ class SpecialHermesPages extends HermesSpecialPage {
 					$isActive ? $html : $formatter->dimmed( $html )
 				);
 			}
-			$rows[] = $formatter->projectRow( $id, $cells );
+			$rows[] = $formatter->projectRow( $project, $cells );
 		}
 		return $formatter->table( $headers, $rows );
 	}

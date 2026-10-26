@@ -3,7 +3,6 @@
 namespace MediaWiki\Extension\Hermes;
 
 use InvalidArgumentException;
-use MediaWiki\Extension\Hermes\Exceptions\LanguageConflictException;
 use MediaWiki\MainConfigNames;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\WikiMap\WikiMap;
@@ -58,6 +57,11 @@ class ProjectStore {
 		return self::$projects;
 	}
 
+	/** $wiki's project in $language, active or not, if any. */
+	public static function getProject( string $language, string $wiki ): ?Project {
+		return self::getProjects()[ $language ][ $wiki ] ?? null;
+	}
+
 	/**
 	 * The active project of each language.
 	 *
@@ -76,14 +80,27 @@ class ProjectStore {
 		return $projects;
 	}
 
-	/**
-	 * Look up the wiki of a language's active project (base or translation).
-	 *
-	 * @param string $language
-	 * @return string|null The wiki ID, or null if no project in that language is active.
-	 */
-	public static function getWikiForLanguage( string $language ): ?string {
-		return ( self::getActiveProjects()[ $language ] ?? null )?->wiki;
+	/** The current wiki's base project, which init() makes sure exists. */
+	public static function getLocalBaseProject(): Project {
+		$wiki = WikiMap::getCurrentWikiId();
+		// Usually the project in the content language, which avoids going through all projects.
+		$project = self::getProject( self::getLocalBaseLanguage(), $wiki );
+		return $project?->isBase ? $project : self::getBaseProject( $wiki );
+	}
+
+	/** The project with this ID (see Project::hasId()), if any. */
+	public static function getProjectById( string $id ): ?Project {
+		foreach ( self::getProjects()[ Project::languageOfId( $id ) ] ?? [] as $project ) {
+			if ( $project->hasId( $id ) ) {
+				return $project;
+			}
+		}
+		return null;
+	}
+
+	/** The active project in $language (base or translation), if any. */
+	public static function getActiveProject( string $language ): ?Project {
+		return self::getActiveProjects()[ $language ] ?? null;
 	}
 
 	/**
@@ -91,49 +108,46 @@ class ProjectStore {
 	 *
 	 * @return array<string, Project> Keyed by language code.
 	 */
-	public static function getBaseProjects(): array {
+	public static function getActiveBaseProjects(): array {
 		return array_filter( self::getActiveProjects(), static fn ( Project $project ) => $project->isBase );
 	}
 
-	/** Whether $wiki has a project in $language and it's active. */
-	public static function isActive( string $language, string $wiki ): bool {
-		return ( self::getProjects()[ $language ][ $wiki ] ?? null )?->isActive ?? false;
-	}
-
-	/**
-	 * Whether the current wiki has a translation project in the given language, active or not.
-	 *
-	 * @param string $language
-	 * @return bool
-	 */
-	public static function isLocalTranslationProject( string $language ): bool {
-		return ( self::getProjects()[ $language ][ WikiMap::getCurrentWikiId() ] ?? null )?->isBase === false;
-	}
-
-	/** @return string[] The languages of the current wiki's translation projects, active or not, sorted */
-	public static function getLocalTranslationProjects(): array {
-		return self::filterLocalTranslationProjects( static fn ( Project $project ) => true );
-	}
-
-	/** @return string[] The languages of the current wiki's active translation projects, sorted */
-	public static function getActiveLocalTranslationProjects(): array {
-		return self::filterLocalTranslationProjects( static fn ( Project $project ) => $project->isActive );
-	}
-
-	/**
-	 * Look up the language of a given wiki's base project, active or not.
-	 *
-	 * @param string $wiki
-	 * @return string|null The wiki's base language code, or null if the wiki has no projects.
-	 */
-	public static function getBaseLanguageForWiki( string $wiki ): ?string {
-		foreach ( self::forWiki( $wiki ) as $project ) {
+	/** $wiki's base project, active or not, if the wiki is known. */
+	public static function getBaseProject( string $wiki ): ?Project {
+		foreach ( self::getProjectsOfWiki( $wiki ) as $project ) {
 			if ( $project->isBase ) {
-				return $project->code;
+				return $project;
 			}
 		}
 
 		return null;
+	}
+
+	/** @return array<string, Project> $wiki's projects, keyed by language code */
+	public static function getProjectsOfWiki( string $wiki ): array {
+		$projects = [];
+		foreach ( self::getProjects() as $code => $byWiki ) {
+			if ( isset( $byWiki[ $wiki ] ) ) {
+				$projects[ $code ] = $byWiki[ $wiki ];
+			}
+		}
+		return $projects;
+	}
+
+	/** @return array<string, Project> The current wiki's translation projects, active or not, sorted by language */
+	public static function getLocalTranslationProjects(): array {
+		$projects = array_filter(
+			self::getProjectsOfWiki( WikiMap::getCurrentWikiId() ), static fn ( Project $project ) => !$project->isBase
+		);
+		ksort( $projects );
+		return $projects;
+	}
+
+	/** @return array<string, Project> The current wiki's active translation projects, sorted by language */
+	public static function getActiveLocalTranslationProjects(): array {
+		return array_filter(
+			self::getLocalTranslationProjects(), static fn ( Project $project ) => $project->isActive
+		);
 	}
 
 	/**
@@ -143,7 +157,7 @@ class ProjectStore {
 	 * @return string|null The URL template, or null if none is known for it.
 	 */
 	public static function getUrlTemplate( string $wiki ): ?string {
-		foreach ( self::forWiki( $wiki ) as $project ) {
+		foreach ( self::getProjectsOfWiki( $wiki ) as $project ) {
 			if ( $project->urlTemplate !== null ) {
 				return $project->urlTemplate;
 			}
@@ -173,12 +187,12 @@ class ProjectStore {
 		$config = MediaWikiServices::getInstance()->getMainConfig();
 		$url = $config->get( MainConfigNames::Server ) . $config->get( MainConfigNames::ArticlePath );
 
-		if ( self::getBaseLanguageForWiki( $wiki ) === null && !isset( self::$projects[ $code ][ $wiki ] ) ) {
+		if ( self::getBaseProject( $wiki ) === null && !isset( self::$projects[ $code ][ $wiki ] ) ) {
 			self::insert( new Project( $code, $wiki, true, false, $url ) );
 		}
 
 		$outdated = array_filter(
-			self::forWiki( $wiki ), static fn ( Project $project ) => $project->urlTemplate !== $url
+			self::getProjectsOfWiki( $wiki ), static fn ( Project $project ) => $project->urlTemplate !== $url
 		);
 		if ( $outdated ) {
 			Hermes::getDB( DB_PRIMARY )->newUpdateQueryBuilder()
@@ -197,22 +211,22 @@ class ProjectStore {
 	 * Add a new translation project to a given wiki: active, unless a project in its language is already
 	 * active on another wiki.
 	 *
-	 * @param string $wiki Wiki ID, as configured in $wgHermesWikis.
 	 * @param string $language Language code of the translation project.
+	 * @param string $wiki Wiki ID, as configured in $wgHermesWikis.
 	 * @return bool True if newly added, false if $wiki already had it.
-	 * @throws LanguageConflictException If the language is $wiki's base language.
+	 * @throws InvalidArgumentException If the language is $wiki's base language.
 	 */
-	public static function addTranslationProject( string $wiki, string $language ): bool {
-		return self::withLock( static function () use ( $wiki, $language ) {
+	public static function addTranslationProject( string $language, string $wiki ): bool {
+		return self::withLock( static function () use ( $language, $wiki ) {
 			$existing = self::$projects[ $language ][ $wiki ] ?? null;
 			if ( $existing?->isBase ) {
-				throw new LanguageConflictException( $language, $wiki, $wiki );
+				throw new InvalidArgumentException( "\"{$language}\" is the base language of wiki \"{$wiki}\"." );
 			}
 			if ( $existing !== null ) {
 				return false;
 			}
 
-			$isActive = self::getWikiForLanguage( $language ) === null;
+			$isActive = self::getActiveProject( $language ) === null;
 			self::insert( new Project( $language, $wiki, false, $isActive, self::getUrlTemplate( $wiki ) ) );
 			return true;
 		} );
@@ -241,40 +255,16 @@ class ProjectStore {
 	/**
 	 * Makes every project in $language inactive.
 	 *
-	 * @return string|null The wiki whose project was active, or null if none.
+	 * @return Project|null The project that was active (as it was), or null if none.
 	 */
-	public static function deactivate( string $language ): ?string {
+	public static function deactivate( string $language ): ?Project {
 		return self::withLock( static function () use ( $language ) {
-			$wiki = self::getWikiForLanguage( $language );
-			if ( $wiki === null ) {
-				return null;
+			$active = self::getActiveProject( $language );
+			if ( $active !== null ) {
+				self::setActive( $language, null );
 			}
-			self::setActive( $language, null );
-			return $wiki;
+			return $active;
 		} );
-	}
-
-	/** @return Project[] The projects of $wiki */
-	private static function forWiki( string $wiki ): array {
-		$projects = [];
-		foreach ( self::getProjects() as $byWiki ) {
-			if ( isset( $byWiki[ $wiki ] ) ) {
-				$projects[] = $byWiki[ $wiki ];
-			}
-		}
-		return $projects;
-	}
-
-	/** @return string[] */
-	private static function filterLocalTranslationProjects( callable $filter ): array {
-		$languages = [];
-		foreach ( self::forWiki( WikiMap::getCurrentWikiId() ) as $project ) {
-			if ( !$project->isBase && $filter( $project ) ) {
-				$languages[] = $project->code;
-			}
-		}
-		sort( $languages );
-		return $languages;
 	}
 
 	/**

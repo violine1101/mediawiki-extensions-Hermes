@@ -20,8 +20,8 @@ class PreferencesHooksTest extends HermesIntegrationTestCase {
 		parent::setUp();
 		$this->overrideConfigValues( [ 'LanguageCode' => 'en', 'UsePigLatinVariant' => true ] );
 		ProjectStore::init();
-		ProjectStore::addTranslationProject( WikiMap::getCurrentWikiId(), 'zh' );
-		ProjectStore::addTranslationProject( WikiMap::getCurrentWikiId(), 'eo' );
+		ProjectStore::addTranslationProject( 'zh', WikiMap::getCurrentWikiId() );
+		ProjectStore::addTranslationProject( 'eo', WikiMap::getCurrentWikiId() );
 	}
 
 	private function makeHooks(): PreferencesHooks {
@@ -68,7 +68,7 @@ class PreferencesHooksTest extends HermesIntegrationTestCase {
 	public function testVariantShownForOtherWikiOnlyIfSpoken(
 		string $mode, string $preferred, string $spoken, bool $shown
 	) {
-		$this->registerBaseProject( 'otherwiki', 'sr' );
+		$this->registerBaseProject( 'sr', 'otherwiki' );
 		$user = $this->getTestUser()->getUser();
 		$manager = $this->getServiceContainer()->getUserOptionsManager();
 		$manager->setOption( $user, DisplayLanguage::OPTION, $mode );

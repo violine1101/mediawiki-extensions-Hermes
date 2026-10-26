@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\Hermes\Tests\PageInfo;
 
 use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\Project;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 
@@ -12,16 +13,18 @@ use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
  */
 class BuildLinkTest extends HermesIntegrationTestCase {
 
-	public function testUnregisteredWikiGivesPlainText() {
-		$page = new PageInfo( ProjectTitle::makeTitleOnWiki( 'dewiki', NS_MAIN, 'Foo_<b>', 'de', null, '' ) );
+	public function testWithoutUrlGivesPlainText() {
+		$project = new Project( 'de', 'dewiki', true, true, null );
+		$page = new PageInfo( ProjectTitle::makeTitle( $project, NS_MAIN, 'Foo_<b>', null, '' ) );
 
 		$this->assertSame( 'Foo &lt;b&gt;', $page->buildLink() );
 	}
 
 	public function testProjectPageTarget() {
-		$this->registerTranslationProject( 'trwiki', 'eo', url: 'https://translate.example.org/wiki/$1' );
+		$this->registerTranslationProject( 'eo', 'trwiki', url: 'https://translate.example.org/wiki/$1' );
 
-		$title = ProjectTitle::makeTitleOnWiki( 'trwiki', NS_MAIN, 'BuildLinkProjectTarget', 'eo', null, '' );
+		$project = self::getProject( 'eo', 'trwiki' );
+		$title = ProjectTitle::makeTitle( $project, NS_MAIN, 'BuildLinkProjectTarget', null, '' );
 		$page = new PageInfo( $title );
 
 		$this->assertSame(
@@ -32,10 +35,10 @@ class BuildLinkTest extends HermesIntegrationTestCase {
 	}
 
 	public function testNamespacedProjectPageTarget() {
-		$this->registerTranslationProject( 'trwiki', 'eo', url: 'https://translate.example.org/wiki/$1' );
+		$this->registerTranslationProject( 'eo', 'trwiki', url: 'https://translate.example.org/wiki/$1' );
 
-		$title = ProjectTitle::makeTitleOnWiki(
-			'trwiki', NS_CATEGORY, 'BuildLinkNamespacedProjectTarget', 'eo', null, 'Category'
+		$title = ProjectTitle::makeTitle(
+			self::getProject( 'eo', 'trwiki' ), NS_CATEGORY, 'BuildLinkNamespacedProjectTarget', null, 'Category'
 		);
 		$page = new PageInfo( $title );
 

@@ -2,7 +2,6 @@
 
 namespace MediaWiki\Extension\Hermes\Tests\ProjectTitle;
 
-use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 use MediaWiki\MainConfigNames;
 
@@ -13,18 +12,18 @@ use MediaWiki\MainConfigNames;
 class GetErrorTest extends HermesIntegrationTestCase {
 
 	public function testValidTitle() {
-		$this->assertNull( ProjectTitle::makeTitle( NS_MAIN, 'Foo', 'eo' )->getError() );
-		$this->assertNull( ProjectTitle::makeTitle( NS_MAIN, 'Foo' )->getError() );
+		$this->assertNull( self::localTitle( NS_MAIN, 'Foo', 'eo' )->getError() );
+		$this->assertNull( self::localTitle( NS_MAIN, 'Foo' )->getError() );
 	}
 
 	public function testInvalidProjectTitle() {
-		$this->assertSame( 'hermes-invalid-project-title', ProjectTitle::makeTitle( NS_MAIN, '!zz:Foo' )->getError() );
+		$this->assertSame( 'hermes-invalid-project-title', self::localTitle( NS_MAIN, '!zz:Foo' )->getError() );
 	}
 
 	public function testCapitalizationError() {
 		$this->overrideConfigValue( MainConfigNames::CapitalLinks, true );
 
-		$title = ProjectTitle::makeTitle( NS_MAIN, 'foo', 'eo' );
+		$title = self::localTitle( NS_MAIN, 'foo', 'eo' );
 
 		$this->assertSame( 'hermes-title-not-capitalized', $title->getError() );
 	}

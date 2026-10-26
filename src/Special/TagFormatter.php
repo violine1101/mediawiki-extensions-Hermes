@@ -31,7 +31,7 @@ final class TagFormatter {
 	public static function detailsTitle( PageInfo $page ): Title {
 		$title = $page->title;
 		$namespace = $title->getNamespaceText() !== '' ? $title->getNamespaceText() . ':' : '';
-		$id = $title->getProject()?->toId() ?? $title->getLanguageCode();
+		$id = $title->getProject()->toId();
 		return SpecialPage::getTitleFor( 'HermesPages', "$id/$namespace{$title->baseTitle}" );
 	}
 
@@ -116,11 +116,10 @@ final class TagFormatter {
 		return $name !== '' ? "$name ($code)" : $code;
 	}
 
-	/** "Autonym (code)" for a project ID, followed by the wiki if it's an inactive project. */
-	public function projectLabel( string $id ): string {
-		$project = Project::parseId( $id );
-		if ( $project === null || $project->isActive ) {
-			return $this->languageLabel( $project->code ?? $id );
+	/** "Autonym (code)" for a project, followed by the wiki if it's inactive. */
+	public function projectLabel( Project $project ): string {
+		if ( $project->isActive ) {
+			return $this->languageLabel( $project->code );
 		}
 		return $this->context->msg( 'hermes-inactive-project' )
 			->plaintextParams( $this->languageLabel( $project->code ), $project->wiki )->text();
@@ -166,13 +165,13 @@ final class TagFormatter {
 	}
 
 	/**
-	 * @param string $id Project ID, labelling the row; inactive ones are dimmed
+	 * @param Project $project Labels the row; inactive ones are dimmed
 	 * @param string[] $cells HTML of the other cells, their contents dimmed for inactive ones
 	 * @return string HTML
 	 */
-	public function projectRow( string $id, array $cells ): string {
-		$inactive = str_contains( $id, '@' );
-		$label = htmlspecialchars( $this->projectLabel( $id ) );
+	public function projectRow( Project $project, array $cells ): string {
+		$inactive = !$project->isActive;
+		$label = htmlspecialchars( $this->projectLabel( $project ) );
 		return Html::rawElement( 'tr', [ 'class' => $inactive ? 'ext-hermes-inactive' : null ],
 			Html::rawElement( 'th', [ 'scope' => 'row' ], $inactive ? $this->dimmed( $label ) : $label ) .
 				implode( '', $cells )

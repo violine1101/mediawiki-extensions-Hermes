@@ -13,7 +13,7 @@ use MediaWiki\WikiMap\WikiMap;
 class GetUrlTemplateTest extends HermesIntegrationTestCase {
 
 	public function testReturnsKnownWiki() {
-		$this->registerBaseProject( 'dewiki', 'de', url: 'https://de.example.org/wiki/$1' );
+		$this->registerBaseProject( 'de', 'dewiki', url: 'https://de.example.org/wiki/$1' );
 
 		$this->assertSame( 'https://de.example.org/wiki/$1', ProjectStore::getUrlTemplate( 'dewiki' ) );
 	}

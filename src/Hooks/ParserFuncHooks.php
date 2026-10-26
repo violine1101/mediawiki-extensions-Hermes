@@ -94,9 +94,9 @@ class ParserFuncHooks implements
 		$detailsLink = $linkRenderer->makeKnownLink(
 			TagFormatter::detailsTitle( $page ), wfMessage( 'hermes-page-details' )->text()
 		);
-		$localConflicts = $conflicts[ $page->title->getLanguageCode() ] ?? [];
+		$localConflicts = $conflicts[ $page->title->getProject()->code ] ?? [];
 		$foreignConflicts = $conflicts;
-		unset( $foreignConflicts[ $page->title->getLanguageCode() ] );
+		unset( $foreignConflicts[ $page->title->getProject()->code ] );
 
 		if ( $localConflicts ) {
 			$parser->addTrackingCategory( 'hermes-tag-conflict-category' );
@@ -106,7 +106,7 @@ class ParserFuncHooks implements
 					$tagCode = $tagLink( $tag );
 					$pages = array_filter(
 						$pages,
-						static fn ( PageInfo $p ) => $p->title->wiki !== $page->title->wiki
+						static fn ( PageInfo $p ) => $p->title->getProject()->wiki !== $page->title->getProject()->wiki
 							|| $p->getId() !== $page->getId(),
 					);
 					$links = array_map( static fn ( PageInfo $p ) => $p->buildLink(), $pages );

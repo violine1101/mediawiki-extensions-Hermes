@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\Hermes\Tests\ProjectTitle;
 
+use MediaWiki\Extension\Hermes\Project;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 
@@ -13,35 +14,37 @@ class GetUrlTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->registerBaseProject( 'trwiki', 'en', url: 'https://translate.example.org/wiki/$1' );
+		$this->registerBaseProject( 'en', 'trwiki', url: 'https://translate.example.org/wiki/$1' );
+		$this->registerTranslationProject( 'eo', 'trwiki', url: 'https://translate.example.org/wiki/$1' );
 	}
 
 	public function testBasePage() {
-		$title = ProjectTitle::makeTitleOnWiki( 'trwiki', NS_MAIN, 'Foo_bar', null, null, '' );
+		$title = ProjectTitle::makeTitle( self::getProject( null, 'trwiki' ), NS_MAIN, 'Foo_bar', null, '' );
 
 		$this->assertSame( 'https://translate.example.org/wiki/Foo_bar', $title->getUrl() );
 	}
 
 	public function testProjectPrefixGoesAfterNamespace() {
-		$title = ProjectTitle::makeTitleOnWiki( 'trwiki', NS_CATEGORY, 'Foo', 'eo', null, 'Category' );
+		$title = ProjectTitle::makeTitle( self::getProject( 'eo', 'trwiki' ), NS_CATEGORY, 'Foo', null, 'Category' );
 
 		$this->assertSame( 'https://translate.example.org/wiki/Category:!eo:Foo', $title->getUrl() );
 	}
 
 	public function testSectionBecomesEscapedFragment() {
-		$title = ProjectTitle::makeTitleOnWiki( 'trwiki', NS_MAIN, 'Foo', 'eo', 'Some_section?', '' );
+		$title = ProjectTitle::makeTitle( self::getProject( 'eo', 'trwiki' ), NS_MAIN, 'Foo', 'Some_section?', '' );
 
 		$this->assertSame( 'https://translate.example.org/wiki/!eo:Foo#Some_section?', $title->getUrl() );
 	}
 
 	public function testTitleIsUrlEncoded() {
-		$title = ProjectTitle::makeTitleOnWiki( 'trwiki', NS_MAIN, 'What?_Ŝtono', null, null, '' );
+		$title = ProjectTitle::makeTitle( self::getProject( null, 'trwiki' ), NS_MAIN, 'What?_Ŝtono', null, '' );
 
 		$this->assertSame( 'https://translate.example.org/wiki/What%3F_%C5%9Ctono', $title->getUrl() );
 	}
 
-	public function testUnregisteredOrUnknownWiki() {
-		$this->assertNull( ProjectTitle::makeTitleOnWiki( 'otherwiki', NS_MAIN, 'Foo', null, null, '' )->getUrl() );
-		$this->assertNull( ProjectTitle::makeTitleOnWiki( null, NS_MAIN, 'Foo', null, null, '' )->getUrl() );
+	public function testWithoutUrlTemplate() {
+		$project = new Project( 'de', 'otherwiki', true, true, null );
+
+		$this->assertNull( ProjectTitle::makeTitle( $project, NS_MAIN, 'Foo', null, '' )->getUrl() );
 	}
 }

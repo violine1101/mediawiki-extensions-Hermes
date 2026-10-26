@@ -3,7 +3,6 @@
 namespace MediaWiki\Extension\Hermes;
 
 use LogicException;
-use MediaWiki\Language\Language;
 use MediaWiki\Linker\LinkTarget;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Page\PageReference;
@@ -15,9 +14,9 @@ use Wikimedia\Rdbms\IReadableDatabase;
 use Wikimedia\Rdbms\LikeValue;
 
 /**
- * A title on some wiki in the family, split into namespace, translation project, base title and
- * section, e.g. "Category:!eo:Foo" -> (NS_CATEGORY, 'eo', 'Foo'), with its display forms and
- * language. toTitle(), toStoredTitle() and hasCapitalizationError() only work for local titles.
+ * A title on some wiki in the family, split into project, namespace, base title and section, e.g.
+ * "Category:!eo:Foo" -> (this wiki's "eo" project, NS_CATEGORY, 'Foo'), with its display forms. Its project gives
+ * its wiki and language. toTitle(), toStoredTitle() and hasCapitalizationError() only work for local titles.
  *
  * The static methods handle the title syntax itself: "!xx:Foo" for project pages, and "!:Foo"
  * as an escape to the base page "Foo".
@@ -25,13 +24,10 @@ use Wikimedia\Rdbms\LikeValue;
 final class ProjectTitle {
 
 	private function __construct(
-		/** ID of the title's wiki, or null if unknown */
-		public readonly ?string $wiki,
+		private readonly Project $project,
 		public readonly int $namespace,
 		/** DB key without namespace and "!xx:" prefix */
 		public readonly string $baseTitle,
-		/** Translation project language code, or null for a base page */
-		public readonly ?string $project,
 		/** Section in DB key form, if any */
 		public readonly ?string $section,
 		/** Namespace name on the title's own wiki; looked up on first use for local titles */
@@ -39,27 +35,21 @@ final class ProjectTitle {
 	) {
 	}
 
-	/** A title on this wiki. */
+	/**
+	 * @param Project $project Determines the title's wiki and language
+	 * @param int $namespace
+	 * @param string $baseTitle DB key without namespace and "!xx:" prefix
+	 * @param string|null $section Section in DB key form, if any
+	 * @param string|null $namespaceText Namespace name on the title's wiki; required unless it's this wiki
+	 */
 	public static function makeTitle(
+		Project $project,
 		int $namespace,
 		string $baseTitle,
-		?string $project = null,
 		?string $section = null,
 		?string $namespaceText = null
 	): self {
-		return new self( WikiMap::getCurrentWikiId(), $namespace, $baseTitle, $project, $section, $namespaceText );
-	}
-
-	/** A title on $wiki (null if unknown), whose namespace name can't be looked up here. */
-	public static function makeTitleOnWiki(
-		?string $wiki,
-		int $namespace,
-		string $baseTitle,
-		?string $project,
-		?string $section,
-		string $namespaceText
-	): self {
-		return new self( $wiki, $namespace, $baseTitle, $project, $section, $namespaceText );
+		return new self( $project, $namespace, $baseTitle, $section, $namespaceText );
 	}
 
 	/**
@@ -77,64 +67,44 @@ final class ProjectTitle {
 		[ $project, $baseTitle ] = !$isExternal && Hermes::isProjectNamespace( $namespace )
 			? self::parse( $page->getDBkey() )
 			: [ null, $page->getDBkey() ];
-		return new self( WikiMap::getCurrentWikiId(), $namespace, $baseTitle, $project, null, null );
+		return new self( $project ?? ProjectStore::getLocalBaseProject(), $namespace, $baseTitle, null, null );
 	}
 
-	/** This title in $project, or the base page if null. */
-	public function withProject( ?string $project ): self {
-		return new self(
-			$this->wiki, $this->namespace, $this->baseTitle, $project, $this->section, $this->namespaceText
-		);
+	/** The project this title is in, which gives its wiki and language. */
+	public function getProject(): Project {
+		return $this->project;
+	}
+
+	/** This title in $project, which must be on the same wiki. */
+	public function withProject( Project $project ): self {
+		return new self( $project, $this->namespace, $this->baseTitle, $this->section, $this->namespaceText );
+	}
+
+	/** This local title's base page. */
+	public function toBasePage(): self {
+		$this->assertLocal();
+		return $this->project->isBase ? $this : $this->withProject( ProjectStore::getLocalBaseProject() );
 	}
 
 	/** This title's section $section, or the page as a whole if null. */
 	public function withSection( ?string $section ): self {
-		return new self(
-			$this->wiki, $this->namespace, $this->baseTitle, $this->project, $section, $this->namespaceText
-		);
-	}
-
-	public function isLocal(): bool {
-		return $this->wiki === WikiMap::getCurrentWikiId();
-	}
-
-	/** The project's language code, else the wiki's base language, else this wiki's. */
-	public function getLanguageCode(): string {
-		return $this->project
-			?? ( $this->wiki !== null ? ProjectStore::getBaseLanguageForWiki( $this->wiki ) : null )
-			?? ProjectStore::getLocalBaseLanguage();
-	}
-
-	/** The project of this title's language on its wiki, if any. */
-	public function getProject(): ?Project {
-		if ( $this->wiki === null ) {
-			return null;
-		}
-		return ProjectStore::getProjects()[ $this->getLanguageCode() ][ $this->wiki ] ?? null;
-	}
-
-	/** Whether this title's project is active, so that other languages link to it. */
-	public function isActive(): bool {
-		return $this->getProject()?->isActive ?? false;
-	}
-
-	public function getLanguage(): Language {
-		return MediaWikiServices::getInstance()->getLanguageFactory()->getLanguage( $this->getLanguageCode() );
+		return new self( $this->project, $this->namespace, $this->baseTitle, $section, $this->namespaceText );
 	}
 
 	/** The title, capitalized correctly even after a "!xx:" prefix. */
 	public function toTitle(): Title {
 		$this->assertLocal();
-		$dbKey = $this->project !== null
-			? self::addPrefix( $this->baseTitle, $this->namespace, $this->project )
-			: $this->baseTitle;
+		$dbKey = $this->project->isBase
+			? $this->baseTitle
+			: $this->project->addPrefix( $this->baseTitle, $this->namespace );
 		return Title::makeTitle( $this->namespace, $dbKey, $this->section ?? '' );
 	}
 
 	/** The title exactly as given, which may not be correctly capitalized. */
 	public function toStoredTitle(): Title {
 		$this->assertLocal();
-		return Title::makeTitle( $this->namespace, $this->getProjectPrefix() . $this->baseTitle, $this->section ?? '' );
+		$dbKey = $this->project->getPrefix() . $this->baseTitle;
+		return Title::makeTitle( $this->namespace, $dbKey, $this->section ?? '' );
 	}
 
 	/**
@@ -142,13 +112,13 @@ final class ProjectTitle {
 	 * "!xx:", where "xx" is a registered translation project.
 	 */
 	public function hasInvalidTitle(): bool {
-		return $this->project === null && self::isReserved( $this->baseTitle );
+		return $this->project->isBase && self::isReserved( $this->baseTitle );
 	}
 
 	/** Whether $wgCapitalLinks requires a capital letter after the "!xx:" prefix that's missing. */
 	public function hasCapitalizationError(): bool {
 		$this->assertLocal();
-		return $this->project !== null
+		return !$this->project->isBase
 			&& Title::capitalize( $this->baseTitle, $this->namespace ) !== $this->baseTitle;
 	}
 
@@ -172,12 +142,12 @@ final class ProjectTitle {
 	 * one on the title's own wiki if this isn't a project page. Empty for the main namespace.
 	 */
 	public function getLocalizedNamespaceText(): string {
-		if ( $this->project === null || $this->namespace === NS_MAIN ) {
+		if ( $this->project->isBase || $this->namespace === NS_MAIN ) {
 			return $this->getNamespaceText();
 		}
 
 		$services = MediaWikiServices::getInstance();
-		$lang = $services->getLanguageFactory()->getLanguage( $this->project );
+		$lang = $this->project->getLanguage();
 		$isUserNamespace = $this->namespace === NS_USER || $this->namespace === NS_USER_TALK;
 		if ( $isUserNamespace && $lang->needsGenderDistinction() ) {
 			$userName = strtok( $this->baseTitle, '/' );
@@ -208,33 +178,28 @@ final class ProjectTitle {
 	 * translation project prefix, and "#section", all included.
 	 */
 	public function getRealTitle(): string {
-		return strtr( $this->joinTitle( $this->getNamespaceText(), $this->getProjectPrefix() ), ' ', '_' );
+		return strtr( $this->joinTitle( $this->getNamespaceText(), $this->project->getPrefix() ), ' ', '_' );
 	}
 
 	/**
-	 * The URL of this title on its own wiki, as registered in ProjectStore (so possibly
-	 * protocol-relative), or null if that wiki has none.
+	 * The URL of this title on its own wiki, from its project's URL template (so possibly
+	 * protocol-relative), or null if that's unknown.
 	 */
 	public function getUrl(): ?string {
-		$template = $this->wiki !== null ? ProjectStore::getUrlTemplate( $this->wiki ) : null;
+		$template = $this->project->urlTemplate;
 		if ( $template === null ) {
 			return null;
 		}
 
-		$path = strtr( $this->joinTitle( $this->getNamespaceText(), $this->getProjectPrefix(), false ), ' ', '_' );
+		$path = strtr( $this->joinTitle( $this->getNamespaceText(), $this->project->getPrefix(), false ), ' ', '_' );
 		$fragment = $this->section !== null ? '#' . Sanitizer::escapeIdForLink( $this->section ) : '';
 		return str_replace( '$1', wfUrlencode( $path ), $template ) . $fragment;
 	}
 
 	private function assertLocal(): void {
-		if ( !$this->isLocal() ) {
-			$wiki = $this->wiki ?? 'an unknown wiki';
-			throw new LogicException( "{$this->getRealTitle()} is on {$wiki}, not on this wiki" );
+		if ( !$this->project->isLocal() ) {
+			throw new LogicException( "{$this->getRealTitle()} is on {$this->project->wiki}, not on this wiki" );
 		}
-	}
-
-	private function getProjectPrefix(): string {
-		return $this->project !== null ? "!{$this->project}:" : '';
 	}
 
 	/** "ns:", $projectPrefix, the base title and "#section", with empty parts left out. */
@@ -245,23 +210,22 @@ final class ProjectTitle {
 	}
 
 	/**
-	 * Extracts a title's translation project prefix.
+	 * Extracts a local title's translation project prefix.
 	 *
 	 * @param string $baseTitle The title without namespace, already normalized by core
 	 *   (e.g. from Title::getText() or getDBkey())
-	 * @return array{0: ?string, 1: string} A tuple of (lang code, title in DB key form).
-	 * 	 If the lang code is null, this article is not part of a translation project,
-	 *   either because it doesn't have a "!xx:" prefix, or because the wiki has no translation project
+	 * @return array{0: ?Project, 1: string} A tuple of (translation project, title in DB key form).
+	 * 	 If the project is null, this article is not part of a translation project,
+	 *   either because it doesn't have a "!xx:" prefix, or because this wiki has no translation project
 	 *   in that language.
 	 */
 	public static function parse( string $baseTitle ): array {
 		$baseTitle = strtr( $baseTitle, ' ', '_' );
 
 		if ( preg_match( '/^!([a-z0-9-]+):(.+)$/', $baseTitle, $match ) ) {
-			$lang = $match[ 1 ];
-			$title = $match[ 2 ];
-			if ( ProjectStore::isLocalTranslationProject( $lang ) ) {
-				return [ $lang, $title ];
+			$project = ProjectStore::getProject( $match[ 1 ], WikiMap::getCurrentWikiId() );
+			if ( $project !== null && !$project->isBase ) {
+				return [ $project, $match[ 2 ] ];
 			}
 		}
 
@@ -271,12 +235,6 @@ final class ProjectTitle {
 	/** The title a "!:Foo" escape to the base page refers to ("Foo"), or null if $title isn't one. */
 	public static function unescape( string $title ): ?string {
 		return str_starts_with( $title, '!:' ) ? substr( $title, 2 ) : null;
-	}
-
-	/** Prefixes $title (without namespace) with "!xx:", capitalizing it as $wgCapitalLinks demands. */
-	public static function addPrefix( string $title, int $namespace, string $project ): string {
-		// Core's capitalization only sees the leading "!", so it has to happen here.
-		return "!{$project}:" . Title::capitalize( $title, $namespace );
 	}
 
 	/** Whether $title (without namespace) has the "!...:" shape reserved for translation projects. */
@@ -301,18 +259,18 @@ final class ProjectTitle {
 	}
 
 	/**
-	 * SQL condition for titles in one of $projects ("!xx:Foo").
+	 * SQL condition for titles in the translation projects in one of $languages ("!xx:Foo").
 	 *
 	 * @param IReadableDatabase $dbr
 	 * @param string $title Title field, without namespace
-	 * @param string[] $projects Not empty
+	 * @param string[] $languages Not empty
 	 */
-	public static function projectSqlCondition( IReadableDatabase $dbr, string $title, array $projects ): IExpression {
+	public static function projectSqlCondition( IReadableDatabase $dbr, string $title, array $languages ): IExpression {
 		return $dbr->orExpr( array_map(
-			static fn ( string $project ) => $dbr->expr(
-				$title, IExpression::LIKE, new LikeValue( "!$project:", $dbr->anyString() )
+			static fn ( string $language ) => $dbr->expr(
+				$title, IExpression::LIKE, new LikeValue( "!$language:", $dbr->anyString() )
 			),
-			$projects
+			$languages
 		) );
 	}
 }

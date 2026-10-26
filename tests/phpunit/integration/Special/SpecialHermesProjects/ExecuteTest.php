@@ -26,7 +26,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		parent::setUp();
 		$this->wiki = WikiMap::getCurrentWikiId();
 		$this->activateLocalBaseProject();
-		$this->registerBaseProject( 'dewiki', 'de', url: 'https://de.example/wiki/$1' );
+		$this->registerBaseProject( 'de', 'dewiki', url: 'https://de.example/wiki/$1' );
 	}
 
 	private function execute( ?Authority $performer = null ): string {
@@ -91,8 +91,8 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	}
 
 	public function testListsProjects() {
-		$this->registerTranslationProject( $this->wiki, 'fr' );
-		$this->registerTranslationProject( $this->wiki, 'eo' );
+		$this->registerTranslationProject( 'fr', $this->wiki );
+		$this->registerTranslationProject( 'eo', $this->wiki );
 		// Several tags on one page, and several pages: count pages, not tags.
 		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'A' ), Tag::fromArgs( [ 'a', 'b' ] ) );
 		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'B' ), Tag::fromArgs( [ 'a' ] ) );
@@ -109,7 +109,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	}
 
 	public function testLinks() {
-		$this->registerTranslationProject( 'dewiki', 'eo' );
+		$this->registerTranslationProject( 'eo', 'dewiki' );
 		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'A' ), Tag::fromArgs( [ 'a' ] ) );
 
 		$html = $this->execute();
@@ -135,8 +135,8 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	}
 
 	public function testAddRow() {
-		$this->registerTranslationProject( 'dewiki', 'es' );
-		$this->registerTranslationProject( $this->wiki, 'eo' );
+		$this->registerTranslationProject( 'es', 'dewiki' );
+		$this->registerTranslationProject( 'eo', $this->wiki );
 
 		$html = $this->execute( $this->getAdmin() );
 		$this->assertMatchesRegularExpression(
@@ -198,14 +198,14 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	public function testAddLanguageWithProjectElsewhere() {
 		$this->post( [ 'add-project' => 'de' ] );
 
-		$this->assertTrue( ProjectStore::isLocalTranslationProject( 'de' ) );
-		$this->assertSame( 'dewiki', ProjectStore::getWikiForLanguage( 'de' ) );
+		$this->assertArrayHasKey( 'de', ProjectStore::getLocalTranslationProjects() );
+		$this->assertSame( 'dewiki', ProjectStore::getActiveProject( 'de' )?->wiki );
 	}
 
 	public function testAddOwnBaseLanguage() {
 		$this->post( [ 'add-project' => 'en' ] );
 
-		$this->assertFalse( ProjectStore::isLocalTranslationProject( 'en' ) );
+		$this->assertArrayNotHasKey( 'en', ProjectStore::getLocalTranslationProjects() );
 		$this->assertSame( [], $this->getLogActions() );
 	}
 
@@ -220,7 +220,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	}
 
 	public function testListsInactiveProjects() {
-		$this->registerTranslationProject( $this->wiki, 'de', false );
+		$this->registerTranslationProject( 'de', $this->wiki, false );
 		TagStore::setTagsForPage( $this->makePageInfo( $this->wiki, '!de:C' ), Tag::fromArgs( [ 'a' ] ) );
 
 		$html = $this->execute();
@@ -232,7 +232,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 			'Deutsch (de) | 1 | (hermesprojects-active-no)',
 		], self::rows( $html ) );
 		$this->assertSame( 1, preg_match_all( '/href="[^"]*Special:HermesPages\/de"/', $html ) );
-		$key = ProjectStore::getProjects()[ 'de' ][ $this->wiki ]->toId();
+		$key = ProjectStore::getProject( 'de', $this->wiki )->toId();
 		$this->assertMatchesRegularExpression( "/href=\"[^\"]*Special:HermesPages\\/$key\"[^>]*>1<\\/a>/", $html );
 	}
 
@@ -242,25 +242,25 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 		$this->post( [ 'add-project' => 'eo', 'wiki' => 'dewiki' ], true );
 
-		$this->assertSame( 'dewiki', ProjectStore::getWikiForLanguage( 'eo' ) );
+		$this->assertSame( 'dewiki', ProjectStore::getActiveProject( 'eo' )?->wiki );
 		$this->assertSame( [ 'add-project' ], $this->getLogActions() );
 	}
 
 	public function testLocalAdminOnlyManagesThisWiki() {
 		$this->post( [ 'add-project' => 'eo', 'wiki' => 'dewiki' ] );
 
-		$this->assertNull( ProjectStore::getWikiForLanguage( 'eo' ) );
+		$this->assertNull( ProjectStore::getActiveProject( 'eo' )?->wiki );
 		$this->assertSame( [], $this->getLogActions() );
 	}
 
 	public function testAddToUnregisteredWiki() {
 		$this->post( [ 'add-project' => 'eo', 'wiki' => 'nowiki' ], true );
 
-		$this->assertNull( ProjectStore::getWikiForLanguage( 'eo' ) );
+		$this->assertNull( ProjectStore::getActiveProject( 'eo' )?->wiki );
 	}
 
 	public function testActionButtons() {
-		$this->registerTranslationProject( $this->wiki, 'de', false );
+		$this->registerTranslationProject( 'de', $this->wiki, false );
 
 		$html = $this->execute( $this->getAdmin( true ) );
 		$this->assertSame(
@@ -276,11 +276,11 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	}
 
 	public function testActivate() {
-		$this->registerTranslationProject( $this->wiki, 'de', false );
+		$this->registerTranslationProject( 'de', $this->wiki, false );
 
 		$html = $this->post( [ 'activate-project' => 'de' ], true );
 
-		$this->assertSame( $this->wiki, ProjectStore::getWikiForLanguage( 'de' ) );
+		$this->assertSame( $this->wiki, ProjectStore::getActiveProject( 'de' )?->wiki );
 		// It was active on dewiki before.
 		$this->assertSame( [ 'deactivate', 'activate' ], $this->getLogActions() );
 		$this->assertContains( "deactivate de@{$this->wiki}", self::activeButtons( $html ) );
@@ -288,33 +288,33 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	}
 
 	public function testActivateOnOtherWiki() {
-		$this->registerTranslationProject( 'frwiki', 'de', false );
+		$this->registerTranslationProject( 'de', 'frwiki', false );
 
 		$this->post( [ 'activate-project' => 'de', 'wiki' => 'frwiki' ], true );
 
-		$this->assertSame( 'frwiki', ProjectStore::getWikiForLanguage( 'de' ) );
+		$this->assertSame( 'frwiki', ProjectStore::getActiveProject( 'de' )?->wiki );
 	}
 
 	public function testDeactivate() {
 		$this->post( [ 'deactivate-project' => 'de', 'wiki' => 'dewiki' ], true );
 
-		$this->assertNull( ProjectStore::getWikiForLanguage( 'de' ) );
+		$this->assertNull( ProjectStore::getActiveProject( 'de' )?->wiki );
 		$this->assertSame( [ 'deactivate' ], $this->getLogActions() );
-		$this->assertSame( $this->wiki, ProjectStore::getWikiForLanguage( 'en' ) );
+		$this->assertSame( $this->wiki, ProjectStore::getActiveProject( 'en' )?->wiki );
 	}
 
 	public function testDeactivateWhereInactive() {
-		$this->registerTranslationProject( $this->wiki, 'de', false );
+		$this->registerTranslationProject( 'de', $this->wiki, false );
 
 		$this->post( [ 'deactivate-project' => 'de' ], true );
 
-		$this->assertSame( 'dewiki', ProjectStore::getWikiForLanguage( 'de' ) );
+		$this->assertSame( 'dewiki', ProjectStore::getActiveProject( 'de' )?->wiki );
 		$this->assertSame( [], $this->getLogActions() );
 	}
 
 	public function testLocalAdminActionButtons() {
-		$this->registerTranslationProject( $this->wiki, 'eo' );
-		$this->registerTranslationProject( $this->wiki, 'de', false );
+		$this->registerTranslationProject( 'eo', $this->wiki );
+		$this->registerTranslationProject( 'de', $this->wiki, false );
 
 		$html = $this->execute( $this->getAdmin() );
 		$this->assertSame( [ "deactivate eo@{$this->wiki}" ], self::activeButtons( $html ) );
@@ -322,25 +322,25 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	}
 
 	public function testLocalAdminTogglesUniqueProject() {
-		$this->registerTranslationProject( $this->wiki, 'eo' );
+		$this->registerTranslationProject( 'eo', $this->wiki );
 
 		$this->post( [ 'deactivate-project' => 'eo' ] );
-		$this->assertNull( ProjectStore::getWikiForLanguage( 'eo' ) );
+		$this->assertNull( ProjectStore::getActiveProject( 'eo' )?->wiki );
 
 		$this->post( [ 'activate-project' => 'eo' ] );
-		$this->assertSame( $this->wiki, ProjectStore::getWikiForLanguage( 'eo' ) );
+		$this->assertSame( $this->wiki, ProjectStore::getActiveProject( 'eo' )?->wiki );
 		$this->assertSame( [ 'deactivate', 'activate' ], $this->getLogActions() );
 	}
 
 	/** Base languages, and languages other wikis have too, affect other wikis. */
 	public function testActivationNeedsGlobalRight() {
-		$this->registerTranslationProject( $this->wiki, 'de', false );
+		$this->registerTranslationProject( 'de', $this->wiki, false );
 
 		$this->post( [ 'activate-project' => 'de' ] );
 		$this->post( [ 'deactivate-project' => 'en' ] );
 
-		$this->assertSame( 'dewiki', ProjectStore::getWikiForLanguage( 'de' ) );
-		$this->assertSame( $this->wiki, ProjectStore::getWikiForLanguage( 'en' ) );
+		$this->assertSame( 'dewiki', ProjectStore::getActiveProject( 'de' )?->wiki );
+		$this->assertSame( $this->wiki, ProjectStore::getActiveProject( 'en' )?->wiki );
 		$this->assertSame( [], $this->getLogActions() );
 	}
 }

@@ -2,7 +2,6 @@
 
 namespace MediaWiki\Extension\Hermes\Special;
 
-use MediaWiki\Extension\Hermes\Exceptions\LanguageConflictException;
 use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\Project;
 use MediaWiki\Extension\Hermes\ProjectStore;
@@ -67,17 +66,16 @@ class SpecialHermesProjects extends HermesSpecialPage {
 
 	/**
 	 * One row per project, grouped by wiki: its base project first (in bold), then its translation projects,
-	 * and for wikis the user can manage the form adding one, unless there's nothing left to add. Global admins get
-	 * a button (de)activating each.
+	 * and for wikis the user can manage the form adding one, unless there's nothing left to add. If the user can
+	 * (de)activate any project, a last column has buttons for those.
 	 */
 	private function projectsTable(): string {
-		$formatter = $this->getFormatter();
-		$counts = TagQuery::countPages( Hermes::getDB() );
 		$byWiki = [];
-		foreach ( ProjectStore::getProjects() as $code => $ofLanguage ) {
-			foreach ( $ofLanguage as $wiki => $project ) {
-				$byWiki[ $wiki ][ $project->isBase ? '' : $code ] = $project;
-			}
+		foreach ( ProjectStore::getWikiIds() as $wiki ) {
+			$projects = ProjectStore::getProjectsOfWiki( $wiki );
+			ksort( $projects );
+			uasort( $projects, static fn ( Project $a, Project $b ) => $b->isBase <=> $a->isBase );
+			$byWiki[ $wiki ] = $projects;
 		}
 		ksort( $byWiki );
 		$hasActions = false;
@@ -87,59 +85,19 @@ class SpecialHermesProjects extends HermesSpecialPage {
 			}
 		}
 
-		$headerMsgs = [
-			'hermesprojects-header-wiki', 'hermesprojects-header-language', 'hermesprojects-header-pages',
-			'hermesprojects-header-active',
-		];
-		if ( $hasActions ) {
-			$headerMsgs[] = 'hermesprojects-header-actions';
-		}
-		$headers = array_map(
-			fn ( string $msg ) => Html::element( 'th', [], $this->msg( $msg )->text() ), $headerMsgs
-		);
-		$headers[ 3 ] = Html::rawElement( 'th', [],
-			Html::element( 'abbr', [ 'title' => $this->msg( 'hermesprojects-header-active-tooltip' )->text() ],
-				$this->msg( 'hermesprojects-header-active' )->text()
-			)
-		);
+		$counts = TagQuery::countPages( Hermes::getDB() );
 		$rows = [];
 		foreach ( $byWiki as $wiki => $projects ) {
-			ksort( $projects );
 			$addable = $this->canManage( $wiki ) ? $this->getAddableLanguages( $wiki ) : [];
-			$addRow = (bool)$addable;
 			$wikiCell = Html::rawElement( 'th',
-				[ 'scope' => 'rowgroup', 'rowspan' => count( $projects ) + (int)$addRow ],
+				[ 'scope' => 'rowgroup', 'rowspan' => count( $projects ) + ( $addable ? 1 : 0 ) ],
 				$this->wikiLink( $wiki )
 			);
-			foreach ( $projects as $key => $project ) {
-				$code = $project->code;
-				$count = $this->getLanguage()->formatNum( $counts[ $wiki ][ $code ] ?? 0 );
-				$classes = [
-					'ext-hermes-base-project' => $key === '',
-					'ext-hermes-active-project' => $project->isActive,
-				];
-				$rows[] = Html::rawElement( 'tr', [ 'class' => $classes ],
-					$wikiCell .
-					Html::element( 'td', [], $formatter->languageLabel( $code ) ) .
-					Html::rawElement( 'td',
-						[ 'class' => 'ext-hermes-project-pages' ],
-						$this->getLinkRenderer()->makeKnownLink( SpecialPage::getTitleFor( 'HermesPages',
-							$project->toId()
-						), $count )
-					) .
-					Html::element( 'td', [ 'class' => 'ext-hermes-project-active' ],
-						$this->msg( $project->isActive ? 'hermesprojects-active-yes' : 'hermesprojects-active-no' )
-							->text()
-					) .
-					( $hasActions
-						? Html::rawElement( 'td', [ 'class' => 'ext-hermes-project-actions' ],
-							$this->canActivate( $project ) ? $this->activeButton( $project ) : ''
-						)
-						: '' )
-				);
+			foreach ( $projects as $code => $project ) {
+				$rows[] = $this->projectRow( $project, $wikiCell, $counts[ $wiki ][ $code ] ?? 0, $hasActions );
 				$wikiCell = '';
 			}
-			if ( $addRow ) {
+			if ( $addable ) {
 				$rows[] = Html::rawElement( 'tr', [],
 					Html::rawElement( 'td',
 						[ 'colspan' => 3 + (int)$hasActions ], $this->addForm( $wiki, $addable )
@@ -147,7 +105,56 @@ class SpecialHermesProjects extends HermesSpecialPage {
 				);
 			}
 		}
-		return $formatter->table( $headers, $rows, false, [ 'ext-hermes-projects' ] );
+		return $this->getFormatter()->table( $this->headers( $hasActions ), $rows, false, [ 'ext-hermes-projects' ] );
+	}
+
+	/** @return string[] HTML of the header cells */
+	private function headers( bool $hasActions ): array {
+		$headers = [
+			Html::element( 'th', [], $this->msg( 'hermesprojects-header-wiki' )->text() ),
+			Html::element( 'th', [], $this->msg( 'hermesprojects-header-language' )->text() ),
+			Html::element( 'th', [], $this->msg( 'hermesprojects-header-pages' )->text() ),
+			Html::rawElement( 'th', [],
+				Html::element( 'abbr', [ 'title' => $this->msg( 'hermesprojects-header-active-tooltip' )->text() ],
+					$this->msg( 'hermesprojects-header-active' )->text()
+				)
+			),
+		];
+		if ( $hasActions ) {
+			$headers[] = Html::element( 'th', [], $this->msg( 'hermesprojects-header-actions' )->text() );
+		}
+		return $headers;
+	}
+
+	/**
+	 * @param Project $project
+	 * @param string $wikiCell HTML of the wiki's cell, for its first row
+	 * @param int $count Number of pages with tags
+	 * @param bool $hasActions Whether the table has an actions column
+	 * @return string HTML
+	 */
+	private function projectRow( Project $project, string $wikiCell, int $count, bool $hasActions ): string {
+		$classes = [
+			'ext-hermes-base-project' => $project->isBase,
+			'ext-hermes-active-project' => $project->isActive,
+		];
+		$pagesLink = $this->getLinkRenderer()->makeKnownLink(
+			SpecialPage::getTitleFor( 'HermesPages', $project->toId() ), $this->getLanguage()->formatNum( $count )
+		);
+		$actions = $hasActions
+			? Html::rawElement( 'td', [ 'class' => 'ext-hermes-project-actions' ],
+				$this->canActivate( $project ) ? $this->activeButton( $project ) : ''
+			)
+			: '';
+		return Html::rawElement( 'tr', [ 'class' => $classes ],
+			$wikiCell .
+			Html::element( 'td', [], $this->getFormatter()->languageLabel( $project->code ) ) .
+			Html::rawElement( 'td', [ 'class' => 'ext-hermes-project-pages' ], $pagesLink ) .
+			Html::element( 'td', [ 'class' => 'ext-hermes-project-active' ],
+				$this->msg( $project->isActive ? 'hermesprojects-active-yes' : 'hermesprojects-active-no' )->text()
+			) .
+			$actions
+		);
 	}
 
 	/** A link to the wiki's main page, or just its ID if it has no registered URL. */
@@ -165,7 +172,7 @@ class SpecialHermesProjects extends HermesSpecialPage {
 	private function getAddableLanguages( string $wiki ): array {
 		$codes = array_keys( array_filter(
 			$this->languageNameUtils->getLanguageNames( LanguageNameUtils::AUTONYMS, LanguageNameUtils::SUPPORTED ),
-			static fn ( string $code ) => !isset( ProjectStore::getProjects()[ $code ][ $wiki ] ),
+			static fn ( string $code ) => ProjectStore::getProject( $code, $wiki ) === null,
 			ARRAY_FILTER_USE_KEY
 		) );
 		sort( $codes );
@@ -235,38 +242,34 @@ class SpecialHermesProjects extends HermesSpecialPage {
 		}
 		$this->checkReadOnly();
 
-		$registered = in_array( $wiki, ProjectStore::getWikiIds(), true );
-		if ( $add !== '' && $registered && isset( $this->getAddableLanguages( $wiki )[ $add ] ) ) {
-			try {
-				if ( ProjectStore::addTranslationProject( $wiki, $add ) ) {
-					$this->log( 'add-project', $add, $wiki );
-				}
-			} catch ( LanguageConflictException ) {
-				// Impossible, because getAddableLanguages excludes the wiki's base language
-			}
+		$known = in_array( $wiki, ProjectStore::getWikiIds(), true );
+		if ( $add !== '' && $known && isset( $this->getAddableLanguages( $wiki )[ $add ] )
+			&& ProjectStore::addTranslationProject( $add, $wiki )
+		) {
+			$this->log( 'add-project', ProjectStore::getProject( $add, $wiki ) );
 		}
-		$toActivate = ProjectStore::getProjects()[ $activate ][ $wiki ] ?? null;
+		$toActivate = ProjectStore::getProject( $activate, $wiki );
 		if ( $toActivate !== null && $this->canActivate( $toActivate ) ) {
-			$previous = ProjectStore::getWikiForLanguage( $activate );
+			$previous = ProjectStore::getActiveProject( $activate );
 			if ( ProjectStore::activate( $activate, $wiki ) ) {
 				if ( $previous !== null ) {
-					$this->log( 'deactivate', $activate, $previous );
+					$this->log( 'deactivate', $previous );
 				}
-				$this->log( 'activate', $activate, $wiki );
+				$this->log( 'activate', $toActivate );
 			}
 		}
-		$toDeactivate = ProjectStore::getProjects()[ $deactivate ][ $wiki ] ?? null;
+		$toDeactivate = ProjectStore::getProject( $deactivate, $wiki );
 		if ( $toDeactivate !== null && $toDeactivate->isActive && $this->canActivate( $toDeactivate ) ) {
 			ProjectStore::deactivate( $deactivate );
-			$this->log( 'deactivate', $deactivate, $wiki );
+			$this->log( 'deactivate', $toDeactivate );
 		}
 	}
 
-	private function log( string $action, string $language, string $wiki ): void {
+	private function log( string $action, Project $project ): void {
 		$entry = new ManualLogEntry( 'hermes', $action );
 		$entry->setPerformer( $this->getUser() );
 		$entry->setTarget( $this->getPageTitle() );
-		$entry->setParameters( [ '4::language' => $language, '5::wiki' => $wiki ] );
+		$entry->setParameters( [ '4::language' => $project->code, '5::wiki' => $project->wiki ] );
 		$entry->publish( $entry->insert() );
 	}
 }

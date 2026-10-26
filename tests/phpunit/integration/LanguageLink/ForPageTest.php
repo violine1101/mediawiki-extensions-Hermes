@@ -17,12 +17,13 @@ use MediaWiki\WikiMap\WikiMap;
 class ForPageTest extends HermesIntegrationTestCase {
 
 	public function testBuildsLinksForRegisteredWikis() {
-		$this->registerBaseProject( 'dewiki', 'de', url: 'https://de.example.org/wiki/$1' );
-		$this->registerTranslationProject( 'trwiki', 'eo', url: 'https://translate.example.org/wiki/$1' );
+		$this->registerBaseProject( 'de', 'dewiki', url: 'https://de.example.org/wiki/$1' );
+		$this->registerTranslationProject( 'eo', 'trwiki', url: 'https://translate.example.org/wiki/$1' );
 
 		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
 		$de = $this->makePageInfo( 'dewiki', 'Stein' );
-		$eo = new PageInfo( ProjectTitle::makeTitleOnWiki( 'trwiki', NS_MAIN, 'Ŝtono', 'eo', null, '' ), 1000 );
+		$eoTitle = ProjectTitle::makeTitle( self::getProject( 'eo', 'trwiki' ), NS_MAIN, 'Ŝtono', null, '' );
+		$eo = new PageInfo( $eoTitle, 1000 );
 		foreach ( [ $en, $de, $eo ] as $page ) {
 			TagStore::setTagsForPage( $page, Tag::fromArgs( [ 'stone' ] ) );
 		}
@@ -42,7 +43,7 @@ class ForPageTest extends HermesIntegrationTestCase {
 	}
 
 	public function testSkipsWikisWithoutUrl() {
-		$this->registerBaseProject( 'dewiki', 'de' );
+		$this->registerBaseProject( 'de', 'dewiki' );
 
 		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
 		$de = $this->makePageInfo( 'dewiki' );

@@ -59,7 +59,7 @@ class HermesPagesPager extends TablePager {
 		$dbr = $this->getDatabase();
 		$pageFields = [
 			't.ht_wiki', 't.ht_page_id', 't.ht_namespace_id', 't.ht_namespace_text',
-			't.ht_translation_project', 't.ht_base_title',
+			't.ht_language', 't.ht_base_title',
 		];
 		$query = TagQuery::joinProjects(
 			$dbr->newSelectQueryBuilder()->from( 'hermes_tags', 't' ), 't', 'p', $this->withInactive
@@ -136,8 +136,7 @@ class HermesPagesPager extends TablePager {
 			return $this->formatter->pageLink( PageInfo::fromRow( $row ) );
 		}
 		if ( $name === 'language' ) {
-			$id = PageInfo::fromRow( $row )->title->getProject()?->toId() ?? $value;
-			return htmlspecialchars( $this->formatter->projectLabel( $id ) );
+			return htmlspecialchars( $this->formatter->projectLabel( PageInfo::fromRow( $row )->title->getProject() ) );
 		}
 
 		$priority = $this->priorityFields[ $name ];

@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\Hermes\Special;
 
 use MediaWiki\Context\IContextSource;
 use MediaWiki\Extension\Hermes\Hermes;
+use MediaWiki\Extension\Hermes\Project;
 use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\TagLink;
 use MediaWiki\Html\Html;
@@ -19,8 +20,8 @@ use Wikimedia\Rdbms\Subquery;
  */
 class HermesTagsPager extends TablePager {
 
-	/** @var array<string, string> Column field => project ID */
-	private array $languageFields = [];
+	/** @var array<string, Project> Column field => project */
+	private array $projectFields = [];
 
 	/** @var array<string, array<string, array<int, TagLink[]>>> Tag => project ID => priority => links */
 	private array $links = [];
@@ -43,22 +44,21 @@ class HermesTagsPager extends TablePager {
 		private readonly bool $withInactive,
 		private readonly bool $conflictsOnly,
 	) {
-		$columns = array_intersect( $languages ?: array_keys( ProjectStore::getProjects() ),
-			array_keys( ProjectStore::getActiveProjects() ) );
-		if ( $withInactive ) {
-			foreach ( ProjectStore::getProjects() as $code => $projects ) {
-				foreach ( $projects as $wiki => $project ) {
-					if ( !$project->isActive && ( !$languages || in_array( $code, $languages, true ) )
-						&& ( !$wikis || in_array( $wiki, $wikis, true ) )
-					) {
-						$columns[] = $project->toId();
-					}
+		$columns = [];
+		foreach ( ProjectStore::getProjects() as $code => $projects ) {
+			foreach ( $projects as $wiki => $project ) {
+				// The wiki filter only hides inactive projects; active ones show their pages on those wikis.
+				$shown = $project->isActive || (
+					$withInactive && ( !$wikis || in_array( $wiki, $wikis, true ) )
+				);
+				if ( $shown && ( !$languages || in_array( $code, $languages, true ) ) ) {
+					$columns[ $project->toId() ] = $project;
 				}
 			}
 		}
-		sort( $columns );
-		foreach ( $columns as $id ) {
-			$this->languageFields[ "lang-$id" ] = $id;
+		ksort( $columns );
+		foreach ( $columns as $id => $project ) {
+			$this->projectFields[ "project-$id" ] = $project;
 		}
 
 		$this->mDb = Hermes::getDB();
@@ -74,8 +74,8 @@ class HermesTagsPager extends TablePager {
 			->select( [ 'ht_tag' => 't.ht_tag' ] )
 			->groupBy( 't.ht_tag' )
 			->caller( __METHOD__ );
-		foreach ( array_values( $this->languageFields ) as $i => $id ) {
-			$inColumn = TagQuery::inProject( $dbr, $id );
+		foreach ( array_values( $this->projectFields ) as $i => $project ) {
+			$inColumn = TagQuery::inProject( $dbr, $project );
 			$query->select( [
 				"sort_$i" => TagQuery::sortKey( $dbr, "MIN(CASE WHEN $inColumn THEN t.ht_base_title END)" ),
 			] );
@@ -116,15 +116,15 @@ class HermesTagsPager extends TablePager {
 
 	/** @inheritDoc */
 	public function getIndexField() {
-		$column = array_search( $this->mSort, array_keys( $this->languageFields ), true );
+		$column = array_search( $this->mSort, array_keys( $this->projectFields ), true );
 		return [ $column === false ? [ 'ht_tag' ] : [ "sort_$column", 'ht_tag' ] ];
 	}
 
 	/** @inheritDoc */
 	protected function getFieldNames() {
 		$fields = [ 'ht_tag' => $this->msg( 'hermestags-header-tag' )->text() ];
-		foreach ( $this->languageFields as $field => $id ) {
-			$fields[ $field ] = $this->formatter->projectLabel( $id );
+		foreach ( $this->projectFields as $field => $project ) {
+			$fields[ $field ] = $this->formatter->projectLabel( $project );
 		}
 		return $fields;
 	}
@@ -136,7 +136,7 @@ class HermesTagsPager extends TablePager {
 		}
 
 		// Nothing links to inactive pages, so they can't conflict.
-		$inactive = str_contains( $this->languageFields[ $name ] ?? '', '@' );
+		$inactive = !( $this->projectFields[ $name ]->isActive ?? true );
 		$lines = array_map(
 			static fn ( string $line ) => Html::rawElement( 'li', [], $line ),
 			$this->formatter->priorityLines( $this->getCell( $name ), !$inactive )
@@ -151,7 +151,7 @@ class HermesTagsPager extends TablePager {
 	/** @inheritDoc */
 	protected function getCellAttrs( $field, $value ) {
 		$attrs = parent::getCellAttrs( $field, $value );
-		if ( str_contains( $this->languageFields[ $field ] ?? '', '@' ) ) {
+		if ( !( $this->projectFields[ $field ]->isActive ?? true ) ) {
 			$attrs[ 'class' ] .= ' ext-hermes-inactive';
 		} elseif ( TagFormatter::hasConflict( $this->getCell( $field ) ) ) {
 			$attrs[ 'class' ] .= ' ext-hermes-tag-conflict';
@@ -171,7 +171,7 @@ class HermesTagsPager extends TablePager {
 
 	/** @return array<int, TagLink[]> The current row's tag's links in a column, by priority */
 	private function getCell( string $field ): array {
-		$id = $this->languageFields[ $field ] ?? null;
+		$id = ( $this->projectFields[ $field ] ?? null )?->toId();
 		return $id !== null ? $this->links[ $this->mCurrentRow->ht_tag ][ $id ] ?? [] : [];
 	}
 }

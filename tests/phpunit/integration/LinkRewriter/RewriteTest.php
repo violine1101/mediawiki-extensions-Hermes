@@ -19,22 +19,22 @@ class RewriteTest extends HermesIntegrationTestCase {
 		// Simulates InitHooks::onBeforeInitialize()'s real-request base project setup, which
 		// addTranslationProject() alone doesn't trigger for the *current* wiki.
 		ProjectStore::init();
-		ProjectStore::addTranslationProject( WikiMap::getCurrentWikiId(), 'eo' );
+		ProjectStore::addTranslationProject( 'eo', WikiMap::getCurrentWikiId() );
 		// A second project, for references to other local projects.
-		ProjectStore::addTranslationProject( WikiMap::getCurrentWikiId(), 'de' );
+		ProjectStore::addTranslationProject( 'de', WikiMap::getCurrentWikiId() );
 	}
 
 	private function eoPage(): ProjectTitle {
-		return ProjectTitle::makeTitle( NS_MAIN, 'Some_Page', 'eo' );
+		return self::localTitle( NS_MAIN, 'Some_Page', 'eo' );
 	}
 
 	public function testNonProjectPageIsUntouched() {
-		$page = ProjectTitle::makeTitle( NS_MAIN, 'Some_Page' );
+		$page = self::localTitle( NS_MAIN, 'Some_Page' );
 		$this->assertSame( '[[Foo]]', LinkRewriter::rewrite( '[[Foo]]', $page ) );
 	}
 
 	public function testEscapeIsStrippedOnNonProjectPage() {
-		$page = ProjectTitle::makeTitle( NS_MAIN, 'Some_Page' );
+		$page = self::localTitle( NS_MAIN, 'Some_Page' );
 		$this->assertSame(
 			'[[Foo|!:Foo]] [[Talk:Bar|x]] [[:Template:Baz|Template:!:Baz]] [[Qux]]',
 			LinkRewriter::rewrite( '[[!:Foo]] [[Talk:!:Bar|x]] [[:Template:!:Baz]] [[Qux]]', $page )
@@ -42,7 +42,7 @@ class RewriteTest extends HermesIntegrationTestCase {
 	}
 
 	public function testUnprefixedLinkOnNonProjectPageIsUntouched() {
-		$page = ProjectTitle::makeTitle( NS_MAIN, 'Some_Page' );
+		$page = self::localTitle( NS_MAIN, 'Some_Page' );
 		$this->assertSame( '[[Talk:foo!]]', LinkRewriter::rewrite( '[[Talk:foo!]]', $page ) );
 	}
 
@@ -83,7 +83,7 @@ class RewriteTest extends HermesIntegrationTestCase {
 	public function testExplicitProjectReferenceIsCapitalized() {
 		$this->assertSame(
 			'[[!de:Foo|!de:foo]]',
-			LinkRewriter::rewrite( '[[!de:foo]]', ProjectTitle::makeTitle( NS_MAIN, 'Some_Page' ) )
+			LinkRewriter::rewrite( '[[!de:foo]]', self::localTitle( NS_MAIN, 'Some_Page' ) )
 		);
 	}
 

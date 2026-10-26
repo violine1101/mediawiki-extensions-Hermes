@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\Hermes\Special;
 
 use MediaWiki\Extension\Hermes\Exceptions\InvalidTagNameException;
 use MediaWiki\Extension\Hermes\Hermes;
+use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Html\Html;
 
@@ -58,19 +59,20 @@ class SpecialHermesTags extends HermesSpecialPage {
 		$out->setPageTitleMsg( $this->msg( 'hermestags-single', $tag ) );
 		$out->addBacklinkSubtitle( $this->getPageTitle() );
 
-		$byLanguage = TagQuery::loadLinks( Hermes::getDB(), [ $tag ], true )[ $tag ] ?? [];
-		if ( !$byLanguage ) {
+		$byProject = TagQuery::loadLinks( Hermes::getDB(), [ $tag ], true )[ $tag ] ?? [];
+		if ( !$byProject ) {
 			$out->addWikiMsg( 'hermestags-empty' );
 			return true;
 		}
-		ksort( $byLanguage );
-		$maxPriority = max( array_map( static fn ( array $links ) => max( array_keys( $links ) ), $byLanguage ) );
+		ksort( $byProject );
+		$maxPriority = max( array_map( static fn ( array $links ) => max( array_keys( $links ) ), $byProject ) );
 		$priorities = range( 0, $maxPriority );
 
 		$formatter = $this->getFormatter();
 		$rows = [];
-		foreach ( $byLanguage as $id => $links ) {
-			$inactive = str_contains( $id, '@' );
+		foreach ( $byProject as $id => $links ) {
+			$project = ProjectStore::getProjectById( $id );
+			$inactive = !$project->isActive;
 			// Nothing links to inactive pages, so they can't conflict.
 			$conflict = $inactive ? null : TagFormatter::conflictPriority( $links );
 			$cells = [];
@@ -82,7 +84,7 @@ class SpecialHermesTags extends HermesSpecialPage {
 					$inactive ? $formatter->dimmed( $pages ) : $pages
 				);
 			}
-			$rows[] = $formatter->projectRow( $id, $cells );
+			$rows[] = $formatter->projectRow( $project, $cells );
 		}
 
 		// With a single column, there's nothing for a priority header to tell apart.

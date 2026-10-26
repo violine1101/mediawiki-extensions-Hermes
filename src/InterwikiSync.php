@@ -28,9 +28,9 @@ class InterwikiSync {
 	 */
 	public static function sync( bool $dryRun = false ): array {
 		$targets = [];
-		foreach ( ProjectStore::getBaseProjects() as $code => $language ) {
-			if ( !$language->isLocal() && $language->urlTemplate !== null ) {
-				$targets[ $code ] = [ 'iw_url' => $language->urlTemplate, 'iw_wikiid' => $language->wiki ];
+		foreach ( ProjectStore::getActiveBaseProjects() as $code => $project ) {
+			if ( !$project->isLocal() && $project->urlTemplate !== null ) {
+				$targets[ $code ] = [ 'iw_url' => $project->urlTemplate, 'iw_wikiid' => $project->wiki ];
 			}
 		}
 

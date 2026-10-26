@@ -20,10 +20,10 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->registerBaseProject( 'dewiki', 'de' );
-		$this->registerTranslationProject( 'dewiki', 'es' );
-		$this->registerTranslationProject( WikiMap::getCurrentWikiId(), 'fr' );
-		$this->registerTranslationProject( WikiMap::getCurrentWikiId(), 'eo' );
+		$this->registerBaseProject( 'de', 'dewiki' );
+		$this->registerTranslationProject( 'es', 'dewiki' );
+		$this->registerTranslationProject( 'fr', WikiMap::getCurrentWikiId() );
+		$this->registerTranslationProject( 'eo', WikiMap::getCurrentWikiId() );
 		$this->insertPage( 'Foo' );
 	}
 

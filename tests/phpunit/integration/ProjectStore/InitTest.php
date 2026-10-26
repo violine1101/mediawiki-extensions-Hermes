@@ -29,40 +29,40 @@ class InitTest extends HermesIntegrationTestCase {
 		ProjectStore::clearCacheForTesting();
 
 		$this->assertSame( 'https://example.org/wiki/$1', ProjectStore::getUrlTemplate( $this->wiki ) );
-		$this->assertSame( 'de', ProjectStore::getBaseLanguageForWiki( $this->wiki ) );
-		$this->assertFalse( ProjectStore::isActive( 'de', $this->wiki ) );
-		$this->assertNull( ProjectStore::getWikiForLanguage( 'de' ) );
+		$this->assertSame( 'de', ProjectStore::getBaseProject( $this->wiki )?->code );
+		$this->assertFalse( ProjectStore::getProject( 'de', $this->wiki )->isActive );
+		$this->assertNull( ProjectStore::getActiveProject( 'de' )?->wiki );
 	}
 
 	public function testRegistersAlongsideOtherWikis() {
-		$this->registerBaseProject( 'otherwiki', 'de' );
+		$this->registerBaseProject( 'de', 'otherwiki' );
 
 		ProjectStore::init();
 
-		$this->assertSame( 'de', ProjectStore::getBaseLanguageForWiki( $this->wiki ) );
-		$this->assertSame( 'otherwiki', ProjectStore::getWikiForLanguage( 'de' ) );
+		$this->assertSame( 'de', ProjectStore::getBaseProject( $this->wiki )?->code );
+		$this->assertSame( 'otherwiki', ProjectStore::getActiveProject( 'de' )?->wiki );
 	}
 
 	public function testKeepsExistingBaseProject() {
-		$this->registerBaseProject( $this->wiki, 'de' );
+		$this->registerBaseProject( 'de', $this->wiki );
 
 		ProjectStore::init();
 
-		$this->assertTrue( ProjectStore::isActive( 'de', $this->wiki ) );
+		$this->assertTrue( ProjectStore::getProject( 'de', $this->wiki )->isActive );
 	}
 
 	public function testKeepsBaseProjectWhenConfigChanges() {
-		$this->registerBaseProject( $this->wiki, 'fr' );
+		$this->registerBaseProject( 'fr', $this->wiki );
 
 		ProjectStore::init();
 
-		$this->assertSame( 'fr', ProjectStore::getBaseLanguageForWiki( $this->wiki ) );
+		$this->assertSame( 'fr', ProjectStore::getBaseProject( $this->wiki )?->code );
 		$this->assertArrayNotHasKey( 'de', ProjectStore::getProjects() );
 	}
 
 	public function testUpdatesUrlOfAllRows() {
-		$this->registerBaseProject( $this->wiki, 'de', url: 'https://old.example.org/wiki/$1' );
-		$this->registerTranslationProject( $this->wiki, 'eo', url: 'https://old.example.org/wiki/$1' );
+		$this->registerBaseProject( 'de', $this->wiki, url: 'https://old.example.org/wiki/$1' );
+		$this->registerTranslationProject( 'eo', $this->wiki, url: 'https://old.example.org/wiki/$1' );
 
 		ProjectStore::init();
 		ProjectStore::clearCacheForTesting();
@@ -77,7 +77,7 @@ class InitTest extends HermesIntegrationTestCase {
 		ProjectStore::init();
 
 		$this->assertSame( 'https://example.org/wiki/$1', ProjectStore::getUrlTemplate( $this->wiki ) );
-		$this->assertSame( 'de', ProjectStore::getBaseLanguageForWiki( $this->wiki ) );
+		$this->assertSame( 'de', ProjectStore::getBaseProject( $this->wiki )?->code );
 	}
 
 	public function testUpdatesUrlWhenConfigChanges() {

@@ -21,9 +21,9 @@ class OnCategoryViewer__generateLinkTest extends HermesIntegrationTestCase {
 		// Simulates InitHooks::onBeforeInitialize()'s real-request base project setup, which
 		// addTranslationProject() alone doesn't trigger for the *current* wiki.
 		ProjectStore::init();
-		ProjectStore::addTranslationProject( WikiMap::getCurrentWikiId(), 'eo' );
+		ProjectStore::addTranslationProject( 'eo', WikiMap::getCurrentWikiId() );
 		// A second project, for the cross-project annotation tests.
-		ProjectStore::addTranslationProject( WikiMap::getCurrentWikiId(), 'de' );
+		ProjectStore::addTranslationProject( 'de', WikiMap::getCurrentWikiId() );
 		// The hook only applies while viewing a category.
 		RequestContext::getMain()->setTitle( Title::makeTitle( NS_CATEGORY, 'Bar' ) );
 	}

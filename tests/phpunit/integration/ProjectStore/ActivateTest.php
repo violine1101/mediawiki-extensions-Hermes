@@ -9,30 +9,29 @@ use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 /**
  * @group Database
  * @covers \MediaWiki\Extension\Hermes\ProjectStore::activate
- * @covers \MediaWiki\Extension\Hermes\ProjectStore::isActive
  */
 class ActivateTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->registerTranslationProject( 'enwiki', 'de' );
-		$this->registerBaseProject( 'dewiki', 'de', false );
+		$this->registerTranslationProject( 'de', 'enwiki' );
+		$this->registerBaseProject( 'de', 'dewiki', false );
 	}
 
 	public function testMovesActiveProject() {
 		$this->assertTrue( ProjectStore::activate( 'de', 'dewiki' ) );
 
-		$this->assertTrue( ProjectStore::isActive( 'de', 'dewiki' ) );
-		$this->assertFalse( ProjectStore::isActive( 'de', 'enwiki' ) );
+		$this->assertTrue( ProjectStore::getProject( 'de', 'dewiki' )->isActive );
+		$this->assertFalse( ProjectStore::getProject( 'de', 'enwiki' )->isActive );
 		ProjectStore::clearCacheForTesting();
-		$this->assertSame( 'dewiki', ProjectStore::getWikiForLanguage( 'de' ) );
-		$this->assertFalse( ProjectStore::isActive( 'de', 'enwiki' ) );
+		$this->assertSame( 'dewiki', ProjectStore::getActiveProject( 'de' )?->wiki );
+		$this->assertFalse( ProjectStore::getProject( 'de', 'enwiki' )->isActive );
 	}
 
 	public function testAlreadyActive() {
 		$this->assertFalse( ProjectStore::activate( 'de', 'enwiki' ) );
 
-		$this->assertSame( 'enwiki', ProjectStore::getWikiForLanguage( 'de' ) );
+		$this->assertSame( 'enwiki', ProjectStore::getActiveProject( 'de' )?->wiki );
 	}
 
 	public function testThrowsWithoutProject() {

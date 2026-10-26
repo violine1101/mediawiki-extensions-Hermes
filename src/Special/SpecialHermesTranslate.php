@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\Hermes\Special;
 use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\Hooks\TranslationProject\TranslateHooks;
 use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\Project;
 use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\TagStore;
@@ -34,7 +35,7 @@ class SpecialHermesTranslate extends HermesSpecialPage {
 		$pageName = trim( $request->getText( 'page', $par ) );
 		$language = $request->getVal( 'language' );
 		$translation = $request->getVal( 'translation' );
-		$projects = ProjectStore::getActiveLocalTranslationProjects();
+		$languages = array_keys( ProjectStore::getActiveLocalTranslationProjects() );
 
 		$page = null;
 		if ( $pageName !== '' ) {
@@ -43,14 +44,15 @@ class SpecialHermesTranslate extends HermesSpecialPage {
 				$out->addHTML( Html::errorBox( $this->msg( 'hermestranslate-no-base', $pageName )->parse() ) );
 			} else {
 				// "!xx:Foo" picks the project too.
-				$language ??= ProjectTitle::newFromLinkTarget( Title::newFromText( $pageName ) )->project;
+				$project = ProjectTitle::newFromLinkTarget( Title::newFromText( $pageName ) )->getProject();
+				$language ??= $project->isBase ? null : $project->code;
 				$pageName = $page->toTitle()->getPrefixedText();
 				$out->setPageTitleMsg( $this->msg( 'hermestranslate-title' )->plaintextParams( $pageName ) );
 			}
 		}
 
 		// Only projects that don't have the page yet.
-		$available = $page !== null ? self::getUntranslatedProjects( $page ) : $projects;
+		$available = $page !== null ? self::getUntranslatedProjects( $page ) : $languages;
 		if ( $page !== null && $translation !== null && in_array( $language, $available, true ) ) {
 			$target = $this->getTarget( $page, $translation, $language );
 			if ( $target === null ) {
@@ -70,7 +72,7 @@ class SpecialHermesTranslate extends HermesSpecialPage {
 			}
 		}
 
-		if ( !$projects ) {
+		if ( !$languages ) {
 			$out->addWikiMsg( 'hermestranslate-no-projects' );
 			return;
 		}
@@ -121,8 +123,8 @@ class SpecialHermesTranslate extends HermesSpecialPage {
 	public static function getUntranslatedProjects( ProjectTitle $page ): array {
 		$projects = ProjectStore::getActiveLocalTranslationProjects();
 		$translated = $projects ? TagStore::getTranslationsOfPage( PageInfo::fromLocalPage( $page->toTitle() ) ) : [];
-		return array_values( array_filter( $projects, static fn ( string $project ) =>
-			!isset( $translated[ $project ] ) && !$page->withProject( $project )->toTitle()->exists()
+		return array_keys( array_filter( $projects, static fn ( Project $project ) =>
+			!isset( $translated[ $project->code ] ) && !$page->withProject( $project )->toTitle()->exists()
 		) );
 	}
 
@@ -132,7 +134,7 @@ class SpecialHermesTranslate extends HermesSpecialPage {
 		if ( $title === null || $title->isExternal() || !Hermes::isProjectNamespace( $title->getNamespace() ) ) {
 			return null;
 		}
-		$page = ProjectTitle::newFromLinkTarget( $title )->withProject( null );
+		$page = ProjectTitle::newFromLinkTarget( $title )->toBasePage();
 		return $page->toTitle()->exists() ? $page : null;
 	}
 
@@ -142,8 +144,7 @@ class SpecialHermesTranslate extends HermesSpecialPage {
 		if ( $translation === '' || ProjectTitle::isReserved( $translation ) ) {
 			return null;
 		}
-		return Title::makeTitleSafe(
-			$page->namespace, ProjectTitle::addPrefix( $translation, $page->namespace, $language )
-		);
+		$project = ProjectStore::getActiveLocalTranslationProjects()[ $language ];
+		return Title::makeTitleSafe( $page->namespace, $project->addPrefix( $translation, $page->namespace ) );
 	}
 }

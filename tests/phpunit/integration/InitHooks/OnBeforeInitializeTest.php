@@ -30,7 +30,7 @@ class OnBeforeInitializeTest extends HermesIntegrationTestCase {
 			$title, null, $context->getOutput(), $user, $context->getRequest(), null
 		);
 
-		$this->assertSame( 'de', ProjectStore::getBaseLanguageForWiki( WikiMap::getCurrentWikiId() ) );
+		$this->assertSame( 'de', ProjectStore::getBaseProject( WikiMap::getCurrentWikiId() )?->code );
 		$this->assertSame(
 			'https://example.org/wiki/$1',
 			ProjectStore::getUrlTemplate( WikiMap::getCurrentWikiId() )

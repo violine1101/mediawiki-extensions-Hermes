@@ -24,10 +24,10 @@ class OnSkinTemplateNavigationUniversalTest extends HermesIntegrationTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$this->wiki = WikiMap::getCurrentWikiId();
-		$this->registerBaseProject( 'dewiki', 'de' );
-		$this->registerTranslationProject( 'dewiki', 'es' );
-		$this->registerTranslationProject( $this->wiki, 'eo' );
-		$this->registerTranslationProject( $this->wiki, 'fr' );
+		$this->registerBaseProject( 'de', 'dewiki' );
+		$this->registerTranslationProject( 'es', 'dewiki' );
+		$this->registerTranslationProject( 'eo', $this->wiki );
+		$this->registerTranslationProject( 'fr', $this->wiki );
 		$this->insertPage( 'Foo' );
 	}
 

@@ -20,9 +20,9 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$this->overrideConfigValues( [ MainConfigNames::MiserMode => false ] );
-		$this->registerBaseProject( 'dewiki', 'de' );
-		$this->registerTranslationProject( 'dewiki', 'es' );
-		$this->registerTranslationProject( WikiMap::getCurrentWikiId(), 'eo' );
+		$this->registerBaseProject( 'de', 'dewiki' );
+		$this->registerTranslationProject( 'es', 'dewiki' );
+		$this->registerTranslationProject( 'eo', WikiMap::getCurrentWikiId() );
 		$this->insertPage( 'Foo' );
 	}
 
@@ -83,7 +83,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	/** @dataProvider provideProjectFilter */
 	public function testProjectFilter( ?string $par, array $query ) {
-		$this->registerTranslationProject( WikiMap::getCurrentWikiId(), 'fr' );
+		$this->registerTranslationProject( 'fr', WikiMap::getCurrentWikiId() );
 		$this->insertPage( 'A', '[[!eo:Foo]] [[!fr:Foo]] [[Category:!eo:Foo]] [[Category:!fr:Foo]]' );
 
 		// Without the project, which the filter shows.
@@ -103,7 +103,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	}
 
 	public function testFiltersCachedResults() {
-		$this->registerTranslationProject( WikiMap::getCurrentWikiId(), 'fr' );
+		$this->registerTranslationProject( 'fr', WikiMap::getCurrentWikiId() );
 		$this->insertPage( 'A', '[[!eo:Foo]] [[!fr:Foo]]' );
 		$this->overrideConfigValues( [ MainConfigNames::MiserMode => true ] );
 		$this->getServiceContainer()->getSpecialPageFactory()->getPage( 'WantedTranslations' )->recache( false );

@@ -38,8 +38,8 @@ class TemplateHooks implements
 			return;
 		}
 
-		$project = ProjectTitle::newFromLinkTarget( $contextTitle )->project;
-		if ( $project === null ) {
+		$project = ProjectTitle::newFromLinkTarget( $contextTitle )->getProject();
+		if ( $project->isBase ) {
 			return;
 		}
 
@@ -61,8 +61,8 @@ class TemplateHooks implements
 			return;
 		}
 
-		$project = ProjectTitle::newFromLinkTarget( $page )->project;
-		if ( $project === null ) {
+		$project = ProjectTitle::newFromLinkTarget( $page )->getProject();
+		if ( $project->isBase ) {
 			return;
 		}
 

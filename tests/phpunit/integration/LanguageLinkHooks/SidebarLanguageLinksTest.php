@@ -22,8 +22,8 @@ class SidebarLanguageLinksTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->registerBaseProject( 'dewiki', 'de', url: 'https://de.example.org/wiki/$1' );
-		$this->registerTranslationProject( 'trwiki', 'eo', url: 'https://translate.example.org/wiki/$1' );
+		$this->registerBaseProject( 'de', 'dewiki', url: 'https://de.example.org/wiki/$1' );
+		$this->registerTranslationProject( 'eo', 'trwiki', url: 'https://translate.example.org/wiki/$1' );
 
 		$page = $this->getExistingTestPage( 'SidebarLanguageLinksTest' );
 		$this->editPage( $page, '{{#hermes:stone}}' );
@@ -32,7 +32,8 @@ class SidebarLanguageLinksTest extends HermesIntegrationTestCase {
 
 	private function addPartners(): void {
 		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'Stein' ), Tag::fromArgs( [ 'stone' ] ) );
-		$eo = new PageInfo( ProjectTitle::makeTitleOnWiki( 'trwiki', NS_MAIN, 'Ŝtono', 'eo', null, '' ), 1000 );
+		$eoTitle = ProjectTitle::makeTitle( self::getProject( 'eo', 'trwiki' ), NS_MAIN, 'Ŝtono', null, '' );
+		$eo = new PageInfo( $eoTitle, 1000 );
 		TagStore::setTagsForPage( $eo, Tag::fromArgs( [ 'stone' ] ) );
 	}
 

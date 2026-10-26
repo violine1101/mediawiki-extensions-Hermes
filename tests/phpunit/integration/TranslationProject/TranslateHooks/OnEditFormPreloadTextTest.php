@@ -17,7 +17,7 @@ class OnEditFormPreloadTextTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->registerTranslationProject( WikiMap::getCurrentWikiId(), 'eo' );
+		$this->registerTranslationProject( 'eo', WikiMap::getCurrentWikiId() );
 		$this->insertPage( 'Foo', "Base text\n{{#hermes:foo}}" );
 	}
 
@@ -38,7 +38,7 @@ class OnEditFormPreloadTextTest extends HermesIntegrationTestCase {
 	}
 
 	public function testRedirectOnlyWithinProject() {
-		$this->registerTranslationProject( WikiMap::getCurrentWikiId(), 'fr' );
+		$this->registerTranslationProject( 'fr', WikiMap::getCurrentWikiId() );
 
 		$this->assertSame( 'unchanged', $this->preload( '!eo:Foo', 'Fooo', TranslateHooks::REDIRECT_PARAM ) );
 		$this->assertSame( 'unchanged', $this->preload( '!eo:Foo', '!fr:Fooo', TranslateHooks::REDIRECT_PARAM ) );

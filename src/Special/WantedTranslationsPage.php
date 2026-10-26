@@ -20,13 +20,13 @@ use Wikimedia\Rdbms\SelectQueryBuilder;
 abstract class WantedTranslationsPage extends WantedQueryPage {
 
 	/** The selected project, or null for all; never set when updating the query cache. */
-	private ?string $project = null;
+	private ?string $language = null;
 
 	/** @inheritDoc */
 	public function execute( $par ) {
-		$language = $this->getRequest()->getVal( 'language' ) ?? $par;
-		if ( in_array( $language, ProjectStore::getActiveLocalTranslationProjects(), true ) ) {
-			$this->project = $language;
+		$language = $this->getRequest()->getVal( 'language' ) ?? $par ?? '';
+		if ( isset( ProjectStore::getActiveLocalTranslationProjects()[ $language ] ) ) {
+			$this->language = $language;
 		}
 		parent::execute( $par );
 	}
@@ -39,8 +39,10 @@ abstract class WantedTranslationsPage extends WantedQueryPage {
 	 * @return IExpression|string Matching nothing if this wiki has no active translation projects
 	 */
 	protected function inProject( IReadableDatabase $dbr, string $title ): IExpression|string {
-		$projects = $this->project !== null ? [ $this->project ] : ProjectStore::getActiveLocalTranslationProjects();
-		return $projects ? ProjectTitle::projectSqlCondition( $dbr, $title, $projects ) : '0 = 1';
+		$languages = $this->language !== null
+			? [ $this->language ]
+			: array_keys( ProjectStore::getActiveLocalTranslationProjects() );
+		return $languages ? ProjectTitle::projectSqlCondition( $dbr, $title, $languages ) : '0 = 1';
 	}
 
 	/**
@@ -67,14 +69,14 @@ abstract class WantedTranslationsPage extends WantedQueryPage {
 
 	/** @inheritDoc */
 	protected function getPageHeader() {
-		$projects = ProjectStore::getActiveLocalTranslationProjects();
-		if ( !$projects ) {
+		$languages = array_keys( ProjectStore::getActiveLocalTranslationProjects() );
+		if ( !$languages ) {
 			return '';
 		}
 		$options = [ $this->msg( 'hermeswanted-all' )->text() => '' ];
-		foreach ( $projects as $project ) {
-			$autonym = Hermes::getAutonym( $project );
-			$options[ $autonym !== '' ? "$autonym ($project)" : $project ] = $project;
+		foreach ( $languages as $language ) {
+			$autonym = Hermes::getAutonym( $language );
+			$options[ $autonym !== '' ? "$autonym ($language)" : $language ] = $language;
 		}
 		return HTMLForm::factory( 'ooui', [
 			'language' => [
@@ -82,7 +84,7 @@ abstract class WantedTranslationsPage extends WantedQueryPage {
 				'name' => 'language',
 				'label-message' => 'hermeswanted-project',
 				'options' => $options,
-				'default' => $this->project ?? '',
+				'default' => $this->language ?? '',
 			],
 		], $this->getContext() )
 			->setMethod( 'get' )
@@ -95,7 +97,7 @@ abstract class WantedTranslationsPage extends WantedQueryPage {
 
 	/** @inheritDoc */
 	protected function linkParameters() {
-		return $this->project !== null ? [ 'language' => $this->project ] : [];
+		return $this->language !== null ? [ 'language' => $this->language ] : [];
 	}
 
 	/** Whether results show their namespace. */
@@ -111,23 +113,22 @@ abstract class WantedTranslationsPage extends WantedQueryPage {
 	 */
 	public function formatResult( $skin, $result ) {
 		$title = Title::makeTitleSafe( $result->namespace, $result->title );
-		$project = $title !== null ? ProjectTitle::newFromLinkTarget( $title )->project : null;
-		if ( $project === null ) {
+		$page = $title !== null ? ProjectTitle::newFromLinkTarget( $title ) : null;
+		if ( $page === null || $page->getProject()->isBase ) {
 			return parent::formatResult( $skin, $result );
 		}
 
-		$link = $this->getLinkRenderer()->makeLink(
-			$title, ProjectTitle::newFromLinkTarget( $title )->getDisplayTitle( $this->showNamespace() )
-		);
+		$language = $page->getProject()->code;
+		$link = $this->getLinkRenderer()->makeLink( $title, $page->getDisplayTitle( $this->showNamespace() ) );
 		if ( ( $this->isCached() || $this->forceExistenceCheck() ) && $this->existenceCheck( $title ) ) {
 			$link = "<del>$link</del>";
 		}
 		$html = $this->getLanguage()->specialList( $link, $this->makeWlhLink( $title, $result ) );
-		if ( $this->project !== null ) {
+		if ( $this->language !== null ) {
 			return $html;
 		}
-		$autonym = Hermes::getAutonym( $project );
-		return htmlspecialchars( $autonym !== '' ? "$autonym ($project)" : $project )
+		$autonym = Hermes::getAutonym( $language );
+		return htmlspecialchars( $autonym !== '' ? "$autonym ($language)" : $language )
 			. $this->msg( 'colon-separator' )->escaped() . $html;
 	}
 

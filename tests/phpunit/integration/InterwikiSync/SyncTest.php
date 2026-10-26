@@ -14,8 +14,8 @@ class SyncTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->registerBaseProject( 'dewiki', 'de', url: 'https://de.example.org/wiki/$1' );
-		$this->registerBaseProject( 'frwiki', 'fr', url: 'https://fr.example.org/wiki/$1' );
+		$this->registerBaseProject( 'de', 'dewiki', url: 'https://de.example.org/wiki/$1' );
+		$this->registerBaseProject( 'fr', 'frwiki', url: 'https://fr.example.org/wiki/$1' );
 	}
 
 	private function getRows(): array {
@@ -48,7 +48,7 @@ class SyncTest extends HermesIntegrationTestCase {
 	}
 
 	public function testAddsOtherWikisBaseLanguages() {
-		$this->registerTranslationProject( 'dewiki', 'eo' );
+		$this->registerTranslationProject( 'eo', 'dewiki' );
 
 		$this->assertSame(
 			[ 'de' => InterwikiSync::ADDED, 'fr' => InterwikiSync::ADDED ],

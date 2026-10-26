@@ -30,7 +30,7 @@ class CategoryHooks implements
 		OutputPage $outputPage, ProperPageIdentity $categoryTitle, string $text, ?string &$link
 	): void {
 		$category = ProjectTitle::newFromLinkTarget( $categoryTitle );
-		if ( $category->project === null ) {
+		if ( $category->getProject()->isBase ) {
 			return;
 		}
 
@@ -41,7 +41,7 @@ class CategoryHooks implements
 	/** @inheritDoc */
 	public function onGetDefaultSortkey( $title, &$sortkey ) {
 		$page = ProjectTitle::newFromLinkTarget( $title );
-		if ( $page->project === null ) {
+		if ( $page->getProject()->isBase ) {
 			return;
 		}
 
@@ -55,20 +55,20 @@ class CategoryHooks implements
 			return;
 		}
 
-		$this->viewedCategoryLanguage ??= ProjectTitle::newFromLinkTarget( $categoryTitle )->getLanguageCode();
+		$this->viewedCategoryLanguage ??= ProjectTitle::newFromLinkTarget( $categoryTitle )->getProject()->code;
 		$page = ProjectTitle::newFromLinkTarget( $title );
-		$languageCode = $page->getLanguageCode();
+		$languageCode = $page->getProject()->code;
 
 		$suffix = '';
 		if ( $languageCode !== $this->viewedCategoryLanguage ) {
 			$suffix = Html::rawElement( 'sup', [ 'class' => 'hermes-category-language' ], "({$languageCode})" );
 		}
 
-		if ( $page->project === null && $suffix === '' ) {
+		if ( $page->getProject()->isBase && $suffix === '' ) {
 			return;
 		}
 
-		if ( $page->project !== null ) {
+		if ( !$page->getProject()->isBase ) {
 			// Like core: subcategories are shown without namespace, other members with it.
 			$text = $page->getDisplayTitle( $type !== 'subcat' );
 		} else {

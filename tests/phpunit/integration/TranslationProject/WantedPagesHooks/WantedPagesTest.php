@@ -22,7 +22,7 @@ class WantedPagesTest extends HermesIntegrationTestCase {
 			MainConfigNames::MiserMode => false,
 			MainConfigNames::WantedPagesThreshold => 1,
 		] );
-		$this->registerTranslationProject( WikiMap::getCurrentWikiId(), 'eo' );
+		$this->registerTranslationProject( 'eo', WikiMap::getCurrentWikiId() );
 	}
 
 	private function execute( string $page ): string {

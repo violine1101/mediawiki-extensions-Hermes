@@ -89,7 +89,7 @@ class PreferencesHooks implements
 		}
 		// This wiki's languages, and those (or a variant of which) the user has saved as spoken. Others keep
 		// their value (and core's 'api' field), as unsubmitted fields aren't saved.
-		$shown = [ ProjectStore::getLocalBaseLanguage(), ...ProjectStore::getLocalTranslationProjects() ];
+		$shown = [ ProjectStore::getLocalBaseLanguage(), ...array_keys( ProjectStore::getLocalTranslationProjects() ) ];
 		$spoken = $this->getSavedSpokenLanguages( $user );
 		foreach ( $variantLanguages as $code => $variants ) {
 			if ( !in_array( $code, $shown, true ) && DisplayLanguage::findVariant( $code, $spoken ) === null ) {

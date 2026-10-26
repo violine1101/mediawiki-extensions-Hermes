@@ -2,8 +2,8 @@
 
 namespace MediaWiki\Extension\Hermes\Maintenance;
 
+use InvalidArgumentException;
 use Maintenance;
-use MediaWiki\Extension\Hermes\Exceptions\LanguageConflictException;
 use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\WikiMap\WikiMap;
 
@@ -34,12 +34,12 @@ class AddTranslationProject extends Maintenance {
 		$wiki = WikiMap::getCurrentWikiId();
 
 		try {
-			$isNew = ProjectStore::addTranslationProject( $wiki, $language );
-		} catch ( LanguageConflictException $e ) {
+			$isNew = ProjectStore::addTranslationProject( $language, $wiki );
+		} catch ( InvalidArgumentException $e ) {
 			$this->fatalError( $e->getMessage() );
 		}
 
-		$activeWiki = ProjectStore::getWikiForLanguage( $language );
+		$activeWiki = ProjectStore::getActiveProject( $language )?->wiki;
 		if ( $isNew && $activeWiki !== $wiki ) {
 			$this->output( "Added translation project \"$language\" to this wiki ($wiki), inactive, as the " .
 				"project on $activeWiki is active.\n" );

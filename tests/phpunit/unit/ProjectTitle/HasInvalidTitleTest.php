@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\Hermes\Tests\ProjectTitle;
 
+use MediaWiki\Extension\Hermes\Project;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWikiUnitTestCase;
 
@@ -10,8 +11,9 @@ use MediaWikiUnitTestCase;
  */
 class HasInvalidTitleTest extends MediaWikiUnitTestCase {
 
-	private static function makeTitle( ?string $translationProject, string $title ): ProjectTitle {
-		return ProjectTitle::makeTitle( NS_MAIN, $title, $translationProject );
+	private static function makeTitle( ?string $language, string $title ): ProjectTitle {
+		$project = new Project( $language ?? 'en', 'testwiki', $language === null, true, null );
+		return ProjectTitle::makeTitle( $project, NS_MAIN, $title );
 	}
 
 	public function testUnregisteredBangPrefix() {

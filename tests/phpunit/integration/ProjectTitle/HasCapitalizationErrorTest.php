@@ -13,7 +13,7 @@ use MediaWiki\MainConfigNames;
 class HasCapitalizationErrorTest extends HermesIntegrationTestCase {
 
 	private function makeProjectPage( string $title ): ProjectTitle {
-		return ProjectTitle::makeTitle( NS_MAIN, $title, 'eo' );
+		return self::localTitle( NS_MAIN, $title, 'eo' );
 	}
 
 	public function testLowercaseTitle() {
@@ -37,7 +37,7 @@ class HasCapitalizationErrorTest extends HermesIntegrationTestCase {
 	public function testNonProjectPage() {
 		$this->overrideConfigValue( MainConfigNames::CapitalLinks, true );
 
-		$page = ProjectTitle::makeTitle( NS_MAIN, 'foo' );
+		$page = self::localTitle( NS_MAIN, 'foo' );
 
 		// Not a Hermes concern: core's own capitalization already handles this, since a
 		// non-project title's first character is at the very start of the DB key.

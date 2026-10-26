@@ -39,7 +39,7 @@ class TranslateHooks implements EditFormPreloadTextHook, SkinTemplateNavigation_
 			return;
 		}
 		$page = ProjectTitle::newFromLinkTarget( $title );
-		if ( $page->project !== null ) {
+		if ( !$page->getProject()->isBase ) {
 			return;
 		}
 
@@ -55,13 +55,13 @@ class TranslateHooks implements EditFormPreloadTextHook, SkinTemplateNavigation_
 	/** @inheritDoc */
 	public function onEditFormPreloadText( &$text, $title ) {
 		$context = RequestContext::getMain();
-		$project = ProjectTitle::newFromLinkTarget( $title )->project;
-		if ( $project === null ) {
+		$project = ProjectTitle::newFromLinkTarget( $title )->getProject();
+		if ( $project->isBase ) {
 			return;
 		}
 
 		$redirect = Title::newFromText( $context->getRequest()->getText( self::REDIRECT_PARAM ) );
-		if ( $redirect !== null && ProjectTitle::newFromLinkTarget( $redirect )->project === $project ) {
+		if ( $redirect !== null && ProjectTitle::newFromLinkTarget( $redirect )->getProject() === $project ) {
 			$text = $this->contentHandlerFactory->getContentHandler( $title->getContentModel() )
 				->makeRedirectContent( $redirect )?->serialize() ?? $text;
 			return;
@@ -70,7 +70,7 @@ class TranslateHooks implements EditFormPreloadTextHook, SkinTemplateNavigation_
 		$source = Title::newFromText( $context->getRequest()->getText( self::PARAM ) );
 		if (
 			$source === null
-			|| ProjectTitle::newFromLinkTarget( $source )->project !== null
+			|| !ProjectTitle::newFromLinkTarget( $source )->getProject()->isBase
 			|| !$context->getAuthority()->probablyCan( 'read', $source )
 		) {
 			return;

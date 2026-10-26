@@ -23,7 +23,7 @@ class OnHtmlPageLinkRendererBeginTest extends HermesIntegrationTestCase {
 		// Simulates InitHooks::onBeforeInitialize()'s real-request base project setup, which
 		// addTranslationProject() alone doesn't trigger for the *current* wiki.
 		ProjectStore::init();
-		ProjectStore::addTranslationProject( WikiMap::getCurrentWikiId(), 'eo' );
+		ProjectStore::addTranslationProject( 'eo', WikiMap::getCurrentWikiId() );
 	}
 
 	private function callHook( Title $target, &$text = null, array $query = [] ) {

@@ -2,6 +2,9 @@
 
 namespace MediaWiki\Extension\Hermes;
 
+use MediaWiki\Language\Language;
+use MediaWiki\MediaWikiServices;
+use MediaWiki\Title\Title;
 use MediaWiki\WikiMap\WikiMap;
 use stdClass;
 
@@ -51,18 +54,18 @@ final class Project {
 		return $this->isActive ? $this->code : "{$this->code}@" . self::normalizeWiki( $this->wiki );
 	}
 
-	/** The project an ID identifies (as toId(); "<code>@<wiki>" works for an active one too), if any. */
-	public static function parseId( string $id ): ?self {
+	/** Whether $id identifies this project: as toId(), or as "<code>@<wiki>" if it's active. */
+	public function hasId( string $id ): bool {
 		if ( !str_contains( $id, '@' ) ) {
-			return ProjectStore::getActiveProjects()[ $id ] ?? null;
+			return $this->isActive && $id === $this->code;
 		}
 		[ $code, $wiki ] = explode( '@', $id, 2 );
-		foreach ( ProjectStore::getProjects()[ $code ] ?? [] as $projectWiki => $project ) {
-			if ( self::normalizeWiki( $projectWiki ) === self::normalizeWiki( $wiki ) ) {
-				return $project;
-			}
-		}
-		return null;
+		return $code === $this->code && self::normalizeWiki( $wiki ) === self::normalizeWiki( $this->wiki );
+	}
+
+	/** The language code an ID (see toId()) is about. */
+	public static function languageOfId( string $id ): string {
+		return explode( '@', $id, 2 )[ 0 ];
 	}
 
 	public function isLocal(): bool {
@@ -71,6 +74,21 @@ final class Project {
 
 	public function isLocalTranslationProject(): bool {
 		return !$this->isBase && $this->isLocal();
+	}
+
+	public function getLanguage(): Language {
+		return MediaWikiServices::getInstance()->getLanguageFactory()->getLanguage( $this->code );
+	}
+
+	/** The title prefix of this project's pages: "!xx:" for a translation project, none for the base project. */
+	public function getPrefix(): string {
+		return $this->isBase ? '' : "!{$this->code}:";
+	}
+
+	/** $title (without namespace) as a title in this project, capitalized as $wgCapitalLinks demands. */
+	public function addPrefix( string $title, int $namespace ): string {
+		// Core's capitalization only sees the leading "!", so it has to happen here.
+		return $this->getPrefix() . Title::capitalize( $title, $namespace );
 	}
 
 	public function withActive( bool $isActive ): self {

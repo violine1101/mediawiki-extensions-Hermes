@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\Hermes\Tests;
 
+use LogicException;
 use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\Project;
@@ -34,8 +35,35 @@ abstract class HermesIntegrationTestCase extends MediaWikiIntegrationTestCase {
 	 */
 	protected function makePageInfo( string $wiki, ?string $title = null ): PageInfo {
 		$id = $this->nextPageId++;
-		[ $project, $baseTitle ] = ProjectTitle::parse( $title ?? "Page{$id}" );
-		return new PageInfo( ProjectTitle::makeTitleOnWiki( $wiki, NS_MAIN, $baseTitle, $project, null, '' ), $id );
+		$baseTitle = $title ?? "Page{$id}";
+		$language = null;
+		if ( preg_match( '/^!([a-z0-9-]+):(.+)$/', $baseTitle, $match ) ) {
+			[ , $language, $baseTitle ] = $match;
+		}
+		$title = ProjectTitle::makeTitle( self::getProject( $language, $wiki ), NS_MAIN, $baseTitle, null, '' );
+		return new PageInfo( $title, $id );
+	}
+
+	/** $wiki's translation project in $language, or its base project if null, which must exist. */
+	protected static function getProject( ?string $language, string $wiki ): Project {
+		$project = $language !== null
+			? ProjectStore::getProject( $language, $wiki )
+			: ProjectStore::getBaseProject( $wiki );
+		return $project ?? throw new LogicException( "No such project on $wiki: " . ( $language ?? 'base' ) );
+	}
+
+	/** A title on this wiki: in a translation project in $language (which needn't exist), else the base project. */
+	protected static function localTitle(
+		int $namespace,
+		string $baseTitle,
+		?string $language = null,
+		?string $section = null,
+		?string $namespaceText = null
+	): ProjectTitle {
+		$project = $language !== null
+			? new Project( $language, WikiMap::getCurrentWikiId(), false, true, null )
+			: ProjectStore::getLocalBaseProject();
+		return ProjectTitle::makeTitle( $project, $namespace, $baseTitle, $section, $namespaceText );
 	}
 
 	/**
@@ -43,7 +71,7 @@ abstract class HermesIntegrationTestCase extends MediaWikiIntegrationTestCase {
 	 * added it itself (this doesn't exercise that, just consumes its result).
 	 */
 	protected function registerBaseProject(
-		string $wiki, string $language, bool $active = true, ?string $url = null
+		string $language, string $wiki, bool $active = true, ?string $url = null
 	): void {
 		$this->insertProject( new Project( $language, $wiki, true, $active, $url ) );
 	}
@@ -54,7 +82,7 @@ abstract class HermesIntegrationTestCase extends MediaWikiIntegrationTestCase {
 	 * consumes its result).
 	 */
 	protected function registerTranslationProject(
-		string $wiki, string $language, bool $active = true, ?string $url = null
+		string $language, string $wiki, bool $active = true, ?string $url = null
 	): void {
 		$this->insertProject( new Project( $language, $wiki, false, $active, $url ) );
 	}

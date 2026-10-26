@@ -66,8 +66,8 @@ class PageHooks implements
 	/** @inheritDoc */
 	public function onPageContentLanguage( $title, &$pageLang, $userLang ) {
 		$projectTitle = ProjectTitle::newFromLinkTarget( $title );
-		if ( $projectTitle->project !== null ) {
-			$pageLang = $projectTitle->getLanguage();
+		if ( !$projectTitle->getProject()->isBase ) {
+			$pageLang = $projectTitle->getProject()->getLanguage();
 		}
 	}
 
@@ -78,8 +78,9 @@ class PageHooks implements
 		}
 
 		$title = $context->getTitle();
-		$contentLanguage = ( $title ? ProjectTitle::newFromLinkTarget( $title )->project : null )
-			?? ProjectStore::getLocalBaseLanguage();
+		$contentLanguage = $title
+			? ProjectTitle::newFromLinkTarget( $title )->getProject()->code
+			: ProjectStore::getLocalBaseLanguage();
 		// Core's "language" option (the incoming $code) is hidden in favor of Hermes's own; users whose
 		// options can't be loaded yet get the content language, like logged-out users.
 		$code = $user->isSafeToLoad() ? DisplayLanguage::forUser( $user, $contentLanguage ) : $contentLanguage;
@@ -93,12 +94,12 @@ class PageHooks implements
 		}
 
 		$page = ProjectTitle::newFromLinkTarget( $parserPage );
-		if ( $page->project === null ) {
+		if ( $page->getProject()->isBase ) {
 			return;
 		}
 
 		$parser->getOutput()->setDisplayTitle( Parser::formatPageTitle(
-			$page->getLocalizedNamespaceText(), ':', $page->getDisplayTitle(), $page->getLanguage()
+			$page->getLocalizedNamespaceText(), ':', $page->getDisplayTitle(), $page->getProject()->getLanguage()
 		) );
 	}
 
@@ -109,15 +110,15 @@ class PageHooks implements
 			return;
 		}
 
-		$project = ProjectTitle::newFromLinkTarget( $title )->project;
-		if ( $project === null ) {
+		$project = ProjectTitle::newFromLinkTarget( $title )->getProject();
+		if ( $project->isBase ) {
 			return;
 		}
 
 		$hatnote = Html::rawElement(
 			'div',
 			[ 'class' => 'subpages' ],
-			$out->msg( 'hermes-project-hatnote', $project )->parse()
+			$out->msg( 'hermes-project-hatnote', $project->code )->parse()
 		);
 
 		$out->addSubtitle( $hatnote );

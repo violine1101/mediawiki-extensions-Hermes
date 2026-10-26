@@ -17,7 +17,7 @@ final class TagQuery {
 
 	/** A hermes_tags row's language: its translation project's, else its wiki's base language. */
 	public static function language( string $tags = 't', string $projects = 'p' ): string {
-		return "COALESCE($tags.ht_translation_project, $projects.hp_language)";
+		return "COALESCE($tags.ht_language, $projects.hp_language)";
 	}
 
 	/**
@@ -30,8 +30,8 @@ final class TagQuery {
 	): SelectQueryBuilder {
 		$conds = [
 			"$projects.hp_wiki = $tags.ht_wiki",
-			"($projects.hp_language = $tags.ht_translation_project"
-				. " OR ($tags.ht_translation_project IS NULL AND $projects.hp_base = 1))",
+			"($projects.hp_language = $tags.ht_language"
+				. " OR ($tags.ht_language IS NULL AND $projects.hp_base = 1))",
 		];
 		return $query->join( 'hermes_projects', $projects, $withInactive ? $conds : [
 			...$conds, "$projects.hp_active" => 1,
@@ -43,12 +43,8 @@ final class TagQuery {
 		return self::language() . ' IN (' . $dbr->makeList( $languages ) . ')';
 	}
 
-	/** Rows of the project with this ID. */
-	public static function inProject( IReadableDatabase $dbr, string $id ): string {
-		$project = Project::parseId( $id );
-		if ( $project === null ) {
-			return '0 = 1';
-		}
+	/** Rows of $project. */
+	public static function inProject( IReadableDatabase $dbr, Project $project ): string {
 		return self::language() . ' = ' . $dbr->addQuotes( $project->code )
 			. ' AND t.ht_wiki = ' . $dbr->addQuotes( $project->wiki );
 	}
@@ -137,7 +133,7 @@ final class TagQuery {
 		foreach ( $rows as $row ) {
 			$link = TagLink::fromRow( $row );
 			$project = $link->page->title->getProject();
-			if ( $project !== null && ( $project->isActive || $withInactive ) ) {
+			if ( $project->isActive || $withInactive ) {
 				$links[ $link->tag->name ][ $project->toId() ][ $link->tag->priority ][] = $link;
 			}
 		}
@@ -147,14 +143,13 @@ final class TagQuery {
 	/**
 	 * The tags of a page, given as in TagFormatter::detailsTitle().
 	 *
-	 * @param string $id The page's project ID, which determines its wiki and translation project
+	 * @param Project $project The page's project
 	 * @param string $title Namespace name as stored, and base title
 	 * @return TagLink[] In fallback order; none if there's no such page with tags
 	 */
-	public static function findPage( string $id, string $title ): array {
-		$project = Project::parseId( $id );
+	public static function findPage( Project $project, string $title ): array {
 		$title = strtr( trim( $title ), ' ', '_' );
-		if ( $project === null || $title === '' ) {
+		if ( $title === '' ) {
 			return [];
 		}
 
@@ -172,7 +167,7 @@ final class TagQuery {
 			->from( 'hermes_tags' )
 			->where( [
 				'ht_wiki' => $project->wiki,
-				'ht_translation_project' => $project->isBase ? null : $project->code,
+				'ht_language' => $project->isBase ? null : $project->code,
 				$dbr->makeList( $titleConds, LIST_OR ),
 			] )
 			->orderBy( [ 'ht_priority', 'ht_tag' ] )

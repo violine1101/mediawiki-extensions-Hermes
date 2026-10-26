@@ -8,7 +8,7 @@ CREATE TABLE hermes_tags (
   ht_tag TEXT NOT NULL,
   ht_namespace_id INT DEFAULT 0 NOT NULL,
   ht_namespace_text TEXT DEFAULT '' NOT NULL,
-  ht_translation_project TEXT DEFAULT NULL,
+  ht_language TEXT DEFAULT NULL,
   ht_base_title TEXT NOT NULL,
   ht_section TEXT DEFAULT NULL,
   ht_priority INT DEFAULT 0 NOT NULL,

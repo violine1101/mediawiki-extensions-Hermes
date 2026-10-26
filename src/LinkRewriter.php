@@ -32,7 +32,7 @@ class LinkRewriter {
 	public static function rewrite( string $text, ProjectTitle $page ): string {
 		if (
 			!str_contains( $text, '[[' )
-			|| ( $page->project === null && !str_contains( $text, '!' ) )
+			|| ( $page->getProject()->isBase && !str_contains( $text, '!' ) )
 		) {
 			return $text;
 		}
@@ -53,7 +53,7 @@ class LinkRewriter {
 	 * if $hasPipe is false and the target changed.
 	 */
 	private static function rewriteTarget( string $raw, ProjectTitle $page, bool $hasPipe ): string {
-		if ( $page->project === null && !str_contains( $raw, '!' ) ) {
+		if ( $page->getProject()->isBase && !str_contains( $raw, '!' ) ) {
 			// Fast path: this runs for every link on every page.
 			return $raw;
 		}
@@ -72,7 +72,7 @@ class LinkRewriter {
 		}
 
 		$contentLang = MediaWikiServices::getInstance()->getContentLanguage();
-		$projectLang = $page->project !== null ? $page->getLanguage() : $contentLang;
+		$projectLang = $page->getProject()->isBase ? $contentLang : $page->getProject()->getLanguage();
 
 		$colonPos = strpos( $target, ':' );
 		$nsPrefix = $colonPos !== false ? substr( $target, 0, $colonPos ) : '';
@@ -132,7 +132,7 @@ class LinkRewriter {
 			return $raw;
 		}
 
-		$resolved = self::resolveBareTitle( $bareTitle, $nsId, $page->project );
+		$resolved = self::resolveBareTitle( $bareTitle, $nsId, $page->getProject() );
 		if ( !$nsFromProjectLang && strtr( $resolved, '_', ' ' ) === strtr( $bareTitle, '_', ' ' ) ) {
 			return $raw;
 		}
@@ -154,15 +154,15 @@ class LinkRewriter {
 
 	/**
 	 * The title (without namespace or fragment) $bareTitle links to, in the project its prefix
-	 * names, else in $defaultProject (null for the base page).
+	 * names, else in $defaultProject.
 	 */
-	private static function resolveBareTitle( string $bareTitle, int $nsId, ?string $defaultProject ): string {
+	private static function resolveBareTitle( string $bareTitle, int $nsId, Project $defaultProject ): string {
 		$title = ProjectTitle::unescape( $bareTitle );
 		$project = null;
 		if ( $title === null ) {
 			[ $project, $title ] = ProjectTitle::parse( $bareTitle );
 			if ( $project === null ) {
-				if ( $defaultProject === null || ProjectTitle::isReserved( $bareTitle ) ) {
+				if ( $defaultProject->isBase || ProjectTitle::isReserved( $bareTitle ) ) {
 					// Invalid "!...:" prefixes are left for ProjectTitle::hasInvalidTitle() to report.
 					return $bareTitle;
 				}
@@ -171,8 +171,6 @@ class LinkRewriter {
 			}
 		}
 
-		return $project !== null
-			? ProjectTitle::addPrefix( $title, $nsId, $project )
-			: Title::capitalize( $title, $nsId );
+		return $project !== null ? $project->addPrefix( $title, $nsId ) : Title::capitalize( $title, $nsId );
 	}
 }

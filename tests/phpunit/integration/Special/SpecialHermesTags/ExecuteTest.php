@@ -20,8 +20,8 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$this->activateLocalBaseProject();
-		$this->registerBaseProject( 'dewiki', 'de' );
-		$this->registerBaseProject( 'frwiki', 'fr' );
+		$this->registerBaseProject( 'de', 'dewiki' );
+		$this->registerBaseProject( 'fr', 'frwiki' );
 	}
 
 	private function execute( array $query = [], ?string $par = null ): string {
@@ -46,7 +46,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		foreach ( $rows[ 1 ] as $row ) {
 			preg_match( '/TablePager_col_ht_tag">(.*?)<\/td>/s', $row, $tag );
 			preg_match_all(
-				'/<td class="TablePager_col_lang-([^ "]+)( ext-hermes-tag-conflict| ext-hermes-inactive)?"[^>]*>'
+				'/<td class="TablePager_col_project-([^ "]+)( ext-hermes-tag-conflict| ext-hermes-inactive)?"[^>]*>'
 					. '(.*?)<\/td>/s',
 				$row,
 				$cells,
@@ -102,8 +102,8 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		$this->setTags( 'dewiki', 'B', [ 'd' ] );
 
 		// Tags without a page in that language come last.
-		$this->assertSame( [ 'b', 'd', 'a', 'c' ], $this->listedTags( [ 'sort' => 'lang-de' ] ) );
-		$this->assertSame( [ 'c', 'a', 'd', 'b' ], $this->listedTags( [ 'sort' => 'lang-de', 'desc' => '1' ] ) );
+		$this->assertSame( [ 'b', 'd', 'a', 'c' ], $this->listedTags( [ 'sort' => 'project-de' ] ) );
+		$this->assertSame( [ 'c', 'a', 'd', 'b' ], $this->listedTags( [ 'sort' => 'project-de', 'desc' => '1' ] ) );
 	}
 
 	public function testPagesWhenSortedByLanguage() {
@@ -112,7 +112,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		}
 
 		$tags = [];
-		$query = [ 'sort' => 'lang-de', 'limit' => '2' ];
+		$query = [ 'sort' => 'project-de', 'limit' => '2' ];
 		for ( $page = 0; $page < 3; $page++ ) {
 			$html = $this->execute( $query );
 			$tags = array_merge( $tags, array_keys( self::table( $html ) ) );
@@ -168,7 +168,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	public function testProjectPageConflictsOnlyWithinProject() {
 		$wiki = WikiMap::getCurrentWikiId();
-		$this->registerTranslationProject( $wiki, 'eo' );
+		$this->registerTranslationProject( 'eo', $wiki );
 		$this->setTags( $wiki, '!eo:A', [ 'golem' ] );
 		$this->setTags( $wiki, 'B', [ 'golem' ] );
 
@@ -186,7 +186,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 			self::table( $this->execute( [ 'language' => [ 'de' ] ] ) )
 		);
 		$this->assertDoesNotMatchRegularExpression(
-			'/TablePager_col_lang-(en|fr)/',
+			'/TablePager_col_project-(en|fr)/',
 			$this->execute( [ 'language' => [ 'de' ] ] )
 		);
 	}
@@ -335,7 +335,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	}
 
 	public function testSkipsInactivePages() {
-		$this->registerTranslationProject( WikiMap::getCurrentWikiId(), 'de', false );
+		$this->registerTranslationProject( 'de', WikiMap::getCurrentWikiId(), false );
 		$this->setTags( 'dewiki', 'Golem_de', [ 'golem' ] );
 		$this->setTags( WikiMap::getCurrentWikiId(), '!de:Golem', [ 'golem', 'other' ] );
 
@@ -344,15 +344,15 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	public function testShowsInactiveColumns() {
 		$wiki = WikiMap::getCurrentWikiId();
-		$this->registerTranslationProject( $wiki, 'de', false );
+		$this->registerTranslationProject( 'de', $wiki, false );
 		$this->setTags( 'dewiki', 'Golem_de', [ 'golem' ] );
 		$this->setTags( $wiki, '!de:Golem', [ 'golem' ] );
 		$this->setTags( $wiki, '!de:Golem_2', [ 'golem' ] );
 
 		$html = $this->execute( [ 'tag' => '', 'inactive' => '1' ] );
-		$key = ProjectStore::getProjects()[ 'de' ][ $wiki ]->toId();
+		$key = ProjectStore::getProject( 'de', $wiki )->toId();
 		$this->assertSame( [ 'golem' => [ 'de' => 'Golem de', $key => 'Golem / Golem 2' ] ], self::table( $html ) );
-		$this->assertStringContainsString( "TablePager_col_lang-$key ext-hermes-inactive", $html );
+		$this->assertStringContainsString( "TablePager_col_project-$key ext-hermes-inactive", $html );
 	}
 
 	public function testFiltersByWiki() {
@@ -367,7 +367,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	public function testSubpageShowsInactiveRows() {
 		$wiki = WikiMap::getCurrentWikiId();
-		$this->registerTranslationProject( $wiki, 'de', false );
+		$this->registerTranslationProject( 'de', $wiki, false );
 		$this->setTags( 'dewiki', 'A', [ 'golem' ] );
 		$this->setTags( $wiki, '!de:B', [ 'golem' ] );
 		$this->setTags( $wiki, '!de:C', [ 'golem' ] );

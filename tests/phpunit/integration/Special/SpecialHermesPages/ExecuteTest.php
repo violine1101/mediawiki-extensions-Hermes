@@ -21,8 +21,8 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$this->registerBaseProject( 'dewiki', 'de' );
-		$this->registerBaseProject( 'frwiki', 'fr' );
+		$this->registerBaseProject( 'de', 'dewiki' );
+		$this->registerBaseProject( 'fr', 'frwiki' );
 	}
 
 	private function execute( array $query = [], ?string $par = null ): string {
@@ -194,7 +194,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		$this->setTags( 'frwiki', 'Golem_de_fer', [ 'iron_golem' ] );
 		$this->setTags( 'frwiki', 'Golem', [ 'golem' ] );
 		$this->setTags( 'frwiki', 'Golem_2', [ 'golem' ] );
-		$this->registerBaseProject( 'eswiki', 'es' );
+		$this->registerBaseProject( 'es', 'eswiki' );
 		$this->setTags( 'eswiki', 'Golem', [ 'other', 'golem' ] );
 		// Same language as the page itself: not a language link, but a conflict.
 		$this->setTags( 'dewiki', 'Eisengolem', [ 'iron_golem' ] );
@@ -232,7 +232,8 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	public function testDetailsOfNamespacedPage() {
 		TagStore::setTagsForPage(
 			new PageInfo(
-				ProjectTitle::makeTitleOnWiki( 'dewiki', NS_CATEGORY, 'Golems', null, null, 'Kategorie' ), 100
+				ProjectTitle::makeTitle( self::getProject( null, 'dewiki' ), NS_CATEGORY, 'Golems', null, 'Kategorie' ),
+				100
 			),
 			Tag::fromArgs( [ 'golems' ] )
 		);
@@ -248,7 +249,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	public function testDetailsOfProjectPage() {
 		$wiki = WikiMap::getCurrentWikiId();
-		$this->registerTranslationProject( $wiki, 'eo' );
+		$this->registerTranslationProject( 'eo', $wiki );
 		$this->setTags( $wiki, '!eo:Golem', [ 'golem' ] );
 		$this->setTags( $wiki, 'Golem', [ 'other' ] );
 		$this->setTags( 'dewiki', 'A', [ 'golem' ] );
@@ -268,7 +269,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	}
 
 	public function testSkipsInactivePages() {
-		$this->registerTranslationProject( WikiMap::getCurrentWikiId(), 'de', false );
+		$this->registerTranslationProject( 'de', WikiMap::getCurrentWikiId(), false );
 		$this->setTags( 'dewiki', 'Golem', [ 'golem' ] );
 		$this->setTags( WikiMap::getCurrentWikiId(), '!de:Golem', [ 'golem' ] );
 
@@ -277,7 +278,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	public function testShowsInactivePages() {
 		$wiki = WikiMap::getCurrentWikiId();
-		$this->registerTranslationProject( $wiki, 'de', false );
+		$this->registerTranslationProject( 'de', $wiki, false );
 		$this->setTags( 'dewiki', 'Golem', [ 'golem' ] );
 		$this->setTags( $wiki, '!de:Golem', [ 'golem' ] );
 
@@ -298,11 +299,11 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	public function testProjectSubpage() {
 		$wiki = WikiMap::getCurrentWikiId();
-		$this->registerTranslationProject( $wiki, 'de', false );
+		$this->registerTranslationProject( 'de', $wiki, false );
 		$this->setTags( 'dewiki', 'Golem', [ 'golem' ] );
 		$this->setTags( $wiki, '!de:Golem', [ 'golem' ] );
 
-		$html = $this->execute( [], ProjectStore::getProjects()[ 'de' ][ $wiki ]->toId() );
+		$html = $this->execute( [], ProjectStore::getProject( 'de', $wiki )->toId() );
 		preg_match( '/<tbody>(.*)<\/tbody>/s', $html, $body );
 		$this->assertSame(
 			[ "Golem | (hermes-inactive-project: Deutsch (de), $wiki) | golem" ], self::rows( $body[ 1 ] )
@@ -312,7 +313,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	public function testDetailsOfInactivePage() {
 		$wiki = WikiMap::getCurrentWikiId();
-		$this->registerTranslationProject( $wiki, 'de', false );
+		$this->registerTranslationProject( 'de', $wiki, false );
 		$this->setTags( 'dewiki', 'Golem', [ 'golem' ] );
 		$this->setTags( 'frwiki', 'Golem', [ 'golem' ] );
 		$this->setTags( $wiki, '!de:Golem', [ 'golem' ] );
@@ -325,13 +326,13 @@ class ExecuteTest extends HermesIntegrationTestCase {
 				"(hermes-inactive-project: Deutsch (de), $wiki) | [O]Golem",
 				'fr | [T]Golem',
 			],
-			$this->links( ProjectStore::getProjects()[ 'de' ][ $wiki ]->toId() . '/Golem' )
+			$this->links( ProjectStore::getProject( 'de', $wiki )->toId() . '/Golem' )
 		);
 	}
 
 	public function testDetailsShowInactiveRows() {
 		$wiki = WikiMap::getCurrentWikiId();
-		$this->registerTranslationProject( $wiki, 'de', false );
+		$this->registerTranslationProject( 'de', $wiki, false );
 		$this->setTags( 'frwiki', 'Golem', [ 'golem' ] );
 		$this->setTags( $wiki, '!de:Golem', [ 'golem' ] );
 
