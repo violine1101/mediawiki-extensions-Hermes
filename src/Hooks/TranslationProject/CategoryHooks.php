@@ -14,8 +14,8 @@ use MediaWiki\Page\ProperPageIdentity;
 use Wikimedia\HtmlArmor\HtmlArmor;
 
 /**
- * Hides the "!xx:" prefix in category links, listings and sort keys, and marks category members
- * whose language differs from the category's.
+ * Hides the "!xx:" prefix in category links, listings and sort keys, and marks categories and category members
+ * whose language differs from the viewed page's.
  */
 class CategoryHooks implements
 	OutputPageRenderCategoryLinkHook,
@@ -30,12 +30,16 @@ class CategoryHooks implements
 		OutputPage $outputPage, ProperPageIdentity $categoryTitle, string $text, ?string &$link
 	): void {
 		$category = LocalProjectTitle::fromTitle( $categoryTitle );
-		if ( $category->project->isBase ) {
+		$pageTitle = $outputPage->getTitle();
+		$suffix = $pageTitle !== null
+			? self::languageSuffix( $category, LocalProjectTitle::fromTitle( $pageTitle )->project->code )
+			: '';
+		if ( $category->project->isBase && $suffix === '' ) {
 			return;
 		}
 
-		$link = MediaWikiServices::getInstance()->getLinkRenderer()
-			->makeLink( $categoryTitle, $category->getDisplayTitle() );
+		$text = $category->project->isBase ? new HtmlArmor( $text ) : $category->getDisplayTitle();
+		$link = MediaWikiServices::getInstance()->getLinkRenderer()->makeLink( $categoryTitle, $text ) . $suffix;
 	}
 
 	/** @inheritDoc */
@@ -57,13 +61,7 @@ class CategoryHooks implements
 
 		$this->viewedCategoryLanguage ??= LocalProjectTitle::fromTitle( $categoryTitle )->project->code;
 		$page = LocalProjectTitle::fromTitle( $title );
-		$languageCode = $page->project->code;
-
-		$suffix = '';
-		if ( $languageCode !== $this->viewedCategoryLanguage ) {
-			$suffix = Html::rawElement( 'sup', [ 'class' => 'hermes-category-language' ], "({$languageCode})" );
-		}
-
+		$suffix = self::languageSuffix( $page, $this->viewedCategoryLanguage );
 		if ( $page->project->isBase && $suffix === '' ) {
 			return;
 		}
@@ -76,5 +74,13 @@ class CategoryHooks implements
 		}
 
 		$link = MediaWikiServices::getInstance()->getLinkRenderer()->makeLink( $title, $text ) . $suffix;
+	}
+
+	/** "<sup>(xx)</sup>" if $page's language isn't $language, else ''. */
+	private static function languageSuffix( LocalProjectTitle $page, string $language ): string {
+		$code = $page->project->code;
+		return $code !== $language
+			? Html::rawElement( 'sup', [ 'class' => 'hermes-category-language' ], "({$code})" )
+			: '';
 	}
 }

@@ -58,4 +58,33 @@ class OnOutputPageRenderCategoryLinkTest extends HermesIntegrationTestCase {
 
 		$this->assertNull( $link );
 	}
+
+	private static function renderOn( string $pageTitle, string $categoryTitle ): ?string {
+		$outputPage = new OutputPage( RequestContext::getMain() );
+		$outputPage->setTitle( Title::newFromText( $pageTitle ) );
+		$category = Title::makeTitle( NS_CATEGORY, $categoryTitle );
+
+		$link = null;
+		( new CategoryHooks() )->onOutputPageRenderCategoryLink(
+			$outputPage, $category->toPageIdentity(), htmlspecialchars( $category->getText() ), $link
+		);
+		return $link;
+	}
+
+	public function testMarksBaseCategoryOnProjectPage() {
+		$link = self::renderOn( '!eo:Foo', 'Bar' );
+
+		$this->assertStringContainsString( '>Bar</a><sup class="hermes-category-language">(en)</sup>', $link );
+	}
+
+	public function testMarksProjectCategoryOnBasePage() {
+		$link = self::renderOn( 'Foo', '!eo:Bar' );
+
+		$this->assertStringContainsString( '>Bar</a><sup class="hermes-category-language">(eo)</sup>', $link );
+	}
+
+	public function testNoMarkInSameLanguage() {
+		$this->assertStringNotContainsString( '<sup', self::renderOn( '!eo:Foo', '!eo:Bar' ) );
+		$this->assertNull( self::renderOn( 'Foo', 'Bar' ) );
+	}
 }
