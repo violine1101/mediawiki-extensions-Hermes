@@ -136,7 +136,7 @@ class HermesPagesPager extends TablePager {
 			return $this->formatter->pageLink( PageInfo::fromRow( $row ) );
 		}
 		if ( $name === 'language' ) {
-			return htmlspecialchars( $this->formatter->projectLabel( PageInfo::fromRow( $row )->title->getProject() ) );
+			return htmlspecialchars( $this->formatter->projectLabel( PageInfo::fromRow( $row )->title->project ) );
 		}
 
 		$priority = $this->priorityFields[ $name ];

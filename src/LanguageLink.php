@@ -14,12 +14,12 @@ final class LanguageLink {
 	}
 
 	public function getLanguageCode(): string {
-		return $this->page->title->getProject()->code;
+		return $this->page->title->project->code;
 	}
 
 	/** Whether the target is a translation project page rather than a page on a base wiki. */
 	public function isProject(): bool {
-		return !$this->page->title->getProject()->isBase;
+		return !$this->page->title->project->isBase;
 	}
 
 	/** The target's title as shown to readers, e.g. "Kategorio:Foo". */

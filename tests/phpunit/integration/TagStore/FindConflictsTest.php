@@ -117,7 +117,7 @@ class FindConflictsTest extends HermesIntegrationTestCase {
 			[ 'DePrimary', 'DeSecondary' ],
 			self::titlesOf( $conflicts[ 'de' ][ 'golem' ] )
 		);
-		$this->assertArrayNotHasKey( $page->title->getProject()->code, $conflicts );
+		$this->assertArrayNotHasKey( $page->title->project->code, $conflicts );
 	}
 
 	public function testIgnoresTieBehindLowerPriority() {

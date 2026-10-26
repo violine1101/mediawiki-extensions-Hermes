@@ -26,40 +26,40 @@ class FromLocalPageTest extends HermesIntegrationTestCase {
 		$page = $this->getExistingTestPage( 'PageInfoFromLocalPageOrdinary' );
 		$info = PageInfo::fromLocalPage( $page->getTitle() );
 
-		$this->assertTrue( $info->title->getProject()->isBase );
+		$this->assertTrue( $info->title->project->isBase );
 		$this->assertSame( NS_MAIN, $info->title->namespace );
 		$this->assertSame( '', $info->title->getNamespaceText() );
 		$this->assertSame( 'PageInfoFromLocalPageOrdinary', $info->title->baseTitle );
-		$this->assertSame( 'en', $info->title->getProject()->code );
+		$this->assertSame( 'en', $info->title->project->code );
 	}
 
 	public function testMainNamespaceProjectPage() {
 		$title = Title::newFromText( '!eo:PageInfoFromLocalPageProject' );
 		$info = PageInfo::fromLocalPage( $title );
 
-		$this->assertSame( 'eo', $info->title->getProject()->code );
+		$this->assertSame( 'eo', $info->title->project->code );
 		$this->assertSame( NS_MAIN, $info->title->namespace );
 		$this->assertSame( '', $info->title->getNamespaceText() );
 		$this->assertSame( 'PageInfoFromLocalPageProject', $info->title->baseTitle );
-		$this->assertSame( 'eo', $info->title->getProject()->code );
+		$this->assertSame( 'eo', $info->title->project->code );
 	}
 
 	public function testNamespacedProjectPage() {
 		$title = Title::newFromText( 'Category:!eo:PageInfoFromLocalPageProject' );
 		$info = PageInfo::fromLocalPage( $title );
 
-		$this->assertSame( 'eo', $info->title->getProject()->code );
+		$this->assertSame( 'eo', $info->title->project->code );
 		$this->assertSame( NS_CATEGORY, $info->title->namespace );
 		$this->assertSame( 'Category', $info->title->getNamespaceText() );
 		$this->assertSame( 'PageInfoFromLocalPageProject', $info->title->baseTitle );
-		$this->assertSame( 'eo', $info->title->getProject()->code );
+		$this->assertSame( 'eo', $info->title->project->code );
 	}
 
 	public function testNonProjectNamespaceIsNeverProject() {
 		$title = Title::newFromText( 'File:!eo:PageInfoFromLocalPageFile' );
 		$info = PageInfo::fromLocalPage( $title );
 
-		$this->assertTrue( $info->title->getProject()->isBase );
+		$this->assertTrue( $info->title->project->isBase );
 		$this->assertSame( '!eo:PageInfoFromLocalPageFile', $info->title->baseTitle );
 	}
 }

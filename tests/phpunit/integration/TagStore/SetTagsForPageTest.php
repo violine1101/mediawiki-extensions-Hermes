@@ -57,7 +57,7 @@ class SetTagsForPageTest extends HermesIntegrationTestCase {
 		$rows = Hermes::getDB()->select(
 			'hermes_tags',
 			[ 'ht_tag', 'ht_section', 'ht_priority' ],
-			[ 'ht_wiki' => $page->title->getProject()->wiki, 'ht_page_id' => $page->getId() ],
+			[ 'ht_wiki' => $page->title->project->wiki, 'ht_page_id' => $page->getId() ],
 			__METHOD__
 		);
 

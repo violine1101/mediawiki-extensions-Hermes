@@ -114,11 +114,11 @@ abstract class WantedTranslationsPage extends WantedQueryPage {
 	public function formatResult( $skin, $result ) {
 		$title = Title::makeTitleSafe( $result->namespace, $result->title );
 		$page = $title !== null ? ProjectTitle::newFromLinkTarget( $title ) : null;
-		if ( $page === null || $page->getProject()->isBase ) {
+		if ( $page === null || $page->project->isBase ) {
 			return parent::formatResult( $skin, $result );
 		}
 
-		$language = $page->getProject()->code;
+		$language = $page->project->code;
 		$link = $this->getLinkRenderer()->makeLink( $title, $page->getDisplayTitle( $this->showNamespace() ) );
 		if ( ( $this->isCached() || $this->forceExistenceCheck() ) && $this->existenceCheck( $title ) ) {
 			$link = "<del>$link</del>";

@@ -32,7 +32,7 @@ class LinkRewriter {
 	public static function rewrite( string $text, ProjectTitle $page ): string {
 		if (
 			!str_contains( $text, '[[' )
-			|| ( $page->getProject()->isBase && !str_contains( $text, '!' ) )
+			|| ( $page->project->isBase && !str_contains( $text, '!' ) )
 		) {
 			return $text;
 		}
@@ -53,7 +53,7 @@ class LinkRewriter {
 	 * if $hasPipe is false and the target changed.
 	 */
 	private static function rewriteTarget( string $raw, ProjectTitle $page, bool $hasPipe ): string {
-		if ( $page->getProject()->isBase && !str_contains( $raw, '!' ) ) {
+		if ( $page->project->isBase && !str_contains( $raw, '!' ) ) {
 			// Fast path: this runs for every link on every page.
 			return $raw;
 		}
@@ -72,7 +72,7 @@ class LinkRewriter {
 		}
 
 		$contentLang = MediaWikiServices::getInstance()->getContentLanguage();
-		$projectLang = $page->getProject()->isBase ? $contentLang : $page->getProject()->getLanguage();
+		$projectLang = $page->project->isBase ? $contentLang : $page->project->getLanguage();
 
 		$colonPos = strpos( $target, ':' );
 		$nsPrefix = $colonPos !== false ? substr( $target, 0, $colonPos ) : '';
@@ -132,7 +132,7 @@ class LinkRewriter {
 			return $raw;
 		}
 
-		$resolved = self::resolveBareTitle( $bareTitle, $nsId, $page->getProject() );
+		$resolved = self::resolveBareTitle( $bareTitle, $nsId, $page->project );
 		if ( !$nsFromProjectLang && strtr( $resolved, '_', ' ' ) === strtr( $bareTitle, '_', ' ' ) ) {
 			return $raw;
 		}
@@ -163,7 +163,7 @@ class LinkRewriter {
 			[ $project, $title ] = ProjectTitle::parse( $bareTitle );
 			if ( $project === null ) {
 				if ( $defaultProject->isBase || ProjectTitle::isReserved( $bareTitle ) ) {
-					// Invalid "!...:" prefixes are left for ProjectTitle::hasInvalidTitle() to report.
+					// Invalid "!...:" prefixes are left for ProjectTitle::isInvalid() to report.
 					return $bareTitle;
 				}
 				$project = $defaultProject;

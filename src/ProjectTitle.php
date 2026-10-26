@@ -16,7 +16,7 @@ use Wikimedia\Rdbms\LikeValue;
 /**
  * A title on some wiki in the family, split into project, namespace, base title and section, e.g.
  * "Category:!eo:Foo" -> (this wiki's "eo" project, NS_CATEGORY, 'Foo'), with its display forms. Its project gives
- * its wiki and language. toTitle(), toStoredTitle() and hasCapitalizationError() only work for local titles.
+ * its wiki and language. toTitle() and hasCapitalizationError() only work for local titles.
  *
  * The static methods handle the title syntax itself: "!xx:Foo" for project pages, and "!:Foo"
  * as an escape to the base page "Foo".
@@ -24,14 +24,14 @@ use Wikimedia\Rdbms\LikeValue;
 final class ProjectTitle {
 
 	private function __construct(
-		private readonly Project $project,
+		public readonly Project $project,
 		public readonly int $namespace,
+		/** Namespace name on the title's own wiki; looked up on first use for local titles */
+		private ?string $namespaceText,
 		/** DB key without namespace and "!xx:" prefix */
 		public readonly string $baseTitle,
 		/** Section in DB key form, if any */
 		public readonly ?string $section,
-		/** Namespace name on the title's own wiki; looked up on first use for local titles */
-		private ?string $namespaceText,
 	) {
 	}
 
@@ -49,7 +49,7 @@ final class ProjectTitle {
 		?string $section = null,
 		?string $namespaceText = null
 	): self {
-		return new self( $project, $namespace, $baseTitle, $section, $namespaceText );
+		return new self( $project, $namespace, $namespaceText, $baseTitle, $section );
 	}
 
 	/**
@@ -67,17 +67,12 @@ final class ProjectTitle {
 		[ $project, $baseTitle ] = !$isExternal && Hermes::isProjectNamespace( $namespace )
 			? self::parse( $page->getDBkey() )
 			: [ null, $page->getDBkey() ];
-		return new self( $project ?? ProjectStore::getLocalBaseProject(), $namespace, $baseTitle, null, null );
-	}
-
-	/** The project this title is in, which gives its wiki and language. */
-	public function getProject(): Project {
-		return $this->project;
+		return new self( $project ?? ProjectStore::getLocalBaseProject(), $namespace, null, $baseTitle, null );
 	}
 
 	/** This title in $project, which must be on the same wiki. */
 	public function withProject( Project $project ): self {
-		return new self( $project, $this->namespace, $this->baseTitle, $this->section, $this->namespaceText );
+		return new self( $project, $this->namespace, $this->namespaceText, $this->baseTitle, $this->section );
 	}
 
 	/** This local title's base page. */
@@ -88,22 +83,16 @@ final class ProjectTitle {
 
 	/** This title's section $section, or the page as a whole if null. */
 	public function withSection( ?string $section ): self {
-		return new self( $this->project, $this->namespace, $this->baseTitle, $section, $this->namespaceText );
+		return new self( $this->project, $this->namespace, $this->namespaceText, $this->baseTitle, $section );
 	}
 
 	/** The title, capitalized correctly even after a "!xx:" prefix. */
 	public function toTitle(): Title {
 		$this->assertLocal();
-		$dbKey = $this->project->isBase
-			? $this->baseTitle
-			: $this->project->addPrefix( $this->baseTitle, $this->namespace );
-		return Title::makeTitle( $this->namespace, $dbKey, $this->section ?? '' );
-	}
-
-	/** The title exactly as given, which may not be correctly capitalized. */
-	public function toStoredTitle(): Title {
-		$this->assertLocal();
-		$dbKey = $this->project->getPrefix() . $this->baseTitle;
+		$dbKey = $this->baseTitle;
+		if ( !$this->project->isBase ) {
+			$dbKey = $this->project->getPrefix() . Title::capitalize( $this->baseTitle, $this->namespace );
+		}
 		return Title::makeTitle( $this->namespace, $dbKey, $this->section ?? '' );
 	}
 
@@ -111,7 +100,7 @@ final class ProjectTitle {
 	 * Whether this is in an invalid Hermes title format: titles looking like "!...:" must be
 	 * "!xx:", where "xx" is a registered translation project.
 	 */
-	public function hasInvalidTitle(): bool {
+	public function isInvalid(): bool {
 		return $this->project->isBase && self::isReserved( $this->baseTitle );
 	}
 
@@ -123,8 +112,8 @@ final class ProjectTitle {
 	}
 
 	/** The message key of the reason why this title can't be created or moved to, if any. */
-	public function getError(): ?string {
-		if ( $this->hasInvalidTitle() ) {
+	public function getErrorMessage(): ?string {
+		if ( $this->isInvalid() ) {
 			return 'hermes-invalid-project-title';
 		}
 
@@ -133,7 +122,7 @@ final class ProjectTitle {
 
 	/** The namespace name on the title's own wiki, or '' for the main namespace. */
 	public function getNamespaceText(): string {
-		$this->namespaceText ??= $this->toStoredTitle()->getNsText();
+		$this->namespaceText ??= $this->toTitle()->getNsText();
 		return $this->namespaceText;
 	}
 

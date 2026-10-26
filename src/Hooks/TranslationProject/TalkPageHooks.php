@@ -20,7 +20,7 @@ class TalkPageHooks implements PageSaveCompleteHook, OutputPageBeforeHTMLHook {
 		$wikiPage, $user, $summary, $flags, $revisionRecord, $editResult
 	) {
 		$page = ProjectTitle::newFromLinkTarget( $wikiPage->getTitle() );
-		if ( $page->namespace !== NS_USER_TALK || $page->getProject()->isBase || $editResult->isNullEdit() ) {
+		if ( $page->namespace !== NS_USER_TALK || $page->project->isBase || $editResult->isNullEdit() ) {
 			return;
 		}
 
@@ -57,7 +57,7 @@ class TalkPageHooks implements PageSaveCompleteHook, OutputPageBeforeHTMLHook {
 		}
 
 		$page = ProjectTitle::newFromLinkTarget( $title );
-		if ( $page->getProject()->isBase || $page->baseTitle !== strtr( $user->getName(), ' ', '_' ) ) {
+		if ( $page->project->isBase || $page->baseTitle !== strtr( $user->getName(), ' ', '_' ) ) {
 			return;
 		}
 

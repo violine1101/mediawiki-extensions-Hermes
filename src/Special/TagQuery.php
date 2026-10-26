@@ -132,7 +132,7 @@ final class TagQuery {
 		$links = [];
 		foreach ( $rows as $row ) {
 			$link = TagLink::fromRow( $row );
-			$project = $link->page->title->getProject();
+			$project = $link->page->title->project;
 			if ( $project->isActive || $withInactive ) {
 				$links[ $link->tag->name ][ $project->toId() ][ $link->tag->priority ][] = $link;
 			}

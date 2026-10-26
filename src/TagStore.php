@@ -13,7 +13,7 @@ class TagStore {
 		$dbw = Hermes::getDB( DB_PRIMARY );
 		$dbw->delete(
 			self::TABLE_NAME,
-			[ 'ht_wiki' => $page->title->getProject()->wiki, 'ht_page_id' => $page->getId() ],
+			[ 'ht_wiki' => $page->title->project->wiki, 'ht_page_id' => $page->getId() ],
 			__METHOD__
 		);
 	}
@@ -25,21 +25,21 @@ class TagStore {
 	 * @param Tag[] $tags Tags, each carrying its own priority.
 	 */
 	public static function setTagsForPage( PageInfo $page, array $tags ): void {
-		$project = $page->title->getProject();
+		$project = $page->title->project;
 		$dbw = Hermes::getDB( DB_PRIMARY );
 		$dbw->startAtomic( __METHOD__ );
 
 		// Clear old tags for this page first - priorities/tag set may have changed.
 		$dbw->delete(
 			self::TABLE_NAME,
-			[ 'ht_wiki' => $page->title->getProject()->wiki, 'ht_page_id' => $page->getId() ],
+			[ 'ht_wiki' => $page->title->project->wiki, 'ht_page_id' => $page->getId() ],
 			__METHOD__
 		);
 
 		$rows = [];
 		foreach ( $tags as $tag ) {
 			$rows[] = [
-				'ht_wiki' => $page->title->getProject()->wiki,
+				'ht_wiki' => $page->title->project->wiki,
 				'ht_page_id' => $page->getId(),
 				'ht_namespace_id' => $page->title->namespace,
 				'ht_namespace_text' => $page->title->getNamespaceText(),
@@ -68,7 +68,7 @@ class TagStore {
 		$res = $dbr->select(
 			self::TABLE_NAME,
 			[ 'ht_tag', 'ht_priority' ],
-			[ 'ht_wiki' => $page->title->getProject()->wiki, 'ht_page_id' => $page->getId() ],
+			[ 'ht_wiki' => $page->title->project->wiki, 'ht_page_id' => $page->getId() ],
 			__METHOD__,
 			[ 'ORDER BY' => 'ht_priority ASC, ht_tag ASC' ]
 		);
@@ -102,7 +102,7 @@ class TagStore {
 			[
 				'ht_tag' => array_map( static fn ( Tag $tag ) => $tag->name, $tags ),
 				'NOT (' . Hermes::getDB()->makeList(
-					[ 'ht_wiki' => $page->title->getProject()->wiki, 'ht_page_id' => $page->getId() ],
+					[ 'ht_wiki' => $page->title->project->wiki, 'ht_page_id' => $page->getId() ],
 					LIST_AND
 				) . ')',
 			],
@@ -110,7 +110,7 @@ class TagStore {
 			[ 'ORDER BY' => 'ht_namespace_id ASC, ht_base_title ASC' ]
 		);
 
-		$ownLanguage = $page->title->getProject()->code;
+		$ownLanguage = $page->title->project->code;
 		// language => tag => priority => pages
 		$pages = [];
 		foreach ( $tags as $tag ) {
@@ -118,12 +118,12 @@ class TagStore {
 		}
 		foreach ( $rows as $row ) {
 			$rowPage = PageInfo::fromRow( $row );
-			if ( $rowPage->title->getProject()->isActive ) {
-				$pages[ $rowPage->title->getProject()->code ][ $row->ht_tag ][ (int)$row->ht_priority ][] = $rowPage;
+			if ( $rowPage->title->project->isActive ) {
+				$pages[ $rowPage->title->project->code ][ $row->ht_tag ][ (int)$row->ht_priority ][] = $rowPage;
 			}
 		}
 		// Nothing links to an inactive page, so it can't conflict in its own language.
-		if ( !$page->title->getProject()->isActive ) {
+		if ( !$page->title->project->isActive ) {
 			unset( $pages[ $ownLanguage ] );
 		}
 
@@ -179,7 +179,7 @@ class TagStore {
 		$links = [];
 		foreach ( $rows as $row ) {
 			$link = TagLink::fromRow( $row );
-			if ( $link->page->title->getProject()->isActive ) {
+			if ( $link->page->title->project->isActive ) {
 				$links[ $link->tag->name ][] = $link;
 			}
 		}
@@ -190,7 +190,7 @@ class TagStore {
 		$pages = [];
 		foreach ( $tags as $tag ) {
 			foreach ( $links[ $tag ] ?? [] as $link ) {
-				$lang = $link->page->title->getProject()->code;
+				$lang = $link->page->title->project->code;
 
 				if ( !isset( $pages[ $lang ] ) ) {
 					$pages[ $lang ] = $link;
@@ -211,7 +211,7 @@ class TagStore {
 		$tags = self::getTagsForPage( $page );
 		$links = self::getLinksForTags( $tags );
 
-		unset( $links[ $page->title->getProject()->code ] );
+		unset( $links[ $page->title->project->code ] );
 
 		return $links;
 	}
@@ -229,7 +229,7 @@ class TagStore {
 		}
 		// getLinksForTags() prefers the first tag, at the lowest priority.
 		$links = self::getLinksForTags( $tags );
-		unset( $links[ $page->title->getProject()->code ] );
+		unset( $links[ $page->title->project->code ] );
 		return array_filter(
 			$links, static fn ( TagLink $link ) => $link->tag->name === $tags[0] && $link->tag->priority === 0
 		);

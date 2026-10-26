@@ -44,7 +44,7 @@ class SpecialHermesTranslate extends HermesSpecialPage {
 				$out->addHTML( Html::errorBox( $this->msg( 'hermestranslate-no-base', $pageName )->parse() ) );
 			} else {
 				// "!xx:Foo" picks the project too.
-				$project = ProjectTitle::newFromLinkTarget( Title::newFromText( $pageName ) )->getProject();
+				$project = ProjectTitle::newFromLinkTarget( Title::newFromText( $pageName ) )->project;
 				$language ??= $project->isBase ? null : $project->code;
 				$pageName = $page->toTitle()->getPrefixedText();
 				$out->setPageTitleMsg( $this->msg( 'hermestranslate-title' )->plaintextParams( $pageName ) );

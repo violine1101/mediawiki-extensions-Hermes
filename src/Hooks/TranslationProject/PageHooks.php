@@ -35,7 +35,7 @@ class PageHooks implements
 			return true;
 		}
 
-		$error = ProjectTitle::newFromLinkTarget( $title )->getError();
+		$error = ProjectTitle::newFromLinkTarget( $title )->getErrorMessage();
 		if ( $error !== null ) {
 			$result = $error;
 			return false;
@@ -66,8 +66,8 @@ class PageHooks implements
 	/** @inheritDoc */
 	public function onPageContentLanguage( $title, &$pageLang, $userLang ) {
 		$projectTitle = ProjectTitle::newFromLinkTarget( $title );
-		if ( !$projectTitle->getProject()->isBase ) {
-			$pageLang = $projectTitle->getProject()->getLanguage();
+		if ( !$projectTitle->project->isBase ) {
+			$pageLang = $projectTitle->project->getLanguage();
 		}
 	}
 
@@ -79,7 +79,7 @@ class PageHooks implements
 
 		$title = $context->getTitle();
 		$contentLanguage = $title
-			? ProjectTitle::newFromLinkTarget( $title )->getProject()->code
+			? ProjectTitle::newFromLinkTarget( $title )->project->code
 			: ProjectStore::getLocalBaseLanguage();
 		// Core's "language" option (the incoming $code) is hidden in favor of Hermes's own; users whose
 		// options can't be loaded yet get the content language, like logged-out users.
@@ -94,12 +94,12 @@ class PageHooks implements
 		}
 
 		$page = ProjectTitle::newFromLinkTarget( $parserPage );
-		if ( $page->getProject()->isBase ) {
+		if ( $page->project->isBase ) {
 			return;
 		}
 
 		$parser->getOutput()->setDisplayTitle( Parser::formatPageTitle(
-			$page->getLocalizedNamespaceText(), ':', $page->getDisplayTitle(), $page->getProject()->getLanguage()
+			$page->getLocalizedNamespaceText(), ':', $page->getDisplayTitle(), $page->project->getLanguage()
 		) );
 	}
 
@@ -110,7 +110,7 @@ class PageHooks implements
 			return;
 		}
 
-		$project = ProjectTitle::newFromLinkTarget( $title )->getProject();
+		$project = ProjectTitle::newFromLinkTarget( $title )->project;
 		if ( $project->isBase ) {
 			return;
 		}

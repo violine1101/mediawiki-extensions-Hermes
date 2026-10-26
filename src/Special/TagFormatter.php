@@ -31,7 +31,7 @@ final class TagFormatter {
 	public static function detailsTitle( PageInfo $page ): Title {
 		$title = $page->title;
 		$namespace = $title->getNamespaceText() !== '' ? $title->getNamespaceText() . ':' : '';
-		$id = $title->getProject()->toId();
+		$id = $title->project->toId();
 		return SpecialPage::getTitleFor( 'HermesPages', "$id/$namespace{$title->baseTitle}" );
 	}
 

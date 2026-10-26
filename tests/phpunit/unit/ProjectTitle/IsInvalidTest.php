@@ -7,9 +7,9 @@ use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWikiUnitTestCase;
 
 /**
- * @covers \MediaWiki\Extension\Hermes\ProjectTitle::hasInvalidTitle
+ * @covers \MediaWiki\Extension\Hermes\ProjectTitle::isInvalid
  */
-class HasInvalidTitleTest extends MediaWikiUnitTestCase {
+class IsInvalidTest extends MediaWikiUnitTestCase {
 
 	private static function makeTitle( ?string $language, string $title ): ProjectTitle {
 		$project = new Project( $language ?? 'en', 'testwiki', $language === null, true, null );
@@ -19,19 +19,19 @@ class HasInvalidTitleTest extends MediaWikiUnitTestCase {
 	public function testUnregisteredBangPrefix() {
 		$page = self::makeTitle( null, '!zz:Foo' );
 
-		$this->assertTrue( $page->hasInvalidTitle() );
+		$this->assertTrue( $page->isInvalid() );
 	}
 
 	public function testBangPrefixWithoutColonIsAllowed() {
 		$page = self::makeTitle( null, '!Foo' );
 
-		$this->assertFalse( $page->hasInvalidTitle() );
+		$this->assertFalse( $page->isInvalid() );
 	}
 
 	public function testEscapePrefix() {
 		$page = self::makeTitle( null, '!:Foo' );
 
-		$this->assertTrue( $page->hasInvalidTitle() );
+		$this->assertTrue( $page->isInvalid() );
 	}
 
 	public function testRegisteredProjectTitle() {
@@ -40,12 +40,12 @@ class HasInvalidTitleTest extends MediaWikiUnitTestCase {
 		// unregistered-prefix case above.
 		$page = self::makeTitle( 'eo', 'Foo' );
 
-		$this->assertFalse( $page->hasInvalidTitle() );
+		$this->assertFalse( $page->isInvalid() );
 	}
 
 	public function testOrdinaryTitle() {
 		$page = self::makeTitle( null, 'Foo' );
 
-		$this->assertFalse( $page->hasInvalidTitle() );
+		$this->assertFalse( $page->isInvalid() );
 	}
 }

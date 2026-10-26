@@ -63,7 +63,7 @@ class LinkHooks implements
 
 		// Cheap prefix check first: this runs for every rendered link.
 		$projectTitle = ProjectTitle::newFromLinkTarget( $target );
-		if ( $projectTitle->getProject()->isBase ) {
+		if ( $projectTitle->project->isBase ) {
 			return true;
 		}
 
@@ -89,13 +89,13 @@ class LinkHooks implements
 		$fallbackLinks = [ $linkRenderer->makeKnownLink( $baseTitle, ProjectStore::getLocalBaseLanguage() ) ];
 		// The translation may exist under another title, linked by tags.
 		$basePage = PageInfo::fromLocalPage( $baseTitle );
-		$translation = TagStore::getLinksForPage( $basePage )[ $projectTitle->getProject()->code ] ?? null;
+		$translation = TagStore::getLinksForPage( $basePage )[ $projectTitle->project->code ] ?? null;
 		$redirectTo = null;
-		if ( $translation !== null && $translation->page->title->getProject()->isLocal() ) {
+		if ( $translation !== null && $translation->page->title->project->isLocal() ) {
 			$translationTitle = $translation->page->title->toTitle();
-			$fallbackLinks[] = $linkRenderer->makeKnownLink( $translationTitle, $projectTitle->getProject()->code );
+			$fallbackLinks[] = $linkRenderer->makeKnownLink( $translationTitle, $projectTitle->project->code );
 			// Only a redirect to a real translation, not a page it falls back to.
-			if ( isset( TagStore::getTranslationsOfPage( $basePage )[ $projectTitle->getProject()->code ] ) ) {
+			if ( isset( TagStore::getTranslationsOfPage( $basePage )[ $projectTitle->project->code ] ) ) {
 				$redirectTo = $translationTitle;
 			}
 		}
@@ -116,9 +116,9 @@ class LinkHooks implements
 						'class' => trim( ( $customAttribs['class'] ?? '' ) . ' new' ),
 						'title' => $customAttribs['title'] ?? wfMessage(
 							'red-link-title', $projectTitle->getDisplayTitle( true )
-						)->inLanguage( $projectTitle->getProject()->getLanguage() )->text(),
+						)->inLanguage( $projectTitle->project->getLanguage() )->text(),
 					] + $customAttribs,
-					[ 'language' => $projectTitle->getProject()->code ]
+					[ 'language' => $projectTitle->project->code ]
 				);
 			}
 		} finally {
@@ -141,7 +141,7 @@ class LinkHooks implements
 		$output = $parser->getOutput();
 		foreach ( $output->getLinkList( ParserOutputLinkTypes::LOCAL ) as [ 'link' => $link ] ) {
 			$projectTitle = ProjectTitle::newFromLinkTarget( $link );
-			if ( !$projectTitle->getProject()->isBase ) {
+			if ( !$projectTitle->project->isBase ) {
 				$output->addExistenceDependency( $projectTitle->toBasePage()->toTitle() );
 			}
 		}
@@ -158,7 +158,7 @@ class LinkHooks implements
 		if (
 			$target->isExternal()
 			|| !isset( $attribs['title'] )
-			|| ProjectTitle::newFromLinkTarget( $target )->getProject()->isBase
+			|| ProjectTitle::newFromLinkTarget( $target )->project->isBase
 		) {
 			return;
 		}
@@ -174,7 +174,7 @@ class LinkHooks implements
 		} else {
 			$default = wfMessage( 'red-link-title', $prefixedText )->inContentLanguage()->text();
 			$replacement = wfMessage( 'red-link-title', $displayTitle )
-				->inLanguage( $page->getProject()->getLanguage() )->text();
+				->inLanguage( $page->project->getLanguage() )->text();
 		}
 
 		// Leave hover texts set explicitly by the caller alone.

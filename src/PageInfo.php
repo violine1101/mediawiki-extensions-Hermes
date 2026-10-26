@@ -59,7 +59,7 @@ class PageInfo {
 
 	/** The page ID, or 0 if the page doesn't exist. Only known for local pages and database rows. */
 	public function getId(): int {
-		$this->id ??= $this->title->toStoredTitle()->getArticleID();
+		$this->id ??= $this->title->toTitle()->getArticleID();
 		return $this->id;
 	}
 
@@ -75,7 +75,7 @@ class PageInfo {
 		}
 
 		$languageName = MediaWikiServices::getInstance()->getLanguageNameUtils()
-			->getLanguageName( $this->title->getProject()->code, RequestContext::getMain()->getLanguage()->getCode() );
+			->getLanguageName( $this->title->project->code, RequestContext::getMain()->getLanguage()->getCode() );
 		return Html::element( 'a', [
 			'href' => $url,
 			'class' => 'extiw',

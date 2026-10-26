@@ -38,12 +38,6 @@ class ToTitleTest extends HermesIntegrationTestCase {
 		$this->assertSame( '!eo:Foo', $title->getText() );
 	}
 
-	public function testStoredTitleKeepsCapitalization() {
-		$title = self::localTitle( NS_MAIN, 'foo', 'eo' );
-
-		$this->assertSame( '!eo:foo', $title->toStoredTitle()->getPrefixedText() );
-	}
-
 	public function testWithProjectOfTemplateTarget() {
 		$title = ProjectTitle::newFromLinkTarget( Title::makeTitle( NS_TEMPLATE, 'Foo_bar' ) )
 			->withProject( self::getProject( 'eo', WikiMap::getCurrentWikiId() ) )
@@ -56,16 +50,16 @@ class ToTitleTest extends HermesIntegrationTestCase {
 		$projectTitle = ProjectTitle::newFromLinkTarget( Title::makeTitle( NS_CATEGORY, '!eo:Foo_bar' ) );
 
 		$this->assertSame( NS_CATEGORY, $projectTitle->namespace );
-		$this->assertSame( 'eo', $projectTitle->getProject()->code );
+		$this->assertSame( 'eo', $projectTitle->project->code );
 		$this->assertSame( 'Foo_bar', $projectTitle->baseTitle );
 	}
 
 	public function testNewFromLinkTargetIgnoresPrefixInNonProjectNamespace() {
 		$projectTitle = ProjectTitle::newFromLinkTarget( Title::makeTitle( NS_FILE, '!eo:Foo.jpg' ) );
 
-		$this->assertTrue( $projectTitle->getProject()->isBase );
+		$this->assertTrue( $projectTitle->project->isBase );
 		$this->assertSame( '!eo:Foo.jpg', $projectTitle->baseTitle );
-		$this->assertTrue( $projectTitle->hasInvalidTitle() );
+		$this->assertTrue( $projectTitle->isInvalid() );
 	}
 
 	public function testToBasePage() {
@@ -76,7 +70,7 @@ class ToTitleTest extends HermesIntegrationTestCase {
 
 	public function testNewFromLinkTargetIgnoresPrefixOnInterwikiTitle() {
 		$interwiki = new TitleValue( NS_MAIN, '!eo:Foo', '', 'de' );
-		$this->assertTrue( ProjectTitle::newFromLinkTarget( $interwiki )->getProject()->isBase );
+		$this->assertTrue( ProjectTitle::newFromLinkTarget( $interwiki )->project->isBase );
 	}
 
 	public function testForeignTitleCannotBecomeLocalTitle() {

@@ -48,7 +48,7 @@
 	"hermesprojects-header-wiki": "Wiki",
 	"hermesprojects-header-pages": "Pages",
 	"hermesprojects-header-active": "Active",
-	"hermesprojects-header-active-tooltip": "Whether other wikis and translation projects link to the pages of this project. At most one project per language can be active.",
+	"hermesprojects-header-active-tooltip": "Whether other projects link to this project. At most one project per language can be active.",
 	"hermesprojects-active-yes": "Yes",
 	"hermesprojects-active-no": "No",
 	"hermesprojects-add-submit": "Add",

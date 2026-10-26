@@ -29,7 +29,7 @@ class FromRowTest extends HermesIntegrationTestCase {
 		return Hermes::getDB()->selectRow(
 			'hermes_tags',
 			'*',
-			[ 'ht_wiki' => $page->title->getProject()->wiki, 'ht_page_id' => $page->getId() ],
+			[ 'ht_wiki' => $page->title->project->wiki, 'ht_page_id' => $page->getId() ],
 			__METHOD__
 		);
 	}
@@ -41,7 +41,7 @@ class FromRowTest extends HermesIntegrationTestCase {
 
 		$read = PageInfo::fromRow( $this->fetchRow( $written ) );
 
-		$this->assertTrue( $read->title->getProject()->isBase );
+		$this->assertTrue( $read->title->project->isBase );
 		$this->assertSame( NS_MAIN, $read->title->namespace );
 		$this->assertSame( '', $read->title->getNamespaceText() );
 		$this->assertSame( 'PageInfoFromRowOrdinary', $read->title->baseTitle );
@@ -61,7 +61,7 @@ class FromRowTest extends HermesIntegrationTestCase {
 
 		$read = PageInfo::fromRow( $this->fetchRow( $written ) );
 
-		$this->assertSame( 'eo', $read->title->getProject()->code );
+		$this->assertSame( 'eo', $read->title->project->code );
 		$this->assertSame( NS_CATEGORY, $read->title->namespace );
 		$this->assertSame( 'Category', $read->title->getNamespaceText() );
 		$this->assertSame( 'PageInfoFromRowProject', $read->title->baseTitle );
@@ -79,8 +79,8 @@ class FromRowTest extends HermesIntegrationTestCase {
 
 		$read = PageInfo::fromRow( $this->fetchRow( $written ) );
 
-		$this->assertTrue( $read->title->getProject()->isBase );
+		$this->assertTrue( $read->title->project->isBase );
 		$this->assertSame( '!eo:PageInfoFromRowRemoved', $read->title->baseTitle );
-		$this->assertTrue( $read->title->hasInvalidTitle() );
+		$this->assertTrue( $read->title->isInvalid() );
 	}
 }
