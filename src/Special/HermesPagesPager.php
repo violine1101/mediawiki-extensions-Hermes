@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\Hermes\Special;
 use MediaWiki\Context\IContextSource;
 use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\ProjectTitle;
+use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Html\Html;
 use MediaWiki\Pager\TablePager;
 use Wikimedia\Rdbms\Subquery;
@@ -45,12 +46,7 @@ class HermesPagesPager extends TablePager {
 		private readonly bool $conflictsOnly,
 	) {
 		$this->mDb = Hermes::getDB();
-		$maxPriority = (int)$this->mDb->newSelectQueryBuilder()
-			->select( 'MAX(ht_priority)' )
-			->from( 'hermes_tags' )
-			->caller( __METHOD__ )
-			->fetchField();
-		foreach ( range( 0, $maxPriority ) as $priority ) {
+		foreach ( range( 0, TagStore::getMaxPriority() ) as $priority ) {
 			$this->priorityFields[ "priority-$priority" ] = $priority;
 		}
 
@@ -59,43 +55,10 @@ class HermesPagesPager extends TablePager {
 
 	/** @inheritDoc */
 	public function getQueryInfo() {
-		$dbr = $this->getDatabase();
-		$pageFields = [
-			't.ht_wiki', 't.ht_page_id', 't.ht_namespace_id', 't.ht_namespace_text',
-			't.ht_language', 't.ht_base_title',
-		];
-		$query = TagQuery::joinProjects(
-			$dbr->newSelectQueryBuilder()->from( 'hermes_tags', 't' ), 't', 'p', $this->withInactive
-		)
-			->select( $pageFields )
-			->select( [
-				'language' => TagQuery::language(),
-				'is_active' => 'p.hp_active',
-				'has_conflict' => 'MAX(CASE WHEN ' . TagQuery::inConflict( $dbr ) . ' THEN 1 ELSE 0 END)',
-			] )
-			->groupBy( [ ...$pageFields, 'p.hp_language', 'p.hp_active' ] )
-			->caller( __METHOD__ );
-		foreach ( $this->priorityFields as $priority ) {
-			$tag = "MAX(CASE WHEN t.ht_priority = $priority THEN t.ht_tag END)";
-			$query->select( [
-				"tag_$priority" => $tag,
-				"section_$priority" => "MAX(CASE WHEN t.ht_priority = $priority THEN t.ht_section END)",
-				"conflict_$priority" => "MAX(CASE WHEN t.ht_priority = $priority AND " . TagQuery::inConflict( $dbr )
-					. ' THEN 1 ELSE 0 END)',
-				"sort_$priority" => TagQuery::sortKey( $dbr, $tag ),
-			] );
-		}
-
-		if ( $this->titleFilter !== '' ) {
-			$query->where( TagQuery::contains( $dbr, 't.ht_base_title', $this->titleFilter ) );
-		}
-		if ( $this->languages ) {
-			$query->where( TagQuery::inLanguages( $dbr, $this->languages ) );
-		}
-		if ( $this->wikis ) {
-			$query->where( [ 't.ht_wiki' => $this->wikis ] );
-		}
-
+		$query = TagStore::newPagesQuery(
+			array_values( $this->priorityFields ), $this->titleFilter, $this->languages, $this->wikis,
+			$this->withInactive
+		);
 		return [
 			'tables' => [ 'pages' => new Subquery( $query->getSQL() ) ],
 			// The page as a whole, not one of its tags' sections.

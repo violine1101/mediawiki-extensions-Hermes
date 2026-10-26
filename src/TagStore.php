@@ -2,6 +2,15 @@
 
 namespace MediaWiki\Extension\Hermes;
 
+use Wikimedia\Rdbms\IExpression;
+use Wikimedia\Rdbms\IReadableDatabase;
+use Wikimedia\Rdbms\LikeValue;
+use Wikimedia\Rdbms\SelectQueryBuilder;
+
+/**
+ * The hermes_tags table, on the shared Hermes DB: storing pages' tags, resolving them to links, and the queries
+ * of the special pages (projects identified as in Project::toId()).
+ */
 class TagStore {
 
 	private const TABLE_NAME = 'hermes_tags';
@@ -224,6 +233,291 @@ class TagStore {
 		return array_filter(
 			$links, static fn ( TagLink $link ) => $link->tag->name === $tags[0] && $link->tag->priority === 0
 		);
+	}
+
+	/** The highest priority any tag has. */
+	public static function getMaxPriority(): int {
+		return (int)Hermes::getDB()->newSelectQueryBuilder()
+			->select( 'MAX(ht_priority)' )
+			->from( self::TABLE_NAME )
+			->caller( __METHOD__ )
+			->fetchField();
+	}
+
+	/**
+	 * One row per tagged page for Special:HermesPages: its title fields, `language`, `is_active`, `has_conflict`,
+	 * and per priority in $priorities its `tag_N`, `section_N`, `conflict_N` and `sort_N`.
+	 *
+	 * @param int[] $priorities
+	 * @param string $titleFilter Only base titles containing this, in DB key form, if not empty
+	 * @param string[] $languages Only these languages, or all if empty
+	 * @param string[] $wikis Only pages on these wikis, or all if empty
+	 * @param bool $withInactive Whether to include pages of inactive projects
+	 */
+	public static function newPagesQuery(
+		array $priorities, string $titleFilter, array $languages, array $wikis, bool $withInactive
+	): SelectQueryBuilder {
+		$dbr = Hermes::getDB();
+		$pageFields = [
+			't.ht_wiki', 't.ht_page_id', 't.ht_namespace_id', 't.ht_namespace_text',
+			't.ht_language', 't.ht_base_title',
+		];
+		$query = self::joinProjects(
+			$dbr->newSelectQueryBuilder()->from( self::TABLE_NAME, 't' ), 't', 'p', $withInactive
+		)
+			->select( $pageFields )
+			->select( [
+				'language' => self::language(),
+				'is_active' => 'p.hp_active',
+				'has_conflict' => 'MAX(CASE WHEN ' . self::inConflict( $dbr ) . ' THEN 1 ELSE 0 END)',
+			] )
+			->groupBy( [ ...$pageFields, 'p.hp_language', 'p.hp_active' ] )
+			->caller( __METHOD__ );
+		foreach ( $priorities as $priority ) {
+			$tag = "MAX(CASE WHEN t.ht_priority = $priority THEN t.ht_tag END)";
+			$query->select( [
+				"tag_$priority" => $tag,
+				"section_$priority" => "MAX(CASE WHEN t.ht_priority = $priority THEN t.ht_section END)",
+				"conflict_$priority" => "MAX(CASE WHEN t.ht_priority = $priority AND " . self::inConflict( $dbr )
+					. ' THEN 1 ELSE 0 END)',
+				"sort_$priority" => self::sortKey( $dbr, $tag ),
+			] );
+		}
+
+		if ( $titleFilter !== '' ) {
+			$query->where( self::contains( $dbr, 't.ht_base_title', $titleFilter ) );
+		}
+		return self::filter( $dbr, $query, $languages, $wikis );
+	}
+
+	/**
+	 * One row per tag for Special:HermesTags: `ht_tag`, and for each of $columns a `sort_N` (its first page).
+	 *
+	 * @param Project[] $columns
+	 * @param string $tagFilter Only tags containing this, if not empty
+	 * @param string[] $languages Only these languages, or all if empty
+	 * @param string[] $wikis Only pages on these wikis, or all if empty
+	 * @param bool $withInactive Whether to include pages of inactive projects
+	 * @param bool $conflictsOnly Only tags with a conflict
+	 */
+	public static function newTagsQuery(
+		array $columns, string $tagFilter, array $languages, array $wikis, bool $withInactive, bool $conflictsOnly
+	): SelectQueryBuilder {
+		$dbr = Hermes::getDB();
+		$query = self::joinProjects(
+			$dbr->newSelectQueryBuilder()->from( self::TABLE_NAME, 't' ), 't', 'p', $withInactive
+		)
+			->select( [ 'ht_tag' => 't.ht_tag' ] )
+			->groupBy( 't.ht_tag' )
+			->caller( __METHOD__ );
+		foreach ( array_values( $columns ) as $i => $project ) {
+			$inColumn = self::inProject( $dbr, $project );
+			$query->select( [
+				"sort_$i" => self::sortKey( $dbr, "MIN(CASE WHEN $inColumn THEN t.ht_base_title END)" ),
+			] );
+		}
+
+		if ( $tagFilter !== '' ) {
+			$query->where( self::contains( $dbr, 't.ht_tag', $tagFilter ) );
+		}
+		if ( $conflictsOnly ) {
+			$query->where( self::inConflict( $dbr ) );
+		}
+		return self::filter( $dbr, $query, $languages, $wikis );
+	}
+
+	/** @return array<string, array<string, int>> Number of pages with tags, active or not, by wiki and language */
+	public static function countPages(): array {
+		$dbr = Hermes::getDB();
+		$pages = self::joinProjects( $dbr->newSelectQueryBuilder()->from( self::TABLE_NAME, 't' ), 't', 'p', true )
+			->select( [ 't.ht_wiki', 't.ht_page_id', 'language' => self::language() ] )
+			->distinct();
+		$rows = $dbr->newSelectQueryBuilder()
+			->select( [ 'ht_wiki', 'language', 'pages' => 'COUNT(*)' ] )
+			->from( $pages, 'pages' )
+			->groupBy( [ 'ht_wiki', 'language' ] )
+			->caller( __METHOD__ )
+			->fetchResultSet();
+
+		$counts = [];
+		foreach ( $rows as $row ) {
+			$counts[ $row->ht_wiki ][ $row->language ] = (int)$row->pages;
+		}
+		return $counts;
+	}
+
+	/**
+	 * The pages setting $tags, for the special pages.
+	 *
+	 * @param string[] $tags
+	 * @param bool $withInactive Whether to include pages of inactive projects too
+	 * @param string[] $wikis Only pages on these wikis, or all if empty
+	 * @return array<string, array<string, array<int, TagLink[]>>> tag => project ID => priority => links,
+	 *   priorities ascending
+	 */
+	public static function loadLinks( array $tags, bool $withInactive = false, array $wikis = [] ): array {
+		if ( !$tags ) {
+			return [];
+		}
+
+		$rows = Hermes::getDB()->newSelectQueryBuilder()
+			->select( '*' )
+			->from( self::TABLE_NAME )
+			->where( [ 'ht_tag' => $tags ] )
+			->andWhere( $wikis ? [ 'ht_wiki' => $wikis ] : [] )
+			->orderBy( [ 'ht_priority', 'ht_namespace_id', 'ht_base_title' ] )
+			->caller( __METHOD__ )
+			->fetchResultSet();
+		$links = [];
+		foreach ( $rows as $row ) {
+			$link = TagLink::fromRow( $row );
+			$project = $link->title->project;
+			if ( $project->isActive || $withInactive ) {
+				$links[ $link->tag->name ][ $project->toId() ][ $link->tag->priority ][] = $link;
+			}
+		}
+		return $links;
+	}
+
+	/**
+	 * The tags of a page, given as in TagFormatter::detailsTitle().
+	 *
+	 * @param Project $project The page's project
+	 * @param string $title Namespace name as stored, and base title
+	 * @return TagLink[] In fallback order; none if there's no such page with tags
+	 */
+	public static function findPage( Project $project, string $title ): array {
+		$title = strtr( trim( $title ), ' ', '_' );
+		if ( $title === '' ) {
+			return [];
+		}
+
+		$dbr = Hermes::getDB();
+		// Main namespace titles may contain ":" too.
+		$titleConds = [ $dbr->makeList( [ 'ht_namespace_text' => '', 'ht_base_title' => $title ], LIST_AND ) ];
+		if ( str_contains( $title, ':' ) ) {
+			[ $namespace, $baseTitle ] = explode( ':', $title, 2 );
+			$titleConds[] = $dbr->makeList(
+				[ 'ht_namespace_text' => $namespace, 'ht_base_title' => $baseTitle ], LIST_AND
+			);
+		}
+		$rows = $dbr->newSelectQueryBuilder()
+			->select( '*' )
+			->from( self::TABLE_NAME )
+			->where( [
+				'ht_wiki' => $project->wiki,
+				'ht_language' => $project->isBase ? null : $project->code,
+				$dbr->makeList( $titleConds, LIST_OR ),
+			] )
+			->orderBy( [ 'ht_priority', 'ht_tag' ] )
+			->caller( __METHOD__ )
+			->fetchResultSet();
+
+		/** @var TagLink[] $links */
+		$links = [];
+		foreach ( $rows as $row ) {
+			$links[] = TagLink::fromRow( $row );
+		}
+		if ( !$links ) {
+			return [];
+		}
+
+		// A main namespace title can't start with a namespace name, so prefer the namespaced match.
+		$page = $links[ 0 ]->title;
+		foreach ( $links as $link ) {
+			if ( $link->title->getNamespaceText() !== '' ) {
+				$page = $link->title;
+				break;
+			}
+		}
+		return array_values( array_filter(
+			$links,
+			static fn ( TagLink $link ) => $link->title->isSamePage( $page )
+		) );
+	}
+
+	private static function filter(
+		IReadableDatabase $dbr, SelectQueryBuilder $query, array $languages, array $wikis
+	): SelectQueryBuilder {
+		if ( $languages ) {
+			$query->where( self::inLanguages( $dbr, $languages ) );
+		}
+		if ( $wikis ) {
+			$query->where( [ 't.ht_wiki' => $wikis ] );
+		}
+		return $query;
+	}
+
+	/** A hermes_tags row's language: its translation project's, else its wiki's base language. */
+	private static function language( string $tags = 't', string $projects = 'p' ): string {
+		return "COALESCE($tags.ht_language, $projects.hp_language)";
+	}
+
+	/**
+	 * Joins the project of each hermes_tags row (its translation project, else its wiki's base project) as
+	 * $projects, for language(). Rows without one are left out, and without $withInactive, so are rows of
+	 * inactive projects.
+	 */
+	private static function joinProjects(
+		SelectQueryBuilder $query, string $tags = 't', string $projects = 'p', bool $withInactive = false
+	): SelectQueryBuilder {
+		$conds = [
+			"$projects.hp_wiki = $tags.ht_wiki",
+			"($projects.hp_language = $tags.ht_language"
+				. " OR ($tags.ht_language IS NULL AND $projects.hp_base = 1))",
+		];
+		return $query->join( 'hermes_projects', $projects, $withInactive ? $conds : [
+			...$conds, "$projects.hp_active" => 1,
+		] );
+	}
+
+	/** Rows whose language is one of $languages. */
+	private static function inLanguages( IReadableDatabase $dbr, array $languages ): string {
+		return self::language() . ' IN (' . $dbr->makeList( $languages ) . ')';
+	}
+
+	/** Rows of $project. */
+	private static function inProject( IReadableDatabase $dbr, Project $project ): string {
+		return self::language() . ' = ' . $dbr->addQuotes( $project->code )
+			. ' AND t.ht_wiki = ' . $dbr->addQuotes( $project->wiki );
+	}
+
+	/** Rows whose $field contains $text. */
+	private static function contains( IReadableDatabase $dbr, string $field, string $text ): IExpression {
+		return $dbr->expr( $field, IExpression::LIKE, new LikeValue( $dbr->anyString(), $text, $dbr->anyString() ) );
+	}
+
+	/**
+	 * Rows in a conflict: active, and another active page sets their tag with the same priority in the same
+	 * language, and no active page sets it there with a lower priority (which links would resolve to instead).
+	 */
+	private static function inConflict( IReadableDatabase $dbr ): string {
+		$sameTag = static fn ( string $tags, string $projects ) => [
+			"$tags.ht_tag = t.ht_tag",
+			self::language( $tags, $projects ) . ' = ' . self::language(),
+		];
+		$tie = self::joinProjects( $dbr->newSelectQueryBuilder()->from( self::TABLE_NAME, 'o' ), 'o', 'op' )
+			->select( '1' )
+			->where( [
+				...$sameTag( 'o', 'op' ),
+				'o.ht_priority = t.ht_priority',
+				'NOT (o.ht_wiki = t.ht_wiki AND o.ht_page_id = t.ht_page_id)',
+			] )
+			->caller( __METHOD__ );
+		$lower = self::joinProjects( $dbr->newSelectQueryBuilder()->from( self::TABLE_NAME, 'b' ), 'b', 'bp' )
+			->select( '1' )
+			->where( [ ...$sameTag( 'b', 'bp' ), 'b.ht_priority < t.ht_priority' ] )
+			->caller( __METHOD__ );
+		return '(p.hp_active = 1 AND EXISTS(' . $tie->getSQL() . ') AND NOT EXISTS(' . $lower->getSQL() . '))';
+	}
+
+	/**
+	 * A sort key for a nullable string expression that sorts its values (in their own order) before nulls,
+	 * since IndexPager can't page on nulls.
+	 */
+	private static function sortKey( IReadableDatabase $dbr, string $expression ): string {
+		$value = $dbr->buildConcat( [ $dbr->addQuotes( '0' ), $expression ] );
+		return "COALESCE($value, " . $dbr->addQuotes( '1' ) . ')';
 	}
 
 	/** Conditions selecting $page's rows. */

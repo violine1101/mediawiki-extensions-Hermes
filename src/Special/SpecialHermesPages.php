@@ -2,10 +2,10 @@
 
 namespace MediaWiki\Extension\Hermes\Special;
 
-use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\Project;
 use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\TagLink;
+use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Html\Html;
 
 /**
@@ -59,7 +59,7 @@ class SpecialHermesPages extends HermesSpecialPage {
 
 		[ $id, $title ] = array_pad( explode( '/', $par, 2 ), 2, '' );
 		$project = ProjectStore::getProjectById( $id );
-		$tags = $project !== null ? TagQuery::findPage( $project, $title ) : [];
+		$tags = $project !== null ? TagStore::findPage( $project, $title ) : [];
 		if ( !$tags ) {
 			$out->addWikiMsg( 'hermespages-notfound', $par );
 			return true;
@@ -84,7 +84,7 @@ class SpecialHermesPages extends HermesSpecialPage {
 	private function linksTable( array $tags, Project $own ): string {
 		$formatter = $this->getFormatter();
 		$chain = array_map( static fn ( TagLink $link ) => $link->tag->name, $tags );
-		$links = TagQuery::loadLinks( Hermes::getDB(), $chain, true );
+		$links = TagStore::loadLinks( $chain, true );
 
 		$projects = [ $own->toId() => $own ];
 		foreach ( $links as $byId ) {

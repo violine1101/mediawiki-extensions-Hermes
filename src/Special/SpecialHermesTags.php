@@ -3,9 +3,9 @@
 namespace MediaWiki\Extension\Hermes\Special;
 
 use MediaWiki\Extension\Hermes\Exceptions\InvalidTagNameException;
-use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\Tag;
+use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Html\Html;
 
 /**
@@ -59,7 +59,7 @@ class SpecialHermesTags extends HermesSpecialPage {
 		$out->setPageTitleMsg( $this->msg( 'hermestags-single', $tag ) );
 		$out->addBacklinkSubtitle( $this->getPageTitle() );
 
-		$byProject = TagQuery::loadLinks( Hermes::getDB(), [ $tag ], true )[ $tag ] ?? [];
+		$byProject = TagStore::loadLinks( [ $tag ], true )[ $tag ] ?? [];
 		if ( !$byProject ) {
 			$out->addWikiMsg( 'hermestags-empty' );
 			return true;

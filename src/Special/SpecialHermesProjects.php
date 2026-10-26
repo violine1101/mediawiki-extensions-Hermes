@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\Hermes\Special;
 use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\Project;
 use MediaWiki\Extension\Hermes\ProjectStore;
+use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Html\Html;
 use MediaWiki\Languages\LanguageNameUtils;
 use MediaWiki\Logging\ManualLogEntry;
@@ -85,7 +86,7 @@ class SpecialHermesProjects extends HermesSpecialPage {
 			}
 		}
 
-		$counts = TagQuery::countPages( Hermes::getDB() );
+		$counts = TagStore::countPages();
 		$rows = [];
 		foreach ( $byWiki as $wiki => $projects ) {
 			$addable = $this->canManage( $wiki ) ? $this->getAddableLanguages( $wiki ) : [];

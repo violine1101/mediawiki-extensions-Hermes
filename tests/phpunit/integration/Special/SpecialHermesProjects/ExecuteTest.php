@@ -16,7 +16,7 @@ use SpecialPageExecutor;
 /**
  * @group Database
  * @covers \MediaWiki\Extension\Hermes\Special\SpecialHermesProjects
- * @covers \MediaWiki\Extension\Hermes\Special\TagQuery::countPages
+ * @covers \MediaWiki\Extension\Hermes\TagStore::countPages
  */
 class ExecuteTest extends HermesIntegrationTestCase {
 

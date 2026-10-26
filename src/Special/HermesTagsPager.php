@@ -7,6 +7,7 @@ use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\Project;
 use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\TagLink;
+use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Html\Html;
 use MediaWiki\Pager\TablePager;
 use Wikimedia\Rdbms\IResultWrapper;
@@ -67,33 +68,10 @@ class HermesTagsPager extends TablePager {
 
 	/** @inheritDoc */
 	public function getQueryInfo() {
-		$dbr = $this->getDatabase();
-		$query = TagQuery::joinProjects(
-			$dbr->newSelectQueryBuilder()->from( 'hermes_tags', 't' ), 't', 'p', $this->withInactive
-		)
-			->select( [ 'ht_tag' => 't.ht_tag' ] )
-			->groupBy( 't.ht_tag' )
-			->caller( __METHOD__ );
-		foreach ( array_values( $this->projectFields ) as $i => $project ) {
-			$inColumn = TagQuery::inProject( $dbr, $project );
-			$query->select( [
-				"sort_$i" => TagQuery::sortKey( $dbr, "MIN(CASE WHEN $inColumn THEN t.ht_base_title END)" ),
-			] );
-		}
-
-		if ( $this->tagFilter !== '' ) {
-			$query->where( TagQuery::contains( $dbr, 't.ht_tag', $this->tagFilter ) );
-		}
-		if ( $this->languages ) {
-			$query->where( TagQuery::inLanguages( $dbr, $this->languages ) );
-		}
-		if ( $this->wikis ) {
-			$query->where( [ 't.ht_wiki' => $this->wikis ] );
-		}
-		if ( $this->conflictsOnly ) {
-			$query->where( TagQuery::inConflict( $dbr ) );
-		}
-
+		$query = TagStore::newTagsQuery(
+			$this->projectFields, $this->tagFilter, $this->languages, $this->wikis, $this->withInactive,
+			$this->conflictsOnly
+		);
 		return [
 			'tables' => [ 'tags' => new Subquery( $query->getSQL() ) ],
 			'fields' => [ 'tags.*' ],
@@ -111,7 +89,7 @@ class HermesTagsPager extends TablePager {
 			$tags[] = $row->ht_tag;
 		}
 		$result->rewind();
-		$this->links = TagQuery::loadLinks( $this->getDatabase(), $tags, $this->withInactive, $this->wikis );
+		$this->links = TagStore::loadLinks( $tags, $this->withInactive, $this->wikis );
 	}
 
 	/** @inheritDoc */
