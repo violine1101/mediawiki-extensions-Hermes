@@ -9,11 +9,11 @@ class TagStore {
 	/**
 	 * Remove all tags for a page (e.g. when the page is deleted).
 	 */
-	public static function deleteTagsForPage( PageInfo $page ): void {
+	public static function deleteTagsForPage( ProjectTitle $page ): void {
 		$dbw = Hermes::getDB( DB_PRIMARY );
 		$dbw->delete(
 			self::TABLE_NAME,
-			[ 'ht_wiki' => $page->title->project->wiki, 'ht_page_id' => $page->getId() ],
+			[ 'ht_wiki' => $page->project->wiki, 'ht_page_id' => $page->getId() ],
 			__METHOD__
 		);
 	}
@@ -21,30 +21,30 @@ class TagStore {
 	/**
 	 * Replace the tags for a given page.
 	 *
-	 * @param PageInfo $page
+	 * @param ProjectTitle $page
 	 * @param Tag[] $tags Tags, each carrying its own priority.
 	 */
-	public static function setTagsForPage( PageInfo $page, array $tags ): void {
-		$project = $page->title->project;
+	public static function setTagsForPage( ProjectTitle $page, array $tags ): void {
+		$project = $page->project;
 		$dbw = Hermes::getDB( DB_PRIMARY );
 		$dbw->startAtomic( __METHOD__ );
 
 		// Clear old tags for this page first - priorities/tag set may have changed.
 		$dbw->delete(
 			self::TABLE_NAME,
-			[ 'ht_wiki' => $page->title->project->wiki, 'ht_page_id' => $page->getId() ],
+			[ 'ht_wiki' => $page->project->wiki, 'ht_page_id' => $page->getId() ],
 			__METHOD__
 		);
 
 		$rows = [];
 		foreach ( $tags as $tag ) {
 			$rows[] = [
-				'ht_wiki' => $page->title->project->wiki,
+				'ht_wiki' => $page->project->wiki,
 				'ht_page_id' => $page->getId(),
-				'ht_namespace_id' => $page->title->namespace,
-				'ht_namespace_text' => $page->title->getNamespaceText(),
+				'ht_namespace_id' => $page->namespace,
+				'ht_namespace_text' => $page->getNamespaceText(),
 				'ht_language' => $project->isBase ? null : $project->code,
-				'ht_base_title' => $page->title->baseTitle,
+				'ht_base_title' => $page->baseTitle,
 				'ht_section' => $tag->section,
 				'ht_tag' => $tag->name,
 				'ht_priority' => $tag->priority,
@@ -63,12 +63,12 @@ class TagStore {
 	 *
 	 * @return string[] Names of the tags associated with the page, by priority.
 	 */
-	private static function getTagsForPage( PageInfo $page ): array {
+	private static function getTagsForPage( ProjectTitle $page ): array {
 		$dbr = Hermes::getDB();
 		$res = $dbr->select(
 			self::TABLE_NAME,
 			[ 'ht_tag', 'ht_priority' ],
-			[ 'ht_wiki' => $page->title->project->wiki, 'ht_page_id' => $page->getId() ],
+			[ 'ht_wiki' => $page->project->wiki, 'ht_page_id' => $page->getId() ],
 			__METHOD__,
 			[ 'ORDER BY' => 'ht_priority ASC, ht_tag ASC' ]
 		);
@@ -87,11 +87,11 @@ class TagStore {
 	 * counts. In $page's own language, that's a conflict for each of its tags it's part of. In other
 	 * languages, its links are ambiguous if the first of its tags set there has such a tie.
 	 *
-	 * @param PageInfo $page The page $tags is being set on.
+	 * @param ProjectTitle $page The page $tags is being set on.
 	 * @param Tag[] $tags The tags to check, each with its assigned priority, in fallback order.
 	 * @return array<string, array<string, TagLink[]>> language => tag name => conflicted pages
 	 */
-	public static function findConflicts( PageInfo $page, array $tags ): array {
+	public static function findConflicts( ProjectTitle $page, array $tags ): array {
 		if ( !$tags ) {
 			return [];
 		}
@@ -102,7 +102,7 @@ class TagStore {
 			[
 				'ht_tag' => array_map( static fn ( Tag $tag ) => $tag->name, $tags ),
 				'NOT (' . Hermes::getDB()->makeList(
-					[ 'ht_wiki' => $page->title->project->wiki, 'ht_page_id' => $page->getId() ],
+					[ 'ht_wiki' => $page->project->wiki, 'ht_page_id' => $page->getId() ],
 					LIST_AND
 				) . ')',
 			],
@@ -110,7 +110,7 @@ class TagStore {
 			[ 'ORDER BY' => 'ht_namespace_id ASC, ht_base_title ASC' ]
 		);
 
-		$ownLanguage = $page->title->project->code;
+		$ownLanguage = $page->project->code;
 		// language => tag => priority => pages
 		$pages = [];
 		foreach ( $tags as $tag ) {
@@ -118,13 +118,13 @@ class TagStore {
 		}
 		foreach ( $rows as $row ) {
 			$link = TagLink::fromRow( $row );
-			$project = $link->page->title->project;
+			$project = $link->title->project;
 			if ( $project->isActive ) {
 				$pages[ $project->code ][ $link->tag->name ][ $link->tag->priority ][] = $link;
 			}
 		}
 		// Nothing links to an inactive page, so it can't conflict in its own language.
-		if ( !$page->title->project->isActive ) {
+		if ( !$page->project->isActive ) {
 			unset( $pages[ $ownLanguage ] );
 		}
 
@@ -180,7 +180,7 @@ class TagStore {
 		$links = [];
 		foreach ( $rows as $row ) {
 			$link = TagLink::fromRow( $row );
-			if ( $link->page->title->project->isActive ) {
+			if ( $link->title->project->isActive ) {
 				$links[ $link->tag->name ][] = $link;
 			}
 		}
@@ -191,7 +191,7 @@ class TagStore {
 		$pages = [];
 		foreach ( $tags as $tag ) {
 			foreach ( $links[ $tag ] ?? [] as $link ) {
-				$lang = $link->page->title->project->code;
+				$lang = $link->title->project->code;
 
 				if ( !isset( $pages[ $lang ] ) ) {
 					$pages[ $lang ] = $link;
@@ -205,14 +205,14 @@ class TagStore {
 	/**
 	 * Find the other-language versions of the given page on the current wiki.
 	 *
-	 * @param PageInfo $page The page to get the links for
+	 * @param ProjectTitle $page The page to get the links for
 	 * @return TagLink[] Links to pages with the given tags, excluding any self-link.
 	 */
-	public static function getLinksForPage( PageInfo $page ): array {
+	public static function getLinksForPage( ProjectTitle $page ): array {
 		$tags = self::getTagsForPage( $page );
 		$links = self::getLinksForTags( $tags );
 
-		unset( $links[ $page->title->project->code ] );
+		unset( $links[ $page->project->code ] );
 
 		return $links;
 	}
@@ -223,14 +223,14 @@ class TagStore {
 	 *
 	 * @return TagLink[] Keyed by language code
 	 */
-	public static function getTranslationsOfPage( PageInfo $page ): array {
+	public static function getTranslationsOfPage( ProjectTitle $page ): array {
 		$tags = self::getTagsForPage( $page );
 		if ( !$tags ) {
 			return [];
 		}
 		// getLinksForTags() prefers the first tag, at the lowest priority.
 		$links = self::getLinksForTags( $tags );
-		unset( $links[ $page->title->project->code ] );
+		unset( $links[ $page->project->code ] );
 		return array_filter(
 			$links, static fn ( TagLink $link ) => $link->tag->name === $tags[0] && $link->tag->priority === 0
 		);

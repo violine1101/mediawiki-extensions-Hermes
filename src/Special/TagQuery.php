@@ -132,7 +132,7 @@ final class TagQuery {
 		$links = [];
 		foreach ( $rows as $row ) {
 			$link = TagLink::fromRow( $row );
-			$project = $link->page->title->project;
+			$project = $link->title->project;
 			if ( $project->isActive || $withInactive ) {
 				$links[ $link->tag->name ][ $project->toId() ][ $link->tag->priority ][] = $link;
 			}
@@ -184,16 +184,16 @@ final class TagQuery {
 		}
 
 		// A main namespace title can't start with a namespace name, so prefer the namespaced match.
-		$page = $links[ 0 ]->page;
+		$page = $links[ 0 ]->title;
 		foreach ( $links as $link ) {
-			if ( $link->page->title->getNamespaceText() !== '' ) {
-				$page = $link->page;
+			if ( $link->title->getNamespaceText() !== '' ) {
+				$page = $link->title;
 				break;
 			}
 		}
 		return array_values( array_filter(
 			$links,
-			static fn ( TagLink $link ) => $link->page->getId() === $page->getId()
+			static fn ( TagLink $link ) => $link->title->isSamePage( $page )
 		) );
 	}
 }

@@ -3,9 +3,9 @@
 namespace MediaWiki\Extension\Hermes\Special;
 
 use MediaWiki\Extension\Hermes\Hermes;
+use MediaWiki\Extension\Hermes\LocalProjectTitle;
 use MediaWiki\Extension\Hermes\ProjectPrefix;
 use MediaWiki\Extension\Hermes\ProjectStore;
-use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\HTMLForm\HTMLForm;
 use MediaWiki\SpecialPage\WantedQueryPage;
 use MediaWiki\Title\Title;
@@ -114,7 +114,7 @@ abstract class WantedTranslationsPage extends WantedQueryPage {
 	 */
 	public function formatResult( $skin, $result ) {
 		$title = Title::makeTitleSafe( $result->namespace, $result->title );
-		$page = $title !== null ? ProjectTitle::newFromLinkTarget( $title ) : null;
+		$page = $title !== null ? LocalProjectTitle::fromTitle( $title ) : null;
 		if ( $page === null || $page->project->isBase ) {
 			return parent::formatResult( $skin, $result );
 		}

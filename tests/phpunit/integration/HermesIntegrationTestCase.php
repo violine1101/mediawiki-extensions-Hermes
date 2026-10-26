@@ -4,7 +4,7 @@ namespace MediaWiki\Extension\Hermes\Tests;
 
 use LogicException;
 use MediaWiki\Extension\Hermes\Hermes;
-use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\LocalProjectTitle;
 use MediaWiki\Extension\Hermes\Project;
 use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\ProjectTitle;
@@ -16,7 +16,7 @@ use MediaWikiIntegrationTestCase;
  */
 abstract class HermesIntegrationTestCase extends MediaWikiIntegrationTestCase {
 
-	/** Hands out unique synthetic PageInfo ids; a plain per-test instance counter. */
+	/** Hands out unique synthetic page ids; a plain per-test instance counter. */
 	private int $nextPageId = 1;
 
 	protected function setUp(): void {
@@ -25,7 +25,7 @@ abstract class HermesIntegrationTestCase extends MediaWikiIntegrationTestCase {
 	}
 
 	/**
-	 * Builds a synthetic PageInfo without going through Title/PageReference, so tests
+	 * Builds a synthetic ProjectTitle without going through Title/PageReference, so tests
 	 * don't need to invent their own unique page ids.
 	 *
 	 * $wiki must already have projects (via registerBaseProject() for a foreign-wiki partner
@@ -33,15 +33,14 @@ abstract class HermesIntegrationTestCase extends MediaWikiIntegrationTestCase {
 	 * registerTranslationProject()) - a page's language is derived from its wiki's projects, so
 	 * its wiki isn't independently choosable from its language.
 	 */
-	protected function makePageInfo( string $wiki, ?string $title = null ): PageInfo {
+	protected function makePage( string $wiki, ?string $title = null ): ProjectTitle {
 		$id = $this->nextPageId++;
 		$baseTitle = $title ?? "Page{$id}";
 		$language = null;
 		if ( preg_match( '/^!([a-z0-9-]+):(.+)$/', $baseTitle, $match ) ) {
 			[ , $language, $baseTitle ] = $match;
 		}
-		$title = ProjectTitle::makeTitle( self::getProject( $language, $wiki ), NS_MAIN, $baseTitle, '' );
-		return new PageInfo( $title, $id );
+		return ProjectTitle::make( self::getProject( $language, $wiki ), NS_MAIN, $baseTitle, '', $id );
 	}
 
 	/** $wiki's translation project in $language, or its base project if null, which must exist. */
@@ -58,11 +57,11 @@ abstract class HermesIntegrationTestCase extends MediaWikiIntegrationTestCase {
 		string $baseTitle,
 		?string $language = null,
 		?string $namespaceText = null
-	): ProjectTitle {
+	): LocalProjectTitle {
 		$project = $language !== null
 			? new Project( $language, WikiMap::getCurrentWikiId(), false, true, null )
 			: ProjectStore::getLocalBaseProject();
-		return ProjectTitle::makeTitle( $project, $namespace, $baseTitle, $namespaceText );
+		return new LocalProjectTitle( $project, $namespace, $baseTitle, $namespaceText );
 	}
 
 	/**

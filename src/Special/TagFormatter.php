@@ -3,13 +3,15 @@
 namespace MediaWiki\Extension\Hermes\Special;
 
 use MediaWiki\Context\IContextSource;
+use MediaWiki\Context\RequestContext;
 use MediaWiki\Extension\Hermes\Hermes;
-use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\Project;
 use MediaWiki\Extension\Hermes\ProjectStore;
+use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\TagLink;
 use MediaWiki\Html\Html;
 use MediaWiki\Linker\LinkRenderer;
+use MediaWiki\MediaWikiServices;
 use MediaWiki\SpecialPage\SpecialPage;
 use MediaWiki\Title\Title;
 
@@ -28,21 +30,40 @@ final class TagFormatter {
 	 * Special:HermesPages/<id>/<title> for a page: its project ID (Project::toId()) identifies the wiki
 	 * and translation project, the title is the namespace name as stored and the base title.
 	 */
-	public static function detailsTitle( PageInfo $page ): Title {
-		$title = $page->title;
+	public static function detailsTitle( ProjectTitle $title ): Title {
 		$namespace = $title->getNamespaceText() !== '' ? $title->getNamespaceText() . ':' : '';
 		$id = $title->project->toId();
 		return SpecialPage::getTitleFor( 'HermesPages', "$id/$namespace{$title->baseTitle}" );
 	}
 
 	/**
+	 * An external link to $title or its section $section, or just its (escaped) title if its wiki has no
+	 * registered URL.
+	 */
+	public static function externalLink( ProjectTitle $title, ?string $section = null ): string {
+		$displayTitle = $title->getDisplayTitle( true, $section );
+		$url = $title->getUrl( $section );
+		if ( $url === null ) {
+			return htmlspecialchars( $displayTitle );
+		}
+
+		$languageName = MediaWikiServices::getInstance()->getLanguageNameUtils()
+			->getLanguageName( $title->project->code, RequestContext::getMain()->getLanguage()->getCode() );
+		return Html::element( 'a', [
+			'href' => $url,
+			'class' => 'extiw',
+			'title' => wfMessage( 'interlanguage-link-title', $displayTitle, $languageName )->text(),
+		], $displayTitle );
+	}
+
+	/**
 	 * A link to the page itself (or its section $section), followed by an icon linking to its details on
 	 * Special:HermesPages.
 	 */
-	public function pageLink( PageInfo $page, ?string $section = null ): string {
+	public function pageLink( ProjectTitle $title, ?string $section = null ): string {
 		$details = $this->context->msg( 'hermes-page-details' )->text();
-		return $page->buildLink( $section ) . ' ' . Html::element( 'a', [
-			'href' => self::detailsTitle( $page )->getLocalURL(),
+		return self::externalLink( $title, $section ) . ' ' . Html::element( 'a', [
+			'href' => self::detailsTitle( $title )->getLocalURL(),
 			'class' => 'ext-hermes-details-link',
 			'title' => $details,
 			'aria-label' => $details,
@@ -68,7 +89,7 @@ final class TagFormatter {
 			return '';
 		}
 		$html = implode( $separator, array_map(
-			fn ( TagLink $link ) => $this->pageLink( $link->page, $link->tag->section ), $links
+			fn ( TagLink $link ) => $this->pageLink( $link->title, $link->tag->section ), $links
 		) );
 		if ( $conflict ) {
 			$html = Html::rawElement( 'b', [], $html );

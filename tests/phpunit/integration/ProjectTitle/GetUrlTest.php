@@ -19,19 +19,19 @@ class GetUrlTest extends HermesIntegrationTestCase {
 	}
 
 	public function testBasePage() {
-		$title = ProjectTitle::makeTitle( self::getProject( null, 'trwiki' ), NS_MAIN, 'Foo_bar', '' );
+		$title = ProjectTitle::make( self::getProject( null, 'trwiki' ), NS_MAIN, 'Foo_bar', '', 0 );
 
 		$this->assertSame( 'https://translate.example.org/wiki/Foo_bar', $title->getUrl() );
 	}
 
 	public function testProjectPrefixGoesAfterNamespace() {
-		$title = ProjectTitle::makeTitle( self::getProject( 'eo', 'trwiki' ), NS_CATEGORY, 'Foo', 'Category' );
+		$title = ProjectTitle::make( self::getProject( 'eo', 'trwiki' ), NS_CATEGORY, 'Foo', 'Category', 0 );
 
 		$this->assertSame( 'https://translate.example.org/wiki/Category:!eo:Foo', $title->getUrl() );
 	}
 
 	public function testSectionBecomesEscapedFragment() {
-		$title = ProjectTitle::makeTitle( self::getProject( 'eo', 'trwiki' ), NS_MAIN, 'Foo', '' );
+		$title = ProjectTitle::make( self::getProject( 'eo', 'trwiki' ), NS_MAIN, 'Foo', '', 0 );
 
 		$this->assertSame(
 			'https://translate.example.org/wiki/!eo:Foo#Some_section?', $title->getUrl( 'Some_section?' )
@@ -39,7 +39,7 @@ class GetUrlTest extends HermesIntegrationTestCase {
 	}
 
 	public function testTitleIsUrlEncoded() {
-		$title = ProjectTitle::makeTitle( self::getProject( null, 'trwiki' ), NS_MAIN, 'What?_Ŝtono', '' );
+		$title = ProjectTitle::make( self::getProject( null, 'trwiki' ), NS_MAIN, 'What?_Ŝtono', '', 0 );
 
 		$this->assertSame( 'https://translate.example.org/wiki/What%3F_%C5%9Ctono', $title->getUrl() );
 	}
@@ -47,6 +47,6 @@ class GetUrlTest extends HermesIntegrationTestCase {
 	public function testWithoutUrlTemplate() {
 		$project = new Project( 'de', 'otherwiki', true, true, null );
 
-		$this->assertNull( ProjectTitle::makeTitle( $project, NS_MAIN, 'Foo', '' )->getUrl() );
+		$this->assertNull( ProjectTitle::make( $project, NS_MAIN, 'Foo', '', 0 )->getUrl() );
 	}
 }

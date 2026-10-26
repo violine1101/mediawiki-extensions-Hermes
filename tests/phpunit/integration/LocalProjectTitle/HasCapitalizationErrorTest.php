@@ -1,18 +1,18 @@
 <?php
 
-namespace MediaWiki\Extension\Hermes\Tests\ProjectTitle;
+namespace MediaWiki\Extension\Hermes\Tests\LocalProjectTitle;
 
-use MediaWiki\Extension\Hermes\ProjectTitle;
+use MediaWiki\Extension\Hermes\LocalProjectTitle;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 use MediaWiki\MainConfigNames;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\Hermes\ProjectTitle::hasCapitalizationError
+ * @covers \MediaWiki\Extension\Hermes\LocalProjectTitle::hasCapitalizationError
  */
 class HasCapitalizationErrorTest extends HermesIntegrationTestCase {
 
-	private function makeProjectPage( string $title ): ProjectTitle {
+	private function makeProjectPage( string $title ): LocalProjectTitle {
 		return self::localTitle( NS_MAIN, $title, 'eo' );
 	}
 

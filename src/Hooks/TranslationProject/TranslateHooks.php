@@ -6,7 +6,7 @@ use MediaWiki\Content\IContentHandlerFactory;
 use MediaWiki\Content\TextContent;
 use MediaWiki\Context\RequestContext;
 use MediaWiki\Extension\Hermes\Hermes;
-use MediaWiki\Extension\Hermes\ProjectTitle;
+use MediaWiki\Extension\Hermes\LocalProjectTitle;
 use MediaWiki\Extension\Hermes\Special\SpecialHermesTranslate;
 use MediaWiki\Hook\EditFormPreloadTextHook;
 use MediaWiki\Revision\RevisionLookup;
@@ -38,7 +38,7 @@ class TranslateHooks implements EditFormPreloadTextHook, SkinTemplateNavigation_
 		if ( !$title->exists() || !Hermes::isProjectNamespace( $title->getNamespace() ) ) {
 			return;
 		}
-		$page = ProjectTitle::newFromLinkTarget( $title );
+		$page = LocalProjectTitle::fromTitle( $title );
 		if ( !$page->project->isBase ) {
 			return;
 		}
@@ -55,13 +55,13 @@ class TranslateHooks implements EditFormPreloadTextHook, SkinTemplateNavigation_
 	/** @inheritDoc */
 	public function onEditFormPreloadText( &$text, $title ) {
 		$context = RequestContext::getMain();
-		$project = ProjectTitle::newFromLinkTarget( $title )->project;
+		$project = LocalProjectTitle::fromTitle( $title )->project;
 		if ( $project->isBase ) {
 			return;
 		}
 
 		$redirect = Title::newFromText( $context->getRequest()->getText( self::REDIRECT_PARAM ) );
-		if ( $redirect !== null && ProjectTitle::newFromLinkTarget( $redirect )->project === $project ) {
+		if ( $redirect !== null && LocalProjectTitle::fromTitle( $redirect )->project === $project ) {
 			$text = $this->contentHandlerFactory->getContentHandler( $title->getContentModel() )
 				->makeRedirectContent( $redirect )?->serialize() ?? $text;
 			return;
@@ -70,7 +70,7 @@ class TranslateHooks implements EditFormPreloadTextHook, SkinTemplateNavigation_
 		$source = Title::newFromText( $context->getRequest()->getText( self::PARAM ) );
 		if (
 			$source === null
-			|| !ProjectTitle::newFromLinkTarget( $source )->project->isBase
+			|| !LocalProjectTitle::fromTitle( $source )->project->isBase
 			|| !$context->getAuthority()->probablyCan( 'read', $source )
 		) {
 			return;

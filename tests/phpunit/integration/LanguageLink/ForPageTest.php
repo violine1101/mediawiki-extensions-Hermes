@@ -3,7 +3,6 @@
 namespace MediaWiki\Extension\Hermes\Tests\LanguageLink;
 
 use MediaWiki\Extension\Hermes\LanguageLink;
-use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Extension\Hermes\TagStore;
@@ -20,10 +19,9 @@ class ForPageTest extends HermesIntegrationTestCase {
 		$this->registerBaseProject( 'de', 'dewiki', url: 'https://de.example.org/wiki/$1' );
 		$this->registerTranslationProject( 'eo', 'trwiki', url: 'https://translate.example.org/wiki/$1' );
 
-		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
-		$de = $this->makePageInfo( 'dewiki', 'Stein' );
-		$eoTitle = ProjectTitle::makeTitle( self::getProject( 'eo', 'trwiki' ), NS_MAIN, 'Ŝtono', '' );
-		$eo = new PageInfo( $eoTitle, 1000 );
+		$en = $this->makePage( WikiMap::getCurrentWikiId() );
+		$de = $this->makePage( 'dewiki', 'Stein' );
+		$eo = ProjectTitle::make( self::getProject( 'eo', 'trwiki' ), NS_MAIN, 'Ŝtono', '', 1000 );
 		foreach ( [ $en, $de, $eo ] as $page ) {
 			TagStore::setTagsForPage( $page, Tag::fromArgs( [ 'stone' ] ) );
 		}
@@ -45,8 +43,8 @@ class ForPageTest extends HermesIntegrationTestCase {
 	public function testLinksToTaggedSection() {
 		$this->registerBaseProject( 'de', 'dewiki', url: 'https://de.example.org/wiki/$1' );
 
-		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
-		$de = $this->makePageInfo( 'dewiki', 'Golem' );
+		$en = $this->makePage( WikiMap::getCurrentWikiId() );
+		$de = $this->makePage( 'dewiki', 'Golem' );
 		TagStore::setTagsForPage( $en, Tag::fromArgs( [ 'iron_golem' ] ) );
 		TagStore::setTagsForPage( $de, Tag::fromArgs( [ 'iron_golem=#Eisengolem' ] ) );
 
@@ -59,8 +57,8 @@ class ForPageTest extends HermesIntegrationTestCase {
 	public function testSkipsWikisWithoutUrl() {
 		$this->registerBaseProject( 'de', 'dewiki' );
 
-		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
-		$de = $this->makePageInfo( 'dewiki' );
+		$en = $this->makePage( WikiMap::getCurrentWikiId() );
+		$de = $this->makePage( 'dewiki' );
 		TagStore::setTagsForPage( $en, Tag::fromArgs( [ 'stone' ] ) );
 		TagStore::setTagsForPage( $de, Tag::fromArgs( [ 'stone' ] ) );
 

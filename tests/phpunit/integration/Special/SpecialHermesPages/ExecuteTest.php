@@ -2,7 +2,6 @@
 
 namespace MediaWiki\Extension\Hermes\Tests\Special\SpecialHermesPages;
 
-use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\Tag;
@@ -31,8 +30,8 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		return $html;
 	}
 
-	private function setTags( string $wiki, string $title, array $args ): PageInfo {
-		$page = $this->makePageInfo( $wiki, $title );
+	private function setTags( string $wiki, string $title, array $args ): ProjectTitle {
+		$page = $this->makePage( $wiki, $title );
 		TagStore::setTagsForPage( $page, Tag::fromArgs( $args ) );
 		return $page;
 	}
@@ -231,10 +230,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	public function testDetailsOfNamespacedPage() {
 		TagStore::setTagsForPage(
-			new PageInfo(
-				ProjectTitle::makeTitle( self::getProject( null, 'dewiki' ), NS_CATEGORY, 'Golems', 'Kategorie' ),
-				100
-			),
+			ProjectTitle::make( self::getProject( null, 'dewiki' ), NS_CATEGORY, 'Golems', 'Kategorie', 100 ),
 			Tag::fromArgs( [ 'golems' ] )
 		);
 		$this->setTags( 'dewiki', 'Kategorie:Golems', [ 'other' ] );

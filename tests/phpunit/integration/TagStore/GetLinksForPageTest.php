@@ -20,8 +20,8 @@ class GetLinksForPageTest extends HermesIntegrationTestCase {
 	}
 
 	public function testFindsOtherLanguage() {
-		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
-		$de = $this->makePageInfo( 'dewiki' );
+		$en = $this->makePage( WikiMap::getCurrentWikiId() );
+		$de = $this->makePage( 'dewiki' );
 
 		TagStore::setTagsForPage( $en, Tag::fromArgs( [ 'shared_tag' ] ) );
 		TagStore::setTagsForPage( $de, Tag::fromArgs( [ 'shared_tag' ] ) );
@@ -29,12 +29,12 @@ class GetLinksForPageTest extends HermesIntegrationTestCase {
 		$links = TagStore::getLinksForPage( $en );
 
 		$this->assertArrayHasKey( 'de', $links );
-		$this->assertSame( $de->getId(), $links[ 'de' ]->page->getId() );
+		$this->assertSame( $de->getId(), $links[ 'de' ]->title->getId() );
 	}
 
 	public function testExcludesOwnLanguage() {
-		$enA = $this->makePageInfo( WikiMap::getCurrentWikiId() );
-		$enB = $this->makePageInfo( WikiMap::getCurrentWikiId() );
+		$enA = $this->makePage( WikiMap::getCurrentWikiId() );
+		$enB = $this->makePage( WikiMap::getCurrentWikiId() );
 
 		TagStore::setTagsForPage( $enA, Tag::fromArgs( [ 'shared_tag' ] ) );
 		TagStore::setTagsForPage( $enB, Tag::fromArgs( [ 'shared_tag' ] ) );
@@ -43,17 +43,17 @@ class GetLinksForPageTest extends HermesIntegrationTestCase {
 	}
 
 	public function testEmptyWithoutTags() {
-		$page = $this->makePageInfo( WikiMap::getCurrentWikiId() );
+		$page = $this->makePage( WikiMap::getCurrentWikiId() );
 
 		$this->assertSame( [], TagStore::getLinksForPage( $page ) );
 	}
 
 	public function testHighestPriorityWins() {
-		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
+		$en = $this->makePage( WikiMap::getCurrentWikiId() );
 		// shared_tag is this page's first (priority 0) tag.
-		$dePrimary = $this->makePageInfo( 'dewiki' );
+		$dePrimary = $this->makePage( 'dewiki' );
 		// shared_tag is this page's second (priority 1) tag.
-		$deSecondary = $this->makePageInfo( 'dewiki' );
+		$deSecondary = $this->makePage( 'dewiki' );
 
 		TagStore::setTagsForPage( $en, Tag::fromArgs( [ 'shared_tag' ] ) );
 		TagStore::setTagsForPage( $dePrimary, Tag::fromArgs( [ 'shared_tag', 'other_tag' ] ) );
@@ -61,15 +61,15 @@ class GetLinksForPageTest extends HermesIntegrationTestCase {
 
 		$links = TagStore::getLinksForPage( $en );
 
-		$this->assertSame( $dePrimary->getId(), $links[ 'de' ]->page->getId() );
+		$this->assertSame( $dePrimary->getId(), $links[ 'de' ]->title->getId() );
 	}
 
 	public function testEarlierTagWins() {
 		// primaryTarget's tag has a *lower* priority than fallbackTarget's, but
 		// primary_tag comes first in en's fallback chain and must still win.
-		$primaryTarget = $this->makePageInfo( 'dewiki' );
-		$fallbackTarget = $this->makePageInfo( 'dewiki' );
-		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
+		$primaryTarget = $this->makePage( 'dewiki' );
+		$fallbackTarget = $this->makePage( 'dewiki' );
+		$en = $this->makePage( WikiMap::getCurrentWikiId() );
 
 		TagStore::setTagsForPage( $primaryTarget, Tag::fromArgs( [ 'unrelated', 'primary_tag' ] ) );
 		TagStore::setTagsForPage( $fallbackTarget, Tag::fromArgs( [ 'fallback_tag' ] ) );
@@ -77,13 +77,13 @@ class GetLinksForPageTest extends HermesIntegrationTestCase {
 
 		$links = TagStore::getLinksForPage( $en );
 
-		$this->assertSame( $primaryTarget->getId(), $links[ 'de' ]->page->getId() );
+		$this->assertSame( $primaryTarget->getId(), $links[ 'de' ]->title->getId() );
 	}
 
 	public function testTiebreakByTitle() {
-		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
-		$deA = $this->makePageInfo( 'dewiki', 'ZTitle' );
-		$deB = $this->makePageInfo( 'dewiki', 'ATitle' );
+		$en = $this->makePage( WikiMap::getCurrentWikiId() );
+		$deA = $this->makePage( 'dewiki', 'ZTitle' );
+		$deB = $this->makePage( 'dewiki', 'ATitle' );
 
 		TagStore::setTagsForPage( $en, Tag::fromArgs( [ 'shared_tag' ] ) );
 		TagStore::setTagsForPage( $deA, Tag::fromArgs( [ 'shared_tag' ] ) );
@@ -93,35 +93,35 @@ class GetLinksForPageTest extends HermesIntegrationTestCase {
 
 		// deA and deB tie on tag + priority; the alphabetically-first title wins
 		// deterministically, rather than depending on DB scan order.
-		$this->assertSame( 'ATitle', $links[ 'de' ]->page->title->baseTitle );
+		$this->assertSame( 'ATitle', $links[ 'de' ]->title->baseTitle );
 	}
 
 	public function testSkipsInactivePages() {
 		$wiki = WikiMap::getCurrentWikiId();
 		$this->registerTranslationProject( 'eo', $wiki, false );
 		$this->registerTranslationProject( 'de', $wiki, false );
-		$en = $this->makePageInfo( $wiki );
-		$de = $this->makePageInfo( 'dewiki' );
+		$en = $this->makePage( $wiki );
+		$de = $this->makePage( 'dewiki' );
 
 		TagStore::setTagsForPage( $en, Tag::fromArgs( [ 'shared_tag' ] ) );
-		TagStore::setTagsForPage( $this->makePageInfo( $wiki, '!eo:Foo' ), Tag::fromArgs( [ 'shared_tag' ] ) );
-		TagStore::setTagsForPage( $this->makePageInfo( $wiki, '!de:Foo' ), Tag::fromArgs( [ 'shared_tag' ] ) );
+		TagStore::setTagsForPage( $this->makePage( $wiki, '!eo:Foo' ), Tag::fromArgs( [ 'shared_tag' ] ) );
+		TagStore::setTagsForPage( $this->makePage( $wiki, '!de:Foo' ), Tag::fromArgs( [ 'shared_tag' ] ) );
 		TagStore::setTagsForPage( $de, Tag::fromArgs( [ 'other_tag', 'shared_tag' ] ) );
 
 		$links = TagStore::getLinksForPage( $en );
 
 		$this->assertSame( [ 'de' ], array_keys( $links ) );
-		$this->assertSame( $de->getId(), $links[ 'de' ]->page->getId() );
+		$this->assertSame( $de->getId(), $links[ 'de' ]->title->getId() );
 	}
 
 	public function testInactivePageLinksToActivePages() {
 		$wiki = WikiMap::getCurrentWikiId();
 		$this->registerTranslationProject( 'de', $wiki, false );
-		$inactive = $this->makePageInfo( $wiki, '!de:Foo' );
+		$inactive = $this->makePage( $wiki, '!de:Foo' );
 
 		TagStore::setTagsForPage( $inactive, Tag::fromArgs( [ 'shared_tag' ] ) );
-		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki' ), Tag::fromArgs( [ 'shared_tag' ] ) );
-		TagStore::setTagsForPage( $this->makePageInfo( $wiki ), Tag::fromArgs( [ 'shared_tag' ] ) );
+		TagStore::setTagsForPage( $this->makePage( 'dewiki' ), Tag::fromArgs( [ 'shared_tag' ] ) );
+		TagStore::setTagsForPage( $this->makePage( $wiki ), Tag::fromArgs( [ 'shared_tag' ] ) );
 
 		$this->assertSame( [ 'en' ], array_keys( TagStore::getLinksForPage( $inactive ) ) );
 	}

@@ -4,7 +4,7 @@ namespace MediaWiki\Extension\Hermes\Special;
 
 use MediaWiki\Context\IContextSource;
 use MediaWiki\Extension\Hermes\Hermes;
-use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Html\Html;
 use MediaWiki\Pager\TablePager;
 use Wikimedia\Rdbms\Subquery;
@@ -133,10 +133,10 @@ class HermesPagesPager extends TablePager {
 	private function formatCell( string $name, ?string $value ): string {
 		$row = $this->mCurrentRow;
 		if ( $name === 'ht_base_title' ) {
-			return $this->formatter->pageLink( PageInfo::fromRow( $row ) );
+			return $this->formatter->pageLink( ProjectTitle::newFromRow( $row ) );
 		}
 		if ( $name === 'language' ) {
-			return htmlspecialchars( $this->formatter->projectLabel( PageInfo::fromRow( $row )->title->project ) );
+			return htmlspecialchars( $this->formatter->projectLabel( ProjectTitle::newFromRow( $row )->project ) );
 		}
 
 		$priority = $this->priorityFields[ $name ];
@@ -152,7 +152,7 @@ class HermesPagesPager extends TablePager {
 		}
 
 		$text = '#' . strtr( $section, '_', ' ' );
-		$url = PageInfo::fromRow( $this->mCurrentRow )->title->getUrl( $section );
+		$url = ProjectTitle::newFromRow( $this->mCurrentRow )->getUrl( $section );
 		$sectionLink = $url !== null
 			? Html::element( 'a', [ 'href' => $url, 'class' => 'extiw' ], $text )
 			: htmlspecialchars( $text );

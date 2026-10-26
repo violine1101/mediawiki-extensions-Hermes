@@ -4,11 +4,10 @@ namespace MediaWiki\Extension\Hermes\Special;
 
 use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\Hooks\TranslationProject\TranslateHooks;
-use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\LocalProjectTitle;
 use MediaWiki\Extension\Hermes\Project;
 use MediaWiki\Extension\Hermes\ProjectPrefix;
 use MediaWiki\Extension\Hermes\ProjectStore;
-use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Html\Html;
 use MediaWiki\Title\Title;
@@ -45,7 +44,7 @@ class SpecialHermesTranslate extends HermesSpecialPage {
 				$out->addHTML( Html::errorBox( $this->msg( 'hermestranslate-no-base', $pageName )->parse() ) );
 			} else {
 				// "!xx:Foo" picks the project too.
-				$project = ProjectTitle::newFromLinkTarget( Title::newFromText( $pageName ) )->project;
+				$project = LocalProjectTitle::fromTitle( Title::newFromText( $pageName ) )->project;
 				$language ??= $project->isBase ? null : $project->code;
 				$pageName = $page->toTitle()->getPrefixedText();
 				$out->setPageTitleMsg( $this->msg( 'hermestranslate-title' )->plaintextParams( $pageName ) );
@@ -121,26 +120,26 @@ class SpecialHermesTranslate extends HermesSpecialPage {
 	 *
 	 * @return string[]
 	 */
-	public static function getUntranslatedProjects( ProjectTitle $page ): array {
+	public static function getUntranslatedProjects( LocalProjectTitle $page ): array {
 		$projects = ProjectStore::getActiveLocalTranslationProjects();
-		$translated = $projects ? TagStore::getTranslationsOfPage( PageInfo::fromLocalPage( $page->toTitle() ) ) : [];
+		$translated = $projects ? TagStore::getTranslationsOfPage( $page ) : [];
 		return array_keys( array_filter( $projects, static fn ( Project $project ) =>
 			!isset( $translated[ $project->code ] ) && !$page->withProject( $project )->toTitle()->exists()
 		) );
 	}
 
 	/** The existing base page of $pageName (which may have a "!xx:" prefix), if it can have translations. */
-	private function getBasePage( string $pageName ): ?ProjectTitle {
+	private function getBasePage( string $pageName ): ?LocalProjectTitle {
 		$title = Title::newFromText( $pageName );
 		if ( $title === null || $title->isExternal() || !Hermes::isProjectNamespace( $title->getNamespace() ) ) {
 			return null;
 		}
-		$page = ProjectTitle::newFromLinkTarget( $title )->toBasePage();
+		$page = LocalProjectTitle::fromTitle( $title )->toBasePage();
 		return $page->toTitle()->exists() ? $page : null;
 	}
 
 	/** "!xx:<translation>" in $page's namespace, or null if that's not a valid title. */
-	private function getTarget( ProjectTitle $page, string $translation, string $language ): ?Title {
+	private function getTarget( LocalProjectTitle $page, string $translation, string $language ): ?Title {
 		$translation = strtr( trim( $translation ), ' ', '_' );
 		if ( $translation === '' || ProjectPrefix::isReserved( $translation ) ) {
 			return null;

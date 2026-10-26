@@ -2,82 +2,73 @@
 
 namespace MediaWiki\Extension\Hermes;
 
-use LogicException;
-use MediaWiki\Linker\LinkTarget;
 use MediaWiki\MediaWikiServices;
-use MediaWiki\Page\PageReference;
 use MediaWiki\Parser\Sanitizer;
-use MediaWiki\Title\Title;
+use UnexpectedValueException;
 
 /**
- * A title on some wiki in the family, split into project, namespace and base title, e.g.
- * "Category:!eo:Foo" -> (this wiki's "eo" project, NS_CATEGORY, 'Foo'), with its display forms. Its project gives
- * its wiki and language. toTitle() and hasCapitalizationError() only work for local titles.
+ * A page title on some wiki in the family, split into project, namespace and base title, e.g.
+ * "Category:!eo:Foo" -> (this wiki's "eo" project, NS_CATEGORY, 'Foo'), with its page ID and display forms.
+ * Its project gives its wiki and language. LocalProjectTitle adds what needs this wiki's own data.
  */
-final class ProjectTitle {
+abstract class ProjectTitle {
 
-	private function __construct(
+	protected function __construct(
 		public readonly Project $project,
 		public readonly int $namespace,
-		/** Namespace name on the title's own wiki; looked up on first use for local titles */
-		private ?string $namespaceText,
 		/** DB key without namespace and "!xx:" prefix */
 		public readonly string $baseTitle,
 	) {
 	}
 
 	/**
-	 * @param Project $project Determines the title's wiki and language
+	 * A LocalProjectTitle or RemoteProjectTitle, depending on $project's wiki.
+	 *
+	 * @param Project $project
 	 * @param int $namespace
 	 * @param string $baseTitle DB key without namespace and "!xx:" prefix
-	 * @param string|null $namespaceText Namespace name on the title's wiki; required unless it's this wiki
+	 * @param string $namespaceText Namespace name on the title's own wiki
+	 * @param int $id Page ID on the title's own wiki
 	 */
-	public static function makeTitle(
-		Project $project,
-		int $namespace,
-		string $baseTitle,
-		?string $namespaceText = null
+	public static function make(
+		Project $project, int $namespace, string $baseTitle, string $namespaceText, int $id
 	): self {
-		return new self( $project, $namespace, $namespaceText, $baseTitle );
+		return $project->isLocal()
+			? new LocalProjectTitle( $project, $namespace, $baseTitle, $namespaceText, $id )
+			: new RemoteProjectTitle( $project, $namespace, $baseTitle, $namespaceText, $id );
 	}
 
 	/**
-	 * Parses a local title, ignoring its fragment. "!xx:" prefixes are ignored in
-	 * Hermes::NON_PROJECT_NAMESPACES and on interwiki titles, since they only mean something on
-	 * this wiki.
+	 * Creates a title from a hermes_tags table row. A page whose translation project no longer exists is a
+	 * base page again, with the "!xx:" prefix in its (now invalid) title, as it would be parsed on its wiki.
+	 *
+	 * @param \stdClass $row Database row object. Assumed to have the relevant ht_ properties.
 	 */
-	public static function newFromLinkTarget( LinkTarget|PageReference $page ): self {
-		if ( $page instanceof PageReference ) {
-			$page->assertWiki( PageReference::LOCAL );
+	public static function newFromRow( $row ): self {
+		$baseTitle = $row->ht_base_title;
+		$project = $row->ht_language !== null ? ProjectStore::getProject( $row->ht_language, $row->ht_wiki ) : null;
+		if ( $project === null || $project->isBase ) {
+			if ( $row->ht_language !== null ) {
+				$baseTitle = "!{$row->ht_language}:$baseTitle";
+			}
+			// Every wiki adds its base project before it can store tags.
+			$project = ProjectStore::getBaseProject( $row->ht_wiki )
+				?? throw new UnexpectedValueException( "hermes_tags has pages of unknown wiki \"{$row->ht_wiki}\"" );
 		}
-
-		$namespace = $page->getNamespace();
-		$isExternal = $page instanceof LinkTarget && $page->isExternal();
-		[ $project, $baseTitle ] = !$isExternal && Hermes::isProjectNamespace( $namespace )
-			? ProjectPrefix::parse( $page->getDBkey() )
-			: [ null, $page->getDBkey() ];
-		return new self( $project ?? ProjectStore::getLocalBaseProject(), $namespace, null, $baseTitle );
+		return self::make(
+			$project, (int)$row->ht_namespace_id, $baseTitle, $row->ht_namespace_text, (int)$row->ht_page_id
+		);
 	}
 
-	/** This title in $project, which must be on the same wiki. */
-	public function withProject( Project $project ): self {
-		return new self( $project, $this->namespace, $this->namespaceText, $this->baseTitle );
-	}
+	/** The page ID, or 0 if the page doesn't exist. */
+	abstract public function getId(): int;
 
-	/** This local title's base page. */
-	public function toBasePage(): self {
-		$this->assertLocal();
-		return $this->project->isBase ? $this : $this->withProject( ProjectStore::getLocalBaseProject() );
-	}
+	/** The namespace name on the title's own wiki, or '' for the main namespace. */
+	abstract public function getNamespaceText(): string;
 
-	/** The title, capitalized correctly even after a "!xx:" prefix, with $section (DB key form) as its fragment. */
-	public function toTitle( ?string $section = null ): Title {
-		$this->assertLocal();
-		$dbKey = $this->baseTitle;
-		if ( !$this->project->isBase ) {
-			$dbKey = $this->project->getPrefix() . Title::capitalize( $this->baseTitle, $this->namespace );
-		}
-		return Title::makeTitle( $this->namespace, $dbKey, $section ?? '' );
+	/** Whether $other is the same page, on the same wiki. */
+	public function isSamePage( ProjectTitle $other ): bool {
+		return $this->project->wiki === $other->project->wiki && $this->getId() === $other->getId();
 	}
 
 	/**
@@ -86,28 +77,6 @@ final class ProjectTitle {
 	 */
 	public function isInvalid(): bool {
 		return $this->project->isBase && ProjectPrefix::isReserved( $this->baseTitle );
-	}
-
-	/** Whether $wgCapitalLinks requires a capital letter after the "!xx:" prefix that's missing. */
-	public function hasCapitalizationError(): bool {
-		$this->assertLocal();
-		return !$this->project->isBase
-			&& Title::capitalize( $this->baseTitle, $this->namespace ) !== $this->baseTitle;
-	}
-
-	/** The message key of the reason why this title can't be created or moved to, if any. */
-	public function getErrorMessage(): ?string {
-		if ( $this->isInvalid() ) {
-			return 'hermes-invalid-project-title';
-		}
-
-		return $this->hasCapitalizationError() ? 'hermes-title-not-capitalized' : null;
-	}
-
-	/** The namespace name on the title's own wiki, or '' for the main namespace. */
-	public function getNamespaceText(): string {
-		$this->namespaceText ??= $this->toTitle()->getNsText();
-		return $this->namespaceText;
 	}
 
 	/**
@@ -168,12 +137,6 @@ final class ProjectTitle {
 		$path = strtr( $this->joinTitle( $this->getNamespaceText(), $this->project->getPrefix() ), ' ', '_' );
 		$fragment = $section !== null ? '#' . Sanitizer::escapeIdForLink( $section ) : '';
 		return str_replace( '$1', wfUrlencode( $path ), $template ) . $fragment;
-	}
-
-	private function assertLocal(): void {
-		if ( !$this->project->isLocal() ) {
-			throw new LogicException( "{$this->getRealTitle()} is on {$this->project->wiki}, not on this wiki" );
-		}
 	}
 
 	/** "ns:", $projectPrefix, the base title and "#section", with empty parts left out. */

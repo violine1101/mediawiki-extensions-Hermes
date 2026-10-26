@@ -117,9 +117,9 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		$wiki = WikiMap::getCurrentWikiId();
 		$this->insertPage( '!eo:Fooo' );
 		$this->insertPage( '!fr:Fooo' );
-		TagStore::setTagsForPage( $this->makePageInfo( $wiki, 'Foo' ), Tag::fromArgs( [ 'foo', 'bar' ] ) );
-		TagStore::setTagsForPage( $this->makePageInfo( $wiki, '!eo:Fooo' ), Tag::fromArgs( [ 'foo' ] ) );
-		TagStore::setTagsForPage( $this->makePageInfo( $wiki, '!fr:Fooo' ), Tag::fromArgs( [ 'bar' ] ) );
+		TagStore::setTagsForPage( $this->makePage( $wiki, 'Foo' ), Tag::fromArgs( [ 'foo', 'bar' ] ) );
+		TagStore::setTagsForPage( $this->makePage( $wiki, '!eo:Fooo' ), Tag::fromArgs( [ 'foo' ] ) );
+		TagStore::setTagsForPage( $this->makePage( $wiki, '!fr:Fooo' ), Tag::fromArgs( [ 'bar' ] ) );
 
 		[ $html ] = $this->execute( 'Foo' );
 

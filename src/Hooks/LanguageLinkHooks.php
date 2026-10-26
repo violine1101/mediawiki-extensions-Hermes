@@ -4,7 +4,7 @@ namespace MediaWiki\Extension\Hermes\Hooks;
 
 use MediaWiki\Config\Config;
 use MediaWiki\Extension\Hermes\LanguageLink;
-use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\LocalProjectTitle;
 use MediaWiki\Language\Language;
 use MediaWiki\Language\LanguageCode;
 use MediaWiki\Language\LanguageFactory;
@@ -44,7 +44,7 @@ class LanguageLinkHooks implements SidebarBeforeOutputHook {
 		}
 
 		$existingLangs = array_column( $sidebar['LANGUAGES'], 'lang' );
-		foreach ( LanguageLink::forPage( PageInfo::fromLocalPage( $title ) ) as $link ) {
+		foreach ( LanguageLink::forPage( LocalProjectTitle::fromTitle( $title ) ) as $link ) {
 			$item = $this->makeItem( $link, $skin );
 			if ( !in_array( $item['lang'], $existingLangs, true ) ) {
 				$sidebar['LANGUAGES'][] = $item;

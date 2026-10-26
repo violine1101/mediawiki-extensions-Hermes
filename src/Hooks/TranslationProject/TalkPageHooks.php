@@ -2,7 +2,7 @@
 
 namespace MediaWiki\Extension\Hermes\Hooks\TranslationProject;
 
-use MediaWiki\Extension\Hermes\ProjectTitle;
+use MediaWiki\Extension\Hermes\LocalProjectTitle;
 use MediaWiki\HookContainer\HookRunner;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Output\Hook\OutputPageBeforeHTMLHook;
@@ -19,7 +19,7 @@ class TalkPageHooks implements PageSaveCompleteHook, OutputPageBeforeHTMLHook {
 	public function onPageSaveComplete(
 		$wikiPage, $user, $summary, $flags, $revisionRecord, $editResult
 	) {
-		$page = ProjectTitle::newFromLinkTarget( $wikiPage->getTitle() );
+		$page = LocalProjectTitle::fromTitle( $wikiPage->getTitle() );
 		if ( $page->namespace !== NS_USER_TALK || $page->project->isBase || $editResult->isNullEdit() ) {
 			return;
 		}
@@ -56,7 +56,7 @@ class TalkPageHooks implements PageSaveCompleteHook, OutputPageBeforeHTMLHook {
 			return;
 		}
 
-		$page = ProjectTitle::newFromLinkTarget( $title );
+		$page = LocalProjectTitle::fromTitle( $title );
 		if ( $page->project->isBase || $page->baseTitle !== strtr( $user->getName(), ' ', '_' ) ) {
 			return;
 		}

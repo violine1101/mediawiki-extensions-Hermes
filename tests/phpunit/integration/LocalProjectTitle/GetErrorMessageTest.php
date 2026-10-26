@@ -1,13 +1,13 @@
 <?php
 
-namespace MediaWiki\Extension\Hermes\Tests\ProjectTitle;
+namespace MediaWiki\Extension\Hermes\Tests\LocalProjectTitle;
 
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 use MediaWiki\MainConfigNames;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\Hermes\ProjectTitle::getErrorMessage
+ * @covers \MediaWiki\Extension\Hermes\LocalProjectTitle::getErrorMessage
  */
 class GetErrorMessageTest extends HermesIntegrationTestCase {
 

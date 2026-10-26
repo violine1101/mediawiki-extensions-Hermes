@@ -4,9 +4,8 @@ namespace MediaWiki\Extension\Hermes\Hooks\TranslationProject;
 
 use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\LinkRewriter;
-use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\LocalProjectTitle;
 use MediaWiki\Extension\Hermes\ProjectStore;
-use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\TagStore;
 use MediaWiki\Html\Html;
 use MediaWiki\Linker\Hook\HtmlPageLinkRendererBeginHook;
@@ -43,7 +42,7 @@ class LinkHooks implements
 			return;
 		}
 
-		$text = LinkRewriter::rewrite( $text, ProjectTitle::newFromLinkTarget( $parserPage ) );
+		$text = LinkRewriter::rewrite( $text, LocalProjectTitle::fromTitle( $parserPage ) );
 	}
 
 	/** @inheritDoc */
@@ -62,12 +61,13 @@ class LinkHooks implements
 		}
 
 		// Cheap prefix check first: this runs for every rendered link.
-		$projectTitle = ProjectTitle::newFromLinkTarget( $target );
+		$projectTitle = LocalProjectTitle::fromTitle( $target );
 		if ( $projectTitle->project->isBase ) {
 			return true;
 		}
 
-		$baseTitle = $projectTitle->toBasePage()->toTitle();
+		$basePage = $projectTitle->toBasePage();
+		$baseTitle = $basePage->toTitle();
 		if ( Title::newFromLinkTarget( $target )->exists() ) {
 			return true;
 		}
@@ -88,11 +88,10 @@ class LinkHooks implements
 
 		$fallbackLinks = [ $linkRenderer->makeKnownLink( $baseTitle, ProjectStore::getLocalBaseLanguage() ) ];
 		// The translation may exist under another title, linked by tags.
-		$basePage = PageInfo::fromLocalPage( $baseTitle );
 		$translation = TagStore::getLinksForPage( $basePage )[ $projectTitle->project->code ] ?? null;
 		$redirectTo = null;
-		if ( $translation !== null && $translation->page->title->project->isLocal() ) {
-			$translationTitle = $translation->page->title->toTitle( $translation->tag->section );
+		if ( $translation?->title instanceof LocalProjectTitle ) {
+			$translationTitle = $translation->title->toTitle( $translation->tag->section );
 			$fallbackLinks[] = $linkRenderer->makeKnownLink( $translationTitle, $projectTitle->project->code );
 			// Only a redirect to a real translation, not a page it falls back to.
 			if ( isset( TagStore::getTranslationsOfPage( $basePage )[ $projectTitle->project->code ] ) ) {
@@ -140,7 +139,7 @@ class LinkHooks implements
 	public function onParserAfterTidy( $parser, &$text ) {
 		$output = $parser->getOutput();
 		foreach ( $output->getLinkList( ParserOutputLinkTypes::LOCAL ) as [ 'link' => $link ] ) {
-			$projectTitle = ProjectTitle::newFromLinkTarget( $link );
+			$projectTitle = LocalProjectTitle::fromTitle( $link );
 			if ( !$projectTitle->project->isBase ) {
 				$output->addExistenceDependency( $projectTitle->toBasePage()->toTitle() );
 			}
@@ -158,13 +157,13 @@ class LinkHooks implements
 		if (
 			$target->isExternal()
 			|| !isset( $attribs['title'] )
-			|| ProjectTitle::newFromLinkTarget( $target )->project->isBase
+			|| LocalProjectTitle::fromTitle( $target )->project->isBase
 		) {
 			return;
 		}
 
 		$title = Title::newFromLinkTarget( $target );
-		$page = ProjectTitle::newFromLinkTarget( $title );
+		$page = LocalProjectTitle::fromTitle( $title );
 
 		$prefixedText = $title->getPrefixedText();
 		$displayTitle = $page->getDisplayTitle( true );

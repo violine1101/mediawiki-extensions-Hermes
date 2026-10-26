@@ -1,11 +1,11 @@
 <?php
 
-namespace MediaWiki\Extension\Hermes\Tests\ProjectTitle;
+namespace MediaWiki\Extension\Hermes\Tests\LocalProjectTitle;
 
-use LogicException;
+use InvalidArgumentException;
+use MediaWiki\Extension\Hermes\LocalProjectTitle;
 use MediaWiki\Extension\Hermes\Project;
 use MediaWiki\Extension\Hermes\ProjectStore;
-use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 use MediaWiki\MainConfigNames;
 use MediaWiki\Title\Title;
@@ -14,7 +14,7 @@ use MediaWiki\WikiMap\WikiMap;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\Hermes\ProjectTitle
+ * @covers \MediaWiki\Extension\Hermes\LocalProjectTitle
  */
 class ToTitleTest extends HermesIntegrationTestCase {
 
@@ -39,23 +39,23 @@ class ToTitleTest extends HermesIntegrationTestCase {
 	}
 
 	public function testWithProjectOfTemplateTarget() {
-		$title = ProjectTitle::newFromLinkTarget( Title::makeTitle( NS_TEMPLATE, 'Foo_bar' ) )
+		$title = LocalProjectTitle::fromTitle( Title::makeTitle( NS_TEMPLATE, 'Foo_bar' ) )
 			->withProject( self::getProject( 'eo', WikiMap::getCurrentWikiId() ) )
 			->toTitle();
 
 		$this->assertSame( 'Template:!eo:Foo bar', $title->getPrefixedText() );
 	}
 
-	public function testNewFromLinkTargetParsesProject() {
-		$projectTitle = ProjectTitle::newFromLinkTarget( Title::makeTitle( NS_CATEGORY, '!eo:Foo_bar' ) );
+	public function testFromTitleParsesProject() {
+		$projectTitle = LocalProjectTitle::fromTitle( Title::makeTitle( NS_CATEGORY, '!eo:Foo_bar' ) );
 
 		$this->assertSame( NS_CATEGORY, $projectTitle->namespace );
 		$this->assertSame( 'eo', $projectTitle->project->code );
 		$this->assertSame( 'Foo_bar', $projectTitle->baseTitle );
 	}
 
-	public function testNewFromLinkTargetIgnoresPrefixInNonProjectNamespace() {
-		$projectTitle = ProjectTitle::newFromLinkTarget( Title::makeTitle( NS_FILE, '!eo:Foo.jpg' ) );
+	public function testFromTitleIgnoresPrefixInNonProjectNamespace() {
+		$projectTitle = LocalProjectTitle::fromTitle( Title::makeTitle( NS_FILE, '!eo:Foo.jpg' ) );
 
 		$this->assertTrue( $projectTitle->project->isBase );
 		$this->assertSame( '!eo:Foo.jpg', $projectTitle->baseTitle );
@@ -68,16 +68,13 @@ class ToTitleTest extends HermesIntegrationTestCase {
 		$this->assertSame( 'Foo', $title->getPrefixedText() );
 	}
 
-	public function testNewFromLinkTargetIgnoresPrefixOnInterwikiTitle() {
-		$interwiki = new TitleValue( NS_MAIN, '!eo:Foo', '', 'de' );
-		$this->assertTrue( ProjectTitle::newFromLinkTarget( $interwiki )->project->isBase );
+	public function testFromTitleRejectsInterwikiTitle() {
+		$this->expectException( InvalidArgumentException::class );
+		LocalProjectTitle::fromTitle( new TitleValue( NS_MAIN, '!eo:Foo', '', 'de' ) );
 	}
 
-	public function testForeignTitleCannotBecomeLocalTitle() {
-		$project = new Project( 'eo', 'otherwiki', false, true, null );
-		$title = ProjectTitle::makeTitle( $project, NS_MAIN, 'Foo', '' );
-
-		$this->expectException( LogicException::class );
-		$title->toTitle();
+	public function testRejectsForeignProject() {
+		$this->expectException( InvalidArgumentException::class );
+		new LocalProjectTitle( new Project( 'eo', 'otherwiki', false, true, null ), NS_MAIN, 'Foo' );
 	}
 }

@@ -31,7 +31,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	}
 
 	private function setTags( string $wiki, string $title, array $args ): void {
-		TagStore::setTagsForPage( $this->makePageInfo( $wiki, $title ), Tag::fromArgs( $args ) );
+		TagStore::setTagsForPage( $this->makePage( $wiki, $title ), Tag::fromArgs( $args ) );
 	}
 
 	/**

@@ -1,46 +1,43 @@
 <?php
 
-namespace MediaWiki\Extension\Hermes\Tests\PageInfo;
+namespace MediaWiki\Extension\Hermes\Tests\Special\TagFormatter;
 
-use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\Project;
 use MediaWiki\Extension\Hermes\ProjectTitle;
+use MediaWiki\Extension\Hermes\Special\TagFormatter;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
 
 /**
  * @group Database
- * @covers \MediaWiki\Extension\Hermes\PageInfo::buildLink
+ * @covers \MediaWiki\Extension\Hermes\Special\TagFormatter::externalLink
  */
-class BuildLinkTest extends HermesIntegrationTestCase {
+class ExternalLinkTest extends HermesIntegrationTestCase {
 
 	public function testWithoutUrlGivesPlainText() {
 		$project = new Project( 'de', 'dewiki', true, true, null );
-		$page = new PageInfo( ProjectTitle::makeTitle( $project, NS_MAIN, 'Foo_<b>', '' ) );
+		$title = ProjectTitle::make( $project, NS_MAIN, 'Foo_<b>', '', 1 );
 
-		$this->assertSame( 'Foo &lt;b&gt;', $page->buildLink() );
+		$this->assertSame( 'Foo &lt;b&gt;', TagFormatter::externalLink( $title ) );
 	}
 
 	public function testProjectPageTarget() {
 		$this->registerTranslationProject( 'eo', 'trwiki', url: 'https://translate.example.org/wiki/$1' );
 
-		$project = self::getProject( 'eo', 'trwiki' );
-		$title = ProjectTitle::makeTitle( $project, NS_MAIN, 'BuildLinkProjectTarget', '' );
-		$page = new PageInfo( $title );
+		$title = ProjectTitle::make( self::getProject( 'eo', 'trwiki' ), NS_MAIN, 'BuildLinkProjectTarget', '', 1 );
 
 		$this->assertSame(
 			'<a href="https://translate.example.org/wiki/!eo:BuildLinkProjectTarget" class="extiw" '
 				. 'title="BuildLinkProjectTarget – Esperanto">BuildLinkProjectTarget</a>',
-			$page->buildLink()
+			TagFormatter::externalLink( $title )
 		);
 	}
 
 	public function testNamespacedProjectPageTarget() {
 		$this->registerTranslationProject( 'eo', 'trwiki', url: 'https://translate.example.org/wiki/$1' );
 
-		$title = ProjectTitle::makeTitle(
-			self::getProject( 'eo', 'trwiki' ), NS_CATEGORY, 'BuildLinkNamespacedProjectTarget', 'Category'
+		$title = ProjectTitle::make(
+			self::getProject( 'eo', 'trwiki' ), NS_CATEGORY, 'BuildLinkNamespacedProjectTarget', 'Category', 1
 		);
-		$page = new PageInfo( $title );
 
 		// The "!xx:" prefix must land after the namespace, not before it. The link text uses the
 		// Esperanto namespace name, the URL the wiki's own.
@@ -48,7 +45,19 @@ class BuildLinkTest extends HermesIntegrationTestCase {
 			'<a href="https://translate.example.org/wiki/Category:!eo:BuildLinkNamespacedProjectTarget" '
 				. 'class="extiw" title="Kategorio:BuildLinkNamespacedProjectTarget – Esperanto">'
 				. 'Kategorio:BuildLinkNamespacedProjectTarget</a>',
-			$page->buildLink()
+			TagFormatter::externalLink( $title )
+		);
+	}
+
+	public function testSection() {
+		$this->registerBaseProject( 'de', 'dewiki', url: 'https://de.example.org/wiki/$1' );
+
+		$title = ProjectTitle::make( self::getProject( null, 'dewiki' ), NS_MAIN, 'Golem', '', 1 );
+
+		$this->assertSame(
+			'<a href="https://de.example.org/wiki/Golem#Eisengolem" class="extiw" '
+				. 'title="Golem#Eisengolem – German">Golem#Eisengolem</a>',
+			TagFormatter::externalLink( $title, 'Eisengolem' )
 		);
 	}
 }

@@ -3,7 +3,7 @@
 namespace MediaWiki\Extension\Hermes\Hooks\TranslationProject;
 
 use MediaWiki\Context\RequestContext;
-use MediaWiki\Extension\Hermes\ProjectTitle;
+use MediaWiki\Extension\Hermes\LocalProjectTitle;
 use MediaWiki\Hook\CategoryViewer__generateLinkHook;
 use MediaWiki\Hook\GetDefaultSortkeyHook;
 use MediaWiki\Html\Html;
@@ -29,7 +29,7 @@ class CategoryHooks implements
 	public function onOutputPageRenderCategoryLink(
 		OutputPage $outputPage, ProperPageIdentity $categoryTitle, string $text, ?string &$link
 	): void {
-		$category = ProjectTitle::newFromLinkTarget( $categoryTitle );
+		$category = LocalProjectTitle::fromTitle( $categoryTitle );
 		if ( $category->project->isBase ) {
 			return;
 		}
@@ -40,7 +40,7 @@ class CategoryHooks implements
 
 	/** @inheritDoc */
 	public function onGetDefaultSortkey( $title, &$sortkey ) {
-		$page = ProjectTitle::newFromLinkTarget( $title );
+		$page = LocalProjectTitle::fromTitle( $title );
 		if ( $page->project->isBase ) {
 			return;
 		}
@@ -55,8 +55,8 @@ class CategoryHooks implements
 			return;
 		}
 
-		$this->viewedCategoryLanguage ??= ProjectTitle::newFromLinkTarget( $categoryTitle )->project->code;
-		$page = ProjectTitle::newFromLinkTarget( $title );
+		$this->viewedCategoryLanguage ??= LocalProjectTitle::fromTitle( $categoryTitle )->project->code;
+		$page = LocalProjectTitle::fromTitle( $title );
 		$languageCode = $page->project->code;
 
 		$suffix = '';

@@ -14,12 +14,12 @@ final class LanguageLink {
 	}
 
 	public function getLanguageCode(): string {
-		return $this->link->page->title->project->code;
+		return $this->link->title->project->code;
 	}
 
 	/** Whether the target is a translation project page rather than a page on a base wiki. */
 	public function isProject(): bool {
-		return !$this->link->page->title->project->isBase;
+		return !$this->link->title->project->isBase;
 	}
 
 	/** The target's title as shown to readers, e.g. "Kategorio:Foo#Section". */
@@ -31,10 +31,10 @@ final class LanguageLink {
 	 * Links to the other-language versions of $page, keyed by language code. Targets on wikis
 	 * without a registered URL are left out.
 	 *
-	 * @param PageInfo $page
+	 * @param ProjectTitle $page
 	 * @return array<string, LanguageLink>
 	 */
-	public static function forPage( PageInfo $page ): array {
+	public static function forPage( ProjectTitle $page ): array {
 		$links = [];
 		foreach ( TagStore::getLinksForPage( $page ) as $lang => $tagLink ) {
 			$url = $tagLink->getUrl();

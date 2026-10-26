@@ -60,8 +60,8 @@ class OnHtmlPageLinkRendererBeginTest extends HermesIntegrationTestCase {
 		$this->insertPage( 'Foo' );
 		$this->insertPage( '!eo:Fooo' );
 		$wiki = WikiMap::getCurrentWikiId();
-		TagStore::setTagsForPage( $this->makePageInfo( $wiki, 'Foo' ), Tag::fromArgs( [ 'foo' ] ) );
-		TagStore::setTagsForPage( $this->makePageInfo( $wiki, '!eo:Fooo' ), Tag::fromArgs( [ 'foo' ] ) );
+		TagStore::setTagsForPage( $this->makePage( $wiki, 'Foo' ), Tag::fromArgs( [ 'foo' ] ) );
+		TagStore::setTagsForPage( $this->makePage( $wiki, '!eo:Fooo' ), Tag::fromArgs( [ 'foo' ] ) );
 
 		[ , $ret ] = $this->callHook( Title::makeTitle( NS_MAIN, '!eo:Foo' ) );
 
@@ -87,8 +87,8 @@ class OnHtmlPageLinkRendererBeginTest extends HermesIntegrationTestCase {
 		$this->insertPage( 'Foo' );
 		$this->insertPage( '!eo:Fooo' );
 		$wiki = WikiMap::getCurrentWikiId();
-		TagStore::setTagsForPage( $this->makePageInfo( $wiki, 'Foo' ), Tag::fromArgs( $baseTags ) );
-		TagStore::setTagsForPage( $this->makePageInfo( $wiki, '!eo:Fooo' ), Tag::fromArgs( $translationTags ) );
+		TagStore::setTagsForPage( $this->makePage( $wiki, 'Foo' ), Tag::fromArgs( $baseTags ) );
+		TagStore::setTagsForPage( $this->makePage( $wiki, '!eo:Fooo' ), Tag::fromArgs( $translationTags ) );
 
 		[ , $ret ] = $this->callHook( Title::makeTitle( NS_MAIN, '!eo:Foo' ) );
 

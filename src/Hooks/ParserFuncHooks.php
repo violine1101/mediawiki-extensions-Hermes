@@ -6,7 +6,7 @@ use MediaWiki\Extension\Hermes\Exceptions\DuplicateTagException;
 use MediaWiki\Extension\Hermes\Exceptions\InvalidSectionException;
 use MediaWiki\Extension\Hermes\Exceptions\InvalidTagNameException;
 use MediaWiki\Extension\Hermes\Hermes;
-use MediaWiki\Extension\Hermes\PageInfo;
+use MediaWiki\Extension\Hermes\LocalProjectTitle;
 use MediaWiki\Extension\Hermes\Special\TagFormatter;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Extension\Hermes\TagLink;
@@ -85,19 +85,20 @@ class ParserFuncHooks implements
 
 		$showWarnings = MediaWikiServices::getInstance()->getMainConfig()->get( 'HermesWarnings' );
 		$tags = array_map( Tag::fromJson( ... ), json_decode( $json ) );
-		$page = PageInfo::fromLocalPage( $parser->getPage() );
+		$page = LocalProjectTitle::fromTitle( $parser->getPage() );
 
 		$conflicts = TagStore::findConflicts( $page, $tags );
 		$linkRenderer = $parser->getLinkRenderer();
 		$tagLink = static fn ( string $tag ) => $linkRenderer->makeKnownLink(
 			SpecialPage::getTitleFor( 'HermesTags', $tag ), new HtmlArmor( Html::element( 'code', [], $tag ) )
 		);
+		$externalLink = static fn ( TagLink $l ) => TagFormatter::externalLink( $l->title, $l->tag->section );
 		$detailsLink = $linkRenderer->makeKnownLink(
 			TagFormatter::detailsTitle( $page ), wfMessage( 'hermes-page-details' )->text()
 		);
-		$localConflicts = $conflicts[ $page->title->project->code ] ?? [];
+		$localConflicts = $conflicts[ $page->project->code ] ?? [];
 		$foreignConflicts = $conflicts;
-		unset( $foreignConflicts[ $page->title->project->code ] );
+		unset( $foreignConflicts[ $page->project->code ] );
 
 		if ( $localConflicts ) {
 			$parser->addTrackingCategory( 'hermes-tag-conflict-category' );
@@ -105,12 +106,8 @@ class ParserFuncHooks implements
 				$conflictItems = [];
 				foreach ( $localConflicts as $tag => $pages ) {
 					$tagCode = $tagLink( $tag );
-					$pages = array_filter(
-						$pages,
-						static fn ( TagLink $l ) => $l->page->title->project->wiki !== $page->title->project->wiki
-							|| $l->page->getId() !== $page->getId(),
-					);
-					$links = array_map( static fn ( TagLink $l ) => $l->page->buildLink( $l->tag->section ), $pages );
+					$pages = array_filter( $pages, static fn ( TagLink $l ) => !$l->title->isSamePage( $page ) );
+					$links = array_map( $externalLink, $pages );
 					$conflictItems[] = Html::rawElement( 'li', [], "{$tagCode}: " . implode( ', ', $links ) );
 				}
 				$list = Html::rawElement( 'ul', [], implode( '', $conflictItems ) );
@@ -128,9 +125,7 @@ class ParserFuncHooks implements
 					foreach ( $langEntries as $tag => $pages ) {
 						$tagCode = $tagLink( $tag );
 						$langName = htmlspecialchars( Hermes::getAutonym( $lang ) ?: $lang );
-						$links = array_map(
-							static fn ( TagLink $l ) => $l->page->buildLink( $l->tag->section ), $pages
-						);
+						$links = array_map( $externalLink, $pages );
 						$ambiguousItems[] = Html::rawElement(
 							'li', [], "{$tagCode} ({$langName}): " . implode( ', ', $links )
 						);
@@ -152,7 +147,7 @@ class ParserFuncHooks implements
 			return true;
 		}
 
-		$page = PageInfo::fromLocalPage( $linksUpdate->getTitle() );
+		$page = LocalProjectTitle::fromTitle( $linksUpdate->getTitle() );
 		$tags = array_map( Tag::fromJson( ... ), json_decode( $json ) );
 		TagStore::setTagsForPage( $page, $tags );
 
@@ -170,7 +165,7 @@ class ParserFuncHooks implements
 		int $archivedRevisionCount
 	) {
 		// The page is gone by now, so its ID can't be looked up.
-		TagStore::deleteTagsForPage( PageInfo::fromLocalPage( $page, $pageID ) );
+		TagStore::deleteTagsForPage( LocalProjectTitle::fromTitle( $page, $pageID ) );
 
 		return true;
 	}

@@ -13,7 +13,7 @@ class IsInvalidTest extends MediaWikiUnitTestCase {
 
 	private static function makeTitle( ?string $language, string $title ): ProjectTitle {
 		$project = new Project( $language ?? 'en', 'testwiki', $language === null, true, null );
-		return ProjectTitle::makeTitle( $project, NS_MAIN, $title );
+		return ProjectTitle::make( $project, NS_MAIN, $title, '', 0 );
 	}
 
 	public function testUnregisteredBangPrefix() {

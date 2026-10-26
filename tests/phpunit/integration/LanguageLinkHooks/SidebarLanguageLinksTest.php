@@ -4,7 +4,6 @@ namespace MediaWiki\Extension\Hermes\Tests\LanguageLinkHooks;
 
 use MediaWiki\Context\RequestContext;
 use MediaWiki\Extension\Hermes\Hooks\LanguageLinkHooks;
-use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\Tag;
 use MediaWiki\Extension\Hermes\TagStore;
@@ -31,9 +30,8 @@ class SidebarLanguageLinksTest extends HermesIntegrationTestCase {
 	}
 
 	private function addPartners(): void {
-		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'Stein' ), Tag::fromArgs( [ 'stone' ] ) );
-		$eoTitle = ProjectTitle::makeTitle( self::getProject( 'eo', 'trwiki' ), NS_MAIN, 'Ŝtono', '' );
-		$eo = new PageInfo( $eoTitle, 1000 );
+		TagStore::setTagsForPage( $this->makePage( 'dewiki', 'Stein' ), Tag::fromArgs( [ 'stone' ] ) );
+		$eo = ProjectTitle::make( self::getProject( 'eo', 'trwiki' ), NS_MAIN, 'Ŝtono', '', 1000 );
 		TagStore::setTagsForPage( $eo, Tag::fromArgs( [ 'stone' ] ) );
 	}
 

@@ -5,8 +5,8 @@ namespace MediaWiki\Extension\Hermes\Hooks\TranslationProject;
 use MediaWiki\Content\Hook\PageContentLanguageHook;
 use MediaWiki\Context\Hook\UserGetLanguageObjectHook;
 use MediaWiki\Extension\Hermes\DisplayLanguage;
+use MediaWiki\Extension\Hermes\LocalProjectTitle;
 use MediaWiki\Extension\Hermes\ProjectStore;
-use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Hook\BeforeInitializeHook;
 use MediaWiki\Html\Html;
 use MediaWiki\Output\Hook\OutputPageBeforeHTMLHook;
@@ -35,7 +35,7 @@ class PageHooks implements
 			return true;
 		}
 
-		$error = ProjectTitle::newFromLinkTarget( $title )->getErrorMessage();
+		$error = LocalProjectTitle::fromTitle( $title )->getErrorMessage();
 		if ( $error !== null ) {
 			$result = $error;
 			return false;
@@ -52,7 +52,7 @@ class PageHooks implements
 			return;
 		}
 
-		$projectTitle = ProjectTitle::newFromLinkTarget( $title );
+		$projectTitle = LocalProjectTitle::fromTitle( $title );
 		if ( !$projectTitle->hasCapitalizationError() ) {
 			return;
 		}
@@ -65,7 +65,7 @@ class PageHooks implements
 
 	/** @inheritDoc */
 	public function onPageContentLanguage( $title, &$pageLang, $userLang ) {
-		$projectTitle = ProjectTitle::newFromLinkTarget( $title );
+		$projectTitle = LocalProjectTitle::fromTitle( $title );
 		if ( !$projectTitle->project->isBase ) {
 			$pageLang = $projectTitle->project->getLanguage();
 		}
@@ -79,7 +79,7 @@ class PageHooks implements
 
 		$title = $context->getTitle();
 		$contentLanguage = $title
-			? ProjectTitle::newFromLinkTarget( $title )->project->code
+			? LocalProjectTitle::fromTitle( $title )->project->code
 			: ProjectStore::getLocalBaseLanguage();
 		// Core's "language" option (the incoming $code) is hidden in favor of Hermes's own; users whose
 		// options can't be loaded yet get the content language, like logged-out users.
@@ -93,7 +93,7 @@ class PageHooks implements
 			return;
 		}
 
-		$page = ProjectTitle::newFromLinkTarget( $parserPage );
+		$page = LocalProjectTitle::fromTitle( $parserPage );
 		if ( $page->project->isBase ) {
 			return;
 		}
@@ -110,7 +110,7 @@ class PageHooks implements
 			return;
 		}
 
-		$project = ProjectTitle::newFromLinkTarget( $title )->project;
+		$project = LocalProjectTitle::fromTitle( $title )->project;
 		if ( $project->isBase ) {
 			return;
 		}

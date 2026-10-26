@@ -15,8 +15,8 @@ class DeleteTagsForPageTest extends HermesIntegrationTestCase {
 
 	public function testRemovesTags() {
 		$this->registerBaseProject( 'de', 'dewiki' );
-		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
-		$de = $this->makePageInfo( 'dewiki' );
+		$en = $this->makePage( WikiMap::getCurrentWikiId() );
+		$de = $this->makePage( 'dewiki' );
 
 		TagStore::setTagsForPage( $de, Tag::fromArgs( [ 'shared_tag' ] ) );
 		TagStore::setTagsForPage( $en, Tag::fromArgs( [ 'shared_tag' ] ) );

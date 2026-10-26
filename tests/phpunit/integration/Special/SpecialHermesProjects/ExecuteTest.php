@@ -94,9 +94,9 @@ class ExecuteTest extends HermesIntegrationTestCase {
 		$this->registerTranslationProject( 'fr', $this->wiki );
 		$this->registerTranslationProject( 'eo', $this->wiki );
 		// Several tags on one page, and several pages: count pages, not tags.
-		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'A' ), Tag::fromArgs( [ 'a', 'b' ] ) );
-		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'B' ), Tag::fromArgs( [ 'a' ] ) );
-		TagStore::setTagsForPage( $this->makePageInfo( $this->wiki, '!eo:C' ), Tag::fromArgs( [ 'a' ] ) );
+		TagStore::setTagsForPage( $this->makePage( 'dewiki', 'A' ), Tag::fromArgs( [ 'a', 'b' ] ) );
+		TagStore::setTagsForPage( $this->makePage( 'dewiki', 'B' ), Tag::fromArgs( [ 'a' ] ) );
+		TagStore::setTagsForPage( $this->makePage( $this->wiki, '!eo:C' ), Tag::fromArgs( [ 'a' ] ) );
 
 		$this->assertSame( [
 			'(hermesprojects-header-wiki) | (hermesprojects-header-language) | (hermesprojects-header-pages) | '
@@ -110,7 +110,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	public function testLinks() {
 		$this->registerTranslationProject( 'eo', 'dewiki' );
-		TagStore::setTagsForPage( $this->makePageInfo( 'dewiki', 'A' ), Tag::fromArgs( [ 'a' ] ) );
+		TagStore::setTagsForPage( $this->makePage( 'dewiki', 'A' ), Tag::fromArgs( [ 'a' ] ) );
 
 		$html = $this->execute();
 		$this->assertMatchesRegularExpression( '/<a href="[^"]*Special:HermesPages\/de"[^>]*>1<\/a>/', $html );
@@ -221,7 +221,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 
 	public function testListsInactiveProjects() {
 		$this->registerTranslationProject( 'de', $this->wiki, false );
-		TagStore::setTagsForPage( $this->makePageInfo( $this->wiki, '!de:C' ), Tag::fromArgs( [ 'a' ] ) );
+		TagStore::setTagsForPage( $this->makePage( $this->wiki, '!de:C' ), Tag::fromArgs( [ 'a' ] ) );
 
 		$html = $this->execute();
 		$this->assertSame( [

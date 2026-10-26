@@ -2,8 +2,8 @@
 
 namespace MediaWiki\Extension\Hermes\Hooks\TranslationProject;
 
+use MediaWiki\Extension\Hermes\LocalProjectTitle;
 use MediaWiki\Extension\Hermes\ProjectPrefix;
-use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Parser\Hook\BeforeParserFetchTemplateRevisionRecordHook;
 use MediaWiki\Parser\Hook\ParserAfterParseHook;
@@ -39,12 +39,12 @@ class TemplateHooks implements
 			return;
 		}
 
-		$project = ProjectTitle::newFromLinkTarget( $contextTitle )->project;
+		$project = LocalProjectTitle::fromTitle( $contextTitle )->project;
 		if ( $project->isBase ) {
 			return;
 		}
 
-		$projectTitle = ProjectTitle::newFromLinkTarget( $title )->withProject( $project )->toTitle();
+		$projectTitle = LocalProjectTitle::fromTitle( $title )->withProject( $project )->toTitle();
 		if ( $projectTitle->exists() ) {
 			$revRecord = MediaWikiServices::getInstance()->getRevisionLookup()->getRevisionByTitle( $projectTitle );
 		}
@@ -62,7 +62,7 @@ class TemplateHooks implements
 			return;
 		}
 
-		$project = ProjectTitle::newFromLinkTarget( $page )->project;
+		$project = LocalProjectTitle::fromTitle( $page )->project;
 		if ( $project->isBase ) {
 			return;
 		}
@@ -70,7 +70,7 @@ class TemplateHooks implements
 		$output = $parser->getOutput();
 		foreach ( $output->getLinkList( ParserOutputLinkTypes::TEMPLATE ) as [ 'link' => $link ] ) {
 			if ( !ProjectPrefix::isReserved( $link->getText() ) ) {
-				$projectTitle = ProjectTitle::newFromLinkTarget( $link )->withProject( $project )->toTitle();
+				$projectTitle = LocalProjectTitle::fromTitle( $link )->withProject( $project )->toTitle();
 				$output->addExistenceDependency( $projectTitle );
 			}
 		}

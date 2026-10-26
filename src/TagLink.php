@@ -8,7 +8,7 @@ namespace MediaWiki\Extension\Hermes;
 final class TagLink {
 
 	public function __construct(
-		public readonly PageInfo $page,
+		public readonly ProjectTitle $title,
 		public readonly Tag $tag,
 	) {
 	}
@@ -20,16 +20,16 @@ final class TagLink {
 	 * @return TagLink
 	 */
 	public static function fromRow( $row ): TagLink {
-		return new TagLink( PageInfo::fromRow( $row ), Tag::fromRow( $row ) );
+		return new TagLink( ProjectTitle::newFromRow( $row ), Tag::fromRow( $row ) );
 	}
 
 	/** The URL of the page's section, or null if its wiki has no registered URL. */
 	public function getUrl(): ?string {
-		return $this->page->title->getUrl( $this->tag->section );
+		return $this->title->getUrl( $this->tag->section );
 	}
 
 	/** The page's title with namespace and "#section", as shown to readers. */
 	public function getDisplayTitle(): string {
-		return $this->page->title->getDisplayTitle( true, $this->tag->section );
+		return $this->title->getDisplayTitle( true, $this->tag->section );
 	}
 }

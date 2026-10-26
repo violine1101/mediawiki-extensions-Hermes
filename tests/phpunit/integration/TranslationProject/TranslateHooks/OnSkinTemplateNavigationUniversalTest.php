@@ -62,8 +62,8 @@ class OnSkinTemplateNavigationUniversalTest extends HermesIntegrationTestCase {
 		// One translation with the same title, one linked by a tag.
 		$this->insertPage( '!eo:Foo' );
 		$this->insertPage( '!fr:Fou' );
-		TagStore::setTagsForPage( $this->makePageInfo( $this->wiki, 'Foo' ), Tag::fromArgs( [ 'foo' ] ) );
-		TagStore::setTagsForPage( $this->makePageInfo( $this->wiki, '!fr:Fou' ), Tag::fromArgs( [ 'foo' ] ) );
+		TagStore::setTagsForPage( $this->makePage( $this->wiki, 'Foo' ), Tag::fromArgs( [ 'foo' ] ) );
+		TagStore::setTagsForPage( $this->makePage( $this->wiki, '!fr:Fou' ), Tag::fromArgs( [ 'foo' ] ) );
 
 		$this->assertNull( $this->getAction( 'Foo' ) );
 	}
@@ -71,8 +71,8 @@ class OnSkinTemplateNavigationUniversalTest extends HermesIntegrationTestCase {
 	public function testFallbackIsNoTranslation() {
 		$this->insertPage( '!eo:Foo' );
 		$this->insertPage( '!fr:Fou' );
-		TagStore::setTagsForPage( $this->makePageInfo( $this->wiki, 'Foo' ), Tag::fromArgs( [ 'foo', 'bar' ] ) );
-		TagStore::setTagsForPage( $this->makePageInfo( $this->wiki, '!fr:Fou' ), Tag::fromArgs( [ 'bar' ] ) );
+		TagStore::setTagsForPage( $this->makePage( $this->wiki, 'Foo' ), Tag::fromArgs( [ 'foo', 'bar' ] ) );
+		TagStore::setTagsForPage( $this->makePage( $this->wiki, '!fr:Fou' ), Tag::fromArgs( [ 'bar' ] ) );
 
 		$this->assertNotNull( $this->getAction( 'Foo' ) );
 	}

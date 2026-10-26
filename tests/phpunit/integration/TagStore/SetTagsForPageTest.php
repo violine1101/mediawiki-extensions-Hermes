@@ -20,8 +20,8 @@ class SetTagsForPageTest extends HermesIntegrationTestCase {
 	}
 
 	public function testOverwritesPreviousTags() {
-		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
-		$de = $this->makePageInfo( 'dewiki' );
+		$en = $this->makePage( WikiMap::getCurrentWikiId() );
+		$de = $this->makePage( 'dewiki' );
 
 		TagStore::setTagsForPage( $de, Tag::fromArgs( [ 'old_tag' ] ) );
 		TagStore::setTagsForPage( $en, Tag::fromArgs( [ 'old_tag' ] ) );
@@ -33,8 +33,8 @@ class SetTagsForPageTest extends HermesIntegrationTestCase {
 	}
 
 	public function testPersistsSection() {
-		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
-		$de = $this->makePageInfo( 'dewiki' );
+		$en = $this->makePage( WikiMap::getCurrentWikiId() );
+		$de = $this->makePage( 'dewiki' );
 
 		TagStore::setTagsForPage( $de, Tag::fromArgs( [ 'shared_tag=#Some_Section' ] ) );
 		TagStore::setTagsForPage( $en, Tag::fromArgs( [ 'shared_tag' ] ) );
@@ -45,7 +45,7 @@ class SetTagsForPageTest extends HermesIntegrationTestCase {
 	}
 
 	public function testPriorityIgnoresSection() {
-		$page = $this->makePageInfo( WikiMap::getCurrentWikiId() );
+		$page = $this->makePage( WikiMap::getCurrentWikiId() );
 
 		TagStore::setTagsForPage( $page, Tag::fromArgs( [
 			'page_level_a',
@@ -57,7 +57,7 @@ class SetTagsForPageTest extends HermesIntegrationTestCase {
 		$rows = Hermes::getDB()->select(
 			'hermes_tags',
 			[ 'ht_tag', 'ht_section', 'ht_priority' ],
-			[ 'ht_wiki' => $page->title->project->wiki, 'ht_page_id' => $page->getId() ],
+			[ 'ht_wiki' => $page->project->wiki, 'ht_page_id' => $page->getId() ],
 			__METHOD__
 		);
 

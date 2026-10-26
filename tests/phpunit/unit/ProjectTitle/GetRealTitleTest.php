@@ -18,7 +18,7 @@ class GetRealTitleTest extends MediaWikiUnitTestCase {
 	): ProjectTitle {
 		$project = new Project( $language ?? 'en', 'testwiki', $language === null, true, null );
 		// The namespace ID isn't used for the real title.
-		return ProjectTitle::makeTitle( $project, NS_MAIN, $title, $namespaceText );
+		return ProjectTitle::make( $project, NS_MAIN, $title, $namespaceText, 0 );
 	}
 
 	public function testOrdinaryPage() {

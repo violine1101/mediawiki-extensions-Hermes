@@ -21,10 +21,10 @@ class GetTranslationsOfPageTest extends HermesIntegrationTestCase {
 	}
 
 	public function testOnlyMainTagAtPriorityZero() {
-		$en = $this->makePageInfo( WikiMap::getCurrentWikiId() );
-		$de = $this->makePageInfo( 'dewiki' );
-		$fr = $this->makePageInfo( 'frwiki' );
-		$es = $this->makePageInfo( 'eswiki' );
+		$en = $this->makePage( WikiMap::getCurrentWikiId() );
+		$de = $this->makePage( 'dewiki' );
+		$fr = $this->makePage( 'frwiki' );
+		$es = $this->makePage( 'eswiki' );
 		TagStore::setTagsForPage( $en, Tag::fromArgs( [ 'foo', 'bar' ] ) );
 		TagStore::setTagsForPage( $de, Tag::fromArgs( [ 'foo' ] ) );
 		// A fallback of the English page, and one of the French page.
@@ -34,11 +34,11 @@ class GetTranslationsOfPageTest extends HermesIntegrationTestCase {
 		$translations = TagStore::getTranslationsOfPage( $en );
 
 		$this->assertSame( [ 'de' ], array_keys( $translations ) );
-		$this->assertSame( $de->getId(), $translations[ 'de' ]->page->getId() );
+		$this->assertSame( $de->getId(), $translations[ 'de' ]->title->getId() );
 		$this->assertCount( 3, TagStore::getLinksForPage( $en ) );
 	}
 
 	public function testNoTags() {
-		$this->assertSame( [], TagStore::getTranslationsOfPage( $this->makePageInfo( WikiMap::getCurrentWikiId() ) ) );
+		$this->assertSame( [], TagStore::getTranslationsOfPage( $this->makePage( WikiMap::getCurrentWikiId() ) ) );
 	}
 }
