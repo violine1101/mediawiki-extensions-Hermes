@@ -141,15 +141,13 @@ class ParserFuncHooks implements
 
 	/** @inheritDoc */
 	public function onLinksUpdateComplete( $linksUpdate, $ticket ) {
-		$output = $linksUpdate->getParserOutput();
-		$json = $output->getPageProperty( 'hermes_tags' );
-		if ( $json === null ) {
-			return true;
+		$page = LocalProjectTitle::fromTitle( $linksUpdate->getTitle(), $linksUpdate->getPageId() );
+		$json = $linksUpdate->getParserOutput()->getPageProperty( 'hermes_tags' );
+		if ( $json !== null ) {
+			TagStore::setTagsForPage( $page, array_map( Tag::fromJson( ... ), json_decode( $json ) ) );
+		} elseif ( isset( $linksUpdate->getRemovedProperties()['hermes_tags'] ) ) {
+			TagStore::deleteTagsForPage( $page );
 		}
-
-		$page = LocalProjectTitle::fromTitle( $linksUpdate->getTitle() );
-		$tags = array_map( Tag::fromJson( ... ), json_decode( $json ) );
-		TagStore::setTagsForPage( $page, $tags );
 
 		return true;
 	}
