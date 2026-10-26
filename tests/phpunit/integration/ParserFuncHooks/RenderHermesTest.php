@@ -59,4 +59,13 @@ class RenderHermesTest extends HermesIntegrationTestCase {
 
 		$this->assertNotContains( 'Pages_with_duplicate_Hermes_calls', $output->getCategoryNames() );
 	}
+
+	public function testErrorIgnoresUserLanguage() {
+		// Parser output is cached for all users, so qqx's "(message-key)" form must not end up in it.
+		$this->setUserLang( 'qqx' );
+
+		$this->assertStringNotContainsString(
+			'(hermes-invalid-tag-name', $this->parse( '{{#hermes:bad!tag}}' )->getContentHolderText()
+		);
+	}
 }

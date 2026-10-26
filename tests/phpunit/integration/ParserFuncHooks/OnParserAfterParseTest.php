@@ -156,4 +156,19 @@ class OnParserAfterParseTest extends HermesIntegrationTestCase {
 
 		$this->assertContains( 'Pages_with_conflicting_Hermes_tags', $output->getCategoryNames() );
 	}
+
+	public function testWarningIgnoresUserLanguage() {
+		$existing = $this->makePage( 'dewiki', 'UserLanguageConflict' );
+		TagStore::setTagsForPage( $existing, Tag::fromArgs( [ 'user_language_tag' ] ) );
+		TagStore::setTagsForPage( $this->makePage( 'dewiki' ), Tag::fromArgs( [ 'user_language_tag' ] ) );
+		// Parser output is cached for all users, so qqx's "(message-key)" form must not end up in it.
+		$this->setUserLang( 'qqx' );
+
+		$text = $this->parse( '{{#hermes:user_language_tag}}', 'ParserFuncHooksUserLanguageTest' )
+			->getContentHolderText();
+
+		$this->assertStringContainsString( 'cdx-message--warning', $text );
+		$this->assertStringNotContainsString( '(hermes-ambiguous-links-warning', $text );
+		$this->assertStringNotContainsString( '(interlanguage-link-title', $text );
+	}
 }

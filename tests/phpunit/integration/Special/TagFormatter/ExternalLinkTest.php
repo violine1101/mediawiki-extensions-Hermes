@@ -6,6 +6,7 @@ use MediaWiki\Extension\Hermes\Project;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\Special\TagFormatter;
 use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
+use MediaWiki\Language\Language;
 
 /**
  * @group Database
@@ -13,11 +14,15 @@ use MediaWiki\Extension\Hermes\Tests\HermesIntegrationTestCase;
  */
 class ExternalLinkTest extends HermesIntegrationTestCase {
 
+	private function language( string $code ): Language {
+		return $this->getServiceContainer()->getLanguageFactory()->getLanguage( $code );
+	}
+
 	public function testWithoutUrlGivesPlainText() {
 		$project = new Project( 'de', 'dewiki', true, true, null );
 		$title = ProjectTitle::make( $project, NS_MAIN, 'Foo_<b>', '', 1 );
 
-		$this->assertSame( 'Foo &lt;b&gt;', TagFormatter::externalLink( $title ) );
+		$this->assertSame( 'Foo &lt;b&gt;', TagFormatter::externalLink( $title, $this->language( 'en' ) ) );
 	}
 
 	public function testProjectPageTarget() {
@@ -28,7 +33,7 @@ class ExternalLinkTest extends HermesIntegrationTestCase {
 		$this->assertSame(
 			'<a href="https://translate.example.org/wiki/!eo:BuildLinkProjectTarget" class="extiw" '
 				. 'title="BuildLinkProjectTarget – Esperanto">BuildLinkProjectTarget</a>',
-			TagFormatter::externalLink( $title )
+			TagFormatter::externalLink( $title, $this->language( 'en' ) )
 		);
 	}
 
@@ -45,7 +50,7 @@ class ExternalLinkTest extends HermesIntegrationTestCase {
 			'<a href="https://translate.example.org/wiki/Category:!eo:BuildLinkNamespacedProjectTarget" '
 				. 'class="extiw" title="Kategorio:BuildLinkNamespacedProjectTarget – Esperanto">'
 				. 'Kategorio:BuildLinkNamespacedProjectTarget</a>',
-			TagFormatter::externalLink( $title )
+			TagFormatter::externalLink( $title, $this->language( 'en' ) )
 		);
 	}
 
@@ -57,7 +62,17 @@ class ExternalLinkTest extends HermesIntegrationTestCase {
 		$this->assertSame(
 			'<a href="https://de.example.org/wiki/Golem#Eisengolem" class="extiw" '
 				. 'title="Golem#Eisengolem – German">Golem#Eisengolem</a>',
-			TagFormatter::externalLink( $title, 'Eisengolem' )
+			TagFormatter::externalLink( $title, $this->language( 'en' ), 'Eisengolem' )
+		);
+	}
+
+	public function testTooltipInGivenLanguage() {
+		$this->registerBaseProject( 'de', 'dewiki', url: 'https://de.example.org/wiki/$1' );
+
+		$title = ProjectTitle::make( self::getProject( null, 'dewiki' ), NS_MAIN, 'Golem', '', 1 );
+
+		$this->assertStringContainsString(
+			'title="Golem – Deutsch"', TagFormatter::externalLink( $title, $this->language( 'de' ) )
 		);
 	}
 }

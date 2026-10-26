@@ -52,18 +52,18 @@ class ParserFuncHooks implements
 			$parser->addTrackingCategory( 'hermes-duplicate-call-category' );
 
 			if ( $showWarnings ) {
-				$output .= Html::warningBox( wfMessage( 'hermes-duplicate-call' )->parse() );
+				$output .= Html::warningBox( $parser->msg( 'hermes-duplicate-call' )->parse() );
 			}
 		}
 
 		try {
 			$tags = Tag::fromArgs( $args );
 		} catch ( InvalidTagNameException $e ) {
-			return Html::errorBox( wfMessage( 'hermes-invalid-tag-name', $e->tagName )->parse() );
+			return Html::errorBox( $parser->msg( 'hermes-invalid-tag-name', $e->tagName )->parse() );
 		} catch ( InvalidSectionException $e ) {
-			return Html::errorBox( wfMessage( 'hermes-invalid-section' )->plaintextParams( $e->arg )->parse() );
+			return Html::errorBox( $parser->msg( 'hermes-invalid-section' )->plaintextParams( $e->arg )->parse() );
 		} catch ( DuplicateTagException $e ) {
-			return Html::errorBox( wfMessage( 'hermes-duplicate-tag-name', $e->tagName )->parse() );
+			return Html::errorBox( $parser->msg( 'hermes-duplicate-tag-name', $e->tagName )->parse() );
 		}
 
 		$json = json_encode( $tags );
@@ -92,9 +92,12 @@ class ParserFuncHooks implements
 		$tagLink = static fn ( string $tag ) => $linkRenderer->makeKnownLink(
 			SpecialPage::getTitleFor( 'HermesTags', $tag ), new HtmlArmor( Html::element( 'code', [], $tag ) )
 		);
-		$externalLink = static fn ( TagLink $l ) => TagFormatter::externalLink( $l->title, $l->tag->section );
+		// The output is parser-cached, so it mustn't depend on the user's language.
+		$language = $parser->getTargetLanguage();
+		$externalLink = static fn ( TagLink $l ) =>
+			TagFormatter::externalLink( $l->title, $language, $l->tag->section );
 		$detailsLink = $linkRenderer->makeKnownLink(
-			TagFormatter::detailsTitle( $page ), wfMessage( 'hermes-page-details' )->text()
+			TagFormatter::detailsTitle( $page ), $parser->msg( 'hermes-page-details' )->text()
 		);
 		$localConflicts = $conflicts[ $page->project->code ] ?? [];
 		$foreignConflicts = $conflicts;
@@ -112,7 +115,7 @@ class ParserFuncHooks implements
 				}
 				$list = Html::rawElement( 'ul', [], implode( '', $conflictItems ) );
 				$text .= Html::warningBox(
-					wfMessage( 'hermes-tag-conflict-warning' )->rawParams( $detailsLink )->parse() . $list
+					$parser->msg( 'hermes-tag-conflict-warning' )->rawParams( $detailsLink )->parse() . $list
 				);
 			}
 		}
@@ -133,7 +136,7 @@ class ParserFuncHooks implements
 				}
 				$list = Html::rawElement( 'ul', [], implode( '', $ambiguousItems ) );
 				$text .= Html::warningBox(
-					wfMessage( 'hermes-ambiguous-links-warning' )->rawParams( $detailsLink )->parse() . $list
+					$parser->msg( 'hermes-ambiguous-links-warning' )->rawParams( $detailsLink )->parse() . $list
 				);
 			}
 		}

@@ -3,13 +3,13 @@
 namespace MediaWiki\Extension\Hermes\Special;
 
 use MediaWiki\Context\IContextSource;
-use MediaWiki\Context\RequestContext;
 use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\Project;
 use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\TagLink;
 use MediaWiki\Html\Html;
+use MediaWiki\Language\Language;
 use MediaWiki\Linker\LinkRenderer;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\SpecialPage\SpecialPage;
@@ -37,10 +37,10 @@ final class TagFormatter {
 	}
 
 	/**
-	 * An external link to $title or its section $section, or just its (escaped) title if its wiki has no
-	 * registered URL.
+	 * An external link to $title or its section $section, with its tooltip in $language, or just its (escaped)
+	 * title if its wiki has no registered URL.
 	 */
-	public static function externalLink( ProjectTitle $title, ?string $section = null ): string {
+	public static function externalLink( ProjectTitle $title, Language $language, ?string $section = null ): string {
 		$displayTitle = $title->getDisplayTitle( true, $section );
 		$url = $title->getUrl( $section );
 		if ( $url === null ) {
@@ -48,11 +48,12 @@ final class TagFormatter {
 		}
 
 		$languageName = MediaWikiServices::getInstance()->getLanguageNameUtils()
-			->getLanguageName( $title->project->code, RequestContext::getMain()->getLanguage()->getCode() );
+			->getLanguageName( $title->project->code, $language->getCode() );
 		return Html::element( 'a', [
 			'href' => $url,
 			'class' => 'extiw',
-			'title' => wfMessage( 'interlanguage-link-title', $displayTitle, $languageName )->text(),
+			'title' => wfMessage( 'interlanguage-link-title', $displayTitle, $languageName )
+				->inLanguage( $language )->text(),
 		], $displayTitle );
 	}
 
@@ -62,7 +63,7 @@ final class TagFormatter {
 	 */
 	public function pageLink( ProjectTitle $title, ?string $section = null ): string {
 		$details = $this->context->msg( 'hermes-page-details' )->text();
-		return self::externalLink( $title, $section ) . ' ' . Html::element( 'a', [
+		return self::externalLink( $title, $this->context->getLanguage(), $section ) . ' ' . Html::element( 'a', [
 			'href' => self::detailsTitle( $title )->getLocalURL(),
 			'class' => 'ext-hermes-details-link',
 			'title' => $details,
