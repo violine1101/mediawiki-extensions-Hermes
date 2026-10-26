@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\Hermes\Special;
 
 use MediaWiki\Extension\Hermes\Hermes;
+use MediaWiki\Extension\Hermes\ProjectPrefix;
 use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\HTMLForm\HTMLForm;
@@ -42,7 +43,7 @@ abstract class WantedTranslationsPage extends WantedQueryPage {
 		$languages = $this->language !== null
 			? [ $this->language ]
 			: array_keys( ProjectStore::getActiveLocalTranslationProjects() );
-		return $languages ? ProjectTitle::projectSqlCondition( $dbr, $title, $languages ) : '0 = 1';
+		return $languages ? ProjectPrefix::projectSqlCondition( $dbr, $title, $languages ) : '0 = 1';
 	}
 
 	/**

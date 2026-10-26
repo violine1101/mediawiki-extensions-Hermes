@@ -2,7 +2,7 @@
 
 namespace MediaWiki\Extension\Hermes\Special;
 
-use MediaWiki\Extension\Hermes\ProjectTitle;
+use MediaWiki\Extension\Hermes\ProjectPrefix;
 use MediaWiki\Specials\SpecialWantedCategories as CoreSpecialWantedCategories;
 
 /**
@@ -14,7 +14,7 @@ class SpecialWantedCategories extends CoreSpecialWantedCategories {
 	/** @inheritDoc */
 	public function getQueryInfo() {
 		$query = parent::getQueryInfo();
-		$query['conds'][] = ProjectTitle::notProjectSqlCondition(
+		$query['conds'][] = ProjectPrefix::notProjectSqlCondition(
 			$this->getDatabaseProvider()->getReplicaDatabase(), 'lt_namespace', 'lt_title'
 		);
 		return $query;

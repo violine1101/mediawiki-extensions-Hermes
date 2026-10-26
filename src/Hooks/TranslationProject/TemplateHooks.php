@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\Hermes\Hooks\TranslationProject;
 
+use MediaWiki\Extension\Hermes\ProjectPrefix;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Parser\Hook\BeforeParserFetchTemplateRevisionRecordHook;
@@ -25,7 +26,7 @@ class TemplateHooks implements
 		$ns = $title->getNamespace();
 
 		// Make sure that {{!:Foo}} always resolves to {{Template:Foo}}
-		$unescaped = ProjectTitle::unescape( $title->getText() );
+		$unescaped = ProjectPrefix::unescape( $title->getText() );
 		if ( $unescaped !== null ) {
 			$baseTitle = Title::makeTitleSafe( $ns, $unescaped );
 			if ( $baseTitle ) {
@@ -34,7 +35,7 @@ class TemplateHooks implements
 			return;
 		}
 
-		if ( $contextTitle === null || ProjectTitle::isReserved( $title->getText() ) ) {
+		if ( $contextTitle === null || ProjectPrefix::isReserved( $title->getText() ) ) {
 			return;
 		}
 
@@ -68,7 +69,7 @@ class TemplateHooks implements
 
 		$output = $parser->getOutput();
 		foreach ( $output->getLinkList( ParserOutputLinkTypes::TEMPLATE ) as [ 'link' => $link ] ) {
-			if ( !ProjectTitle::isReserved( $link->getText() ) ) {
+			if ( !ProjectPrefix::isReserved( $link->getText() ) ) {
 				$projectTitle = ProjectTitle::newFromLinkTarget( $link )->withProject( $project )->toTitle();
 				$output->addExistenceDependency( $projectTitle );
 			}

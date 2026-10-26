@@ -35,7 +35,7 @@ class IsInvalidTest extends MediaWikiUnitTestCase {
 	}
 
 	public function testRegisteredProjectTitle() {
-		// A recognized "!xx:" prefix is stripped into $project by ProjectTitle::parse(),
+		// A recognized "!xx:" prefix is stripped into $project by ProjectPrefix::parse(),
 		// leaving $baseTitle without its leading "!" - so this isn't just the inverse of the
 		// unregistered-prefix case above.
 		$page = self::makeTitle( 'eo', 'Foo' );

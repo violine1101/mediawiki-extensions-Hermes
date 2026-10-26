@@ -113,7 +113,7 @@ class LinkRewriter {
 
 		if ( !Hermes::isProjectNamespace( $nsId ) ) {
 			// These only have base pages, so "!:" is redundant.
-			$unescapedRest = ProjectTitle::unescape( $rest ) ?? $rest;
+			$unescapedRest = ProjectPrefix::unescape( $rest ) ?? $rest;
 			if ( !$nsFromProjectLang && $unescapedRest === $rest ) {
 				return $raw;
 			}
@@ -157,12 +157,12 @@ class LinkRewriter {
 	 * names, else in $defaultProject.
 	 */
 	private static function resolveBareTitle( string $bareTitle, int $nsId, Project $defaultProject ): string {
-		$title = ProjectTitle::unescape( $bareTitle );
+		$title = ProjectPrefix::unescape( $bareTitle );
 		$project = null;
 		if ( $title === null ) {
-			[ $project, $title ] = ProjectTitle::parse( $bareTitle );
+			[ $project, $title ] = ProjectPrefix::parse( $bareTitle );
 			if ( $project === null ) {
-				if ( $defaultProject->isBase || ProjectTitle::isReserved( $bareTitle ) ) {
+				if ( $defaultProject->isBase || ProjectPrefix::isReserved( $bareTitle ) ) {
 					// Invalid "!...:" prefixes are left for ProjectTitle::isInvalid() to report.
 					return $bareTitle;
 				}

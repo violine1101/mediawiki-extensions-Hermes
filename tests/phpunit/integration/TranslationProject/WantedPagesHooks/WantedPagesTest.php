@@ -12,7 +12,7 @@ use SpecialPageExecutor;
  * @group Database
  * @covers \MediaWiki\Extension\Hermes\Hooks\TranslationProject\WantedPagesHooks
  * @covers \MediaWiki\Extension\Hermes\Special\SpecialWantedCategories
- * @covers \MediaWiki\Extension\Hermes\ProjectTitle::notProjectSqlCondition
+ * @covers \MediaWiki\Extension\Hermes\ProjectPrefix::notProjectSqlCondition
  */
 class WantedPagesTest extends HermesIntegrationTestCase {
 

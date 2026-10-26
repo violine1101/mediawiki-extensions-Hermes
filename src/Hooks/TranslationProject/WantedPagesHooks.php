@@ -2,7 +2,7 @@
 
 namespace MediaWiki\Extension\Hermes\Hooks\TranslationProject;
 
-use MediaWiki\Extension\Hermes\ProjectTitle;
+use MediaWiki\Extension\Hermes\ProjectPrefix;
 use MediaWiki\Extension\Hermes\Special\SpecialWantedCategories;
 use MediaWiki\Extension\Hermes\Special\SpecialWantedCategoryTranslations;
 use MediaWiki\Extension\Hermes\Special\SpecialWantedTranslations;
@@ -20,7 +20,7 @@ class WantedPagesHooks implements WantedPages__getQueryInfoHook, SpecialPage_ini
 
 	/** @inheritDoc */
 	public function onWantedPages__getQueryInfo( $wantedPages, &$query ) {
-		$query['conds'][] = ProjectTitle::notProjectSqlCondition(
+		$query['conds'][] = ProjectPrefix::notProjectSqlCondition(
 			MediaWikiServices::getInstance()->getConnectionProvider()->getReplicaDatabase(),
 			$query['fields']['namespace'],
 			$query['fields']['title']

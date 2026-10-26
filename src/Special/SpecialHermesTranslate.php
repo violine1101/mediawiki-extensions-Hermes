@@ -6,6 +6,7 @@ use MediaWiki\Extension\Hermes\Hermes;
 use MediaWiki\Extension\Hermes\Hooks\TranslationProject\TranslateHooks;
 use MediaWiki\Extension\Hermes\PageInfo;
 use MediaWiki\Extension\Hermes\Project;
+use MediaWiki\Extension\Hermes\ProjectPrefix;
 use MediaWiki\Extension\Hermes\ProjectStore;
 use MediaWiki\Extension\Hermes\ProjectTitle;
 use MediaWiki\Extension\Hermes\TagStore;
@@ -141,7 +142,7 @@ class SpecialHermesTranslate extends HermesSpecialPage {
 	/** "!xx:<translation>" in $page's namespace, or null if that's not a valid title. */
 	private function getTarget( ProjectTitle $page, string $translation, string $language ): ?Title {
 		$translation = strtr( trim( $translation ), ' ', '_' );
-		if ( $translation === '' || ProjectTitle::isReserved( $translation ) ) {
+		if ( $translation === '' || ProjectPrefix::isReserved( $translation ) ) {
 			return null;
 		}
 		$project = ProjectStore::getActiveLocalTranslationProjects()[ $language ];
