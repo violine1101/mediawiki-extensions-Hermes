@@ -5,7 +5,6 @@
 			{ "name": "ht_wiki", "type": "binary", "options": { "length": 64, "notnull": true } },
 			{ "name": "ht_page_id", "type": "integer", "options": { "notnull": true } },
 			{ "name": "ht_namespace_id", "type": "integer", "options": { "notnull": true, "default": 0 } },
-			{ "name": "ht_namespace_text", "type": "binary", "options": { "length": 255, "notnull": true, "default": "" } },
 			{ "name": "ht_language", "type": "binary", "options": { "length": 35, "notnull": false } },
 			{ "name": "ht_base_title", "type": "binary", "options": { "length": 255, "notnull": true } },
 			{ "name": "ht_section", "type": "binary", "options": { "length": 255, "notnull": false } },
@@ -16,6 +15,17 @@
 			{ "name": "ht_wiki_page", "columns": [ "ht_wiki", "ht_page_id" ], "unique": false }
 		],
 		"pk": [ "ht_wiki", "ht_page_id", "ht_tag" ]
+	},
+	{
+		"name": "hermes_namespaces",
+		"comment": "Each wiki's namespace names (DB key form), as titles of other wikis can't be built locally",
+		"columns": [
+			{ "name": "hn_wiki", "type": "binary", "options": { "length": 64, "notnull": true } },
+			{ "name": "hn_namespace_id", "type": "integer", "options": { "notnull": true } },
+			{ "name": "hn_namespace_text", "type": "binary", "options": { "length": 255, "notnull": true } }
+		],
+		"indexes": [],
+		"pk": [ "hn_wiki", "hn_namespace_id" ]
 	},
 	{
 		"name": "hermes_projects",

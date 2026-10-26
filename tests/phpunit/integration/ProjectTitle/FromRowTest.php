@@ -97,4 +97,21 @@ class FromRowTest extends HermesIntegrationTestCase {
 		$this->assertSame( '!eo:FromRowRemoved', $read->baseTitle );
 		$this->assertTrue( $read->isInvalid() );
 	}
+
+	public function testRemoteNamespaceName() {
+		$this->registerBaseProject( 'de', 'dewiki' );
+		$this->registerNamespaces( 'dewiki', [ NS_CATEGORY => 'Kategorie' ] );
+		$written = ProjectTitle::make( self::getProject( null, 'dewiki' ), NS_CATEGORY, 'Golems', 'Kategorie', 1 );
+		TagStore::setTagsForPage( $written, Tag::fromArgs( [ 'from_row_remote_tag' ] ) );
+
+		$this->assertSame( 'Kategorie', ProjectTitle::fromRow( $this->fetchRow( $written ) )->getNamespaceText() );
+	}
+
+	public function testUnknownNamespaceNameFallsBackToCanonical() {
+		$this->registerBaseProject( 'de', 'dewiki' );
+		$written = ProjectTitle::make( self::getProject( null, 'dewiki' ), NS_CATEGORY, 'Golems', 'Kategorie', 1 );
+		TagStore::setTagsForPage( $written, Tag::fromArgs( [ 'from_row_unknown_tag' ] ) );
+
+		$this->assertSame( 'Category', ProjectTitle::fromRow( $this->fetchRow( $written ) )->getNamespaceText() );
+	}
 }

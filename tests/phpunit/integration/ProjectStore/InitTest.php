@@ -89,4 +89,22 @@ class InitTest extends HermesIntegrationTestCase {
 
 		$this->assertSame( 'https://new.example.org/wiki/$1', ProjectStore::getUrlTemplate( $this->wiki ) );
 	}
+
+	public function testStoresNamespaceNames() {
+		ProjectStore::init();
+		ProjectStore::clearCacheForTesting();
+
+		$this->assertSame( 'Kategorie', ProjectStore::getNamespaceText( $this->wiki, NS_CATEGORY ) );
+		$this->assertSame( '', ProjectStore::getNamespaceText( $this->wiki, NS_MAIN ) );
+	}
+
+	public function testUpdatesNamespaceNamesWhenConfigChanges() {
+		ProjectStore::init();
+
+		$this->overrideConfigValue( 'LanguageCode', 'fr' );
+		ProjectStore::init();
+		ProjectStore::clearCacheForTesting();
+
+		$this->assertSame( 'Catégorie', ProjectStore::getNamespaceText( $this->wiki, NS_CATEGORY ) );
+	}
 }

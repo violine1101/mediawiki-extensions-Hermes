@@ -55,9 +55,9 @@ abstract class ProjectTitle {
 			$project = ProjectStore::getBaseProject( $row->ht_wiki )
 				?? throw new UnexpectedValueException( "hermes_tags has pages of unknown wiki \"{$row->ht_wiki}\"" );
 		}
-		return self::make(
-			$project, (int)$row->ht_namespace_id, $baseTitle, $row->ht_namespace_text, (int)$row->ht_page_id
-		);
+		$namespace = (int)$row->ht_namespace_id;
+		$namespaceText = ProjectStore::getNamespaceText( $row->ht_wiki, $namespace );
+		return self::make( $project, $namespace, $baseTitle, $namespaceText, (int)$row->ht_page_id );
 	}
 
 	/** The page ID, or 0 if the page doesn't exist. */

@@ -229,6 +229,7 @@ class ExecuteTest extends HermesIntegrationTestCase {
 	}
 
 	public function testDetailsOfNamespacedPage() {
+		$this->registerNamespaces( 'dewiki', [ NS_CATEGORY => 'Kategorie' ] );
 		TagStore::setTagsForPage(
 			ProjectTitle::make( self::getProject( null, 'dewiki' ), NS_CATEGORY, 'Golems', 'Kategorie', 100 ),
 			Tag::fromArgs( [ 'golems' ] )

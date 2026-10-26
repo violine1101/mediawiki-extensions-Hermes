@@ -7,7 +7,6 @@ CREATE TABLE hermes_tags (
   ht_page_id INT NOT NULL,
   ht_tag TEXT NOT NULL,
   ht_namespace_id INT DEFAULT 0 NOT NULL,
-  ht_namespace_text TEXT DEFAULT '' NOT NULL,
   ht_language TEXT DEFAULT NULL,
   ht_base_title TEXT NOT NULL,
   ht_section TEXT DEFAULT NULL,
@@ -16,6 +15,14 @@ CREATE TABLE hermes_tags (
 );
 
 CREATE INDEX ht_wiki_page ON hermes_tags (ht_wiki, ht_page_id);
+
+
+CREATE TABLE hermes_namespaces (
+  hn_wiki TEXT NOT NULL,
+  hn_namespace_id INT NOT NULL,
+  hn_namespace_text TEXT NOT NULL,
+  PRIMARY KEY(hn_wiki, hn_namespace_id)
+);
 
 
 CREATE TABLE hermes_projects (

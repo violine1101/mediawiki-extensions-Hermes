@@ -7,13 +7,20 @@ CREATE TABLE /*_*/hermes_tags (
   ht_page_id INT NOT NULL,
   ht_tag VARBINARY(255) NOT NULL,
   ht_namespace_id INT DEFAULT 0 NOT NULL,
-  ht_namespace_text VARBINARY(255) DEFAULT '' NOT NULL,
   ht_language VARBINARY(35) DEFAULT NULL,
   ht_base_title VARBINARY(255) NOT NULL,
   ht_section VARBINARY(255) DEFAULT NULL,
   ht_priority INT DEFAULT 0 NOT NULL,
   INDEX ht_wiki_page (ht_wiki, ht_page_id),
   PRIMARY KEY(ht_wiki, ht_page_id, ht_tag)
+) /*$wgDBTableOptions*/;
+
+
+CREATE TABLE /*_*/hermes_namespaces (
+  hn_wiki VARBINARY(64) NOT NULL,
+  hn_namespace_id INT NOT NULL,
+  hn_namespace_text VARBINARY(255) NOT NULL,
+  PRIMARY KEY(hn_wiki, hn_namespace_id)
 ) /*$wgDBTableOptions*/;
 
 

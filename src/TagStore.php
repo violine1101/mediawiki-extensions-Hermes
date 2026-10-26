@@ -48,7 +48,6 @@ class TagStore {
 		foreach ( $tags as $tag ) {
 			$rows[] = self::pageConds( $page ) + [
 				'ht_namespace_id' => $page->namespace,
-				'ht_namespace_text' => $page->getNamespaceText(),
 				'ht_language' => $project->isBase ? null : $project->code,
 				'ht_base_title' => $page->baseTitle,
 				'ht_section' => $tag->section,
@@ -259,8 +258,7 @@ class TagStore {
 	): SelectQueryBuilder {
 		$dbr = Hermes::getDB();
 		$pageFields = [
-			't.ht_wiki', 't.ht_page_id', 't.ht_namespace_id', 't.ht_namespace_text',
-			't.ht_language', 't.ht_base_title',
+			't.ht_wiki', 't.ht_page_id', 't.ht_namespace_id', 't.ht_language', 't.ht_base_title',
 		];
 		$query = self::joinProjects(
 			$dbr->newSelectQueryBuilder()->from( self::TABLE_NAME, 't' ), 't', 'p', $withInactive
@@ -394,12 +392,15 @@ class TagStore {
 
 		$dbr = Hermes::getDB();
 		// Main namespace titles may contain ":" too.
-		$titleConds = [ $dbr->makeList( [ 'ht_namespace_text' => '', 'ht_base_title' => $title ], LIST_AND ) ];
+		$titleConds = [ $dbr->makeList( [ 'ht_namespace_id' => NS_MAIN, 'ht_base_title' => $title ], LIST_AND ) ];
 		if ( str_contains( $title, ':' ) ) {
-			[ $namespace, $baseTitle ] = explode( ':', $title, 2 );
-			$titleConds[] = $dbr->makeList(
-				[ 'ht_namespace_text' => $namespace, 'ht_base_title' => $baseTitle ], LIST_AND
-			);
+			[ $namespaceText, $baseTitle ] = explode( ':', $title, 2 );
+			$namespace = ProjectStore::getNamespaceId( $project->wiki, $namespaceText );
+			if ( $namespace !== null ) {
+				$titleConds[] = $dbr->makeList(
+					[ 'ht_namespace_id' => $namespace, 'ht_base_title' => $baseTitle ], LIST_AND
+				);
+			}
 		}
 		$rows = $dbr->newSelectQueryBuilder()
 			->select( '*' )
@@ -425,7 +426,7 @@ class TagStore {
 		// A main namespace title can't start with a namespace name, so prefer the namespaced match.
 		$page = $links[ 0 ]->title;
 		foreach ( $links as $link ) {
-			if ( $link->title->getNamespaceText() !== '' ) {
+			if ( $link->title->namespace !== NS_MAIN ) {
 				$page = $link->title;
 				break;
 			}

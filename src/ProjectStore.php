@@ -19,6 +19,7 @@ use MediaWiki\WikiMap\WikiMap;
 class ProjectStore {
 
 	private const TABLE_NAME = 'hermes_projects';
+	private const NAMESPACES_TABLE = 'hermes_namespaces';
 
 	/**
 	 * Cached hermes_projects table, keyed by language code and wiki ID.
@@ -28,11 +29,19 @@ class ProjectStore {
 	private static ?array $projects = null;
 
 	/**
+	 * Cached hermes_namespaces table: namespace names in DB key form, keyed by wiki ID and namespace ID.
+	 *
+	 * @var array<string, array<int, string>>|null
+	 */
+	private static ?array $namespaces = null;
+
+	/**
 	 * Clears the $projects cache above, for use in testing.
 	 * This makes sure that the tests don't pollute each other.
 	 */
 	public static function clearCacheForTesting(): void {
 		self::$projects = null;
+		self::$namespaces = null;
 	}
 
 	/**
@@ -166,6 +175,21 @@ class ProjectStore {
 		return null;
 	}
 
+	/**
+	 * The name of namespace $namespace on $wiki, in DB key form ('' for the main namespace); its canonical name
+	 * (or '') if the wiki doesn't (or no longer) have it.
+	 */
+	public static function getNamespaceText( string $wiki, int $namespace ): string {
+		return self::getNamespaces()[ $wiki ][ $namespace ]
+			?? (string)MediaWikiServices::getInstance()->getNamespaceInfo()->getCanonicalName( $namespace );
+	}
+
+	/** The ID of the namespace named $text (DB key form) on $wiki, if any. */
+	public static function getNamespaceId( string $wiki, string $text ): ?int {
+		$namespace = array_search( $text, self::getNamespaces()[ $wiki ] ?? [], true );
+		return $namespace === false ? null : $namespace;
+	}
+
 	/** @return string[] IDs of all wikis with a project. */
 	public static function getWikiIds(): array {
 		$wikis = [];
@@ -177,7 +201,7 @@ class ProjectStore {
 
 	/**
 	 * Populates the cache, adding this wiki's base project (as inactive) if the wiki doesn't have one yet, and
-	 * updating its URL template if it changed.
+	 * updating its URL template and namespace names if they changed.
 	 */
 	public static function init(): void {
 		self::loadProjects();
@@ -205,6 +229,8 @@ class ProjectStore {
 				self::$projects[ $project->code ][ $wiki ] = $project->withUrlTemplate( $url );
 			}
 		}
+
+		self::syncNamespaces( $wiki );
 	}
 
 	/**
@@ -326,6 +352,54 @@ class ProjectStore {
 		foreach ( self::$projects[ $language ] as $otherWiki => $project ) {
 			self::$projects[ $language ][ $otherWiki ] = $project->withActive( $otherWiki === $wiki );
 		}
+	}
+
+	/** @return array<string, array<int, string>> */
+	private static function getNamespaces(): array {
+		if ( self::$namespaces === null ) {
+			$rows = Hermes::getDB()->newSelectQueryBuilder()
+				->select( [ 'hn_wiki', 'hn_namespace_id', 'hn_namespace_text' ] )
+				->from( self::NAMESPACES_TABLE )
+				->caller( __METHOD__ )
+				->fetchResultSet();
+			self::$namespaces = [];
+			foreach ( $rows as $row ) {
+				self::$namespaces[ $row->hn_wiki ][ (int)$row->hn_namespace_id ] = $row->hn_namespace_text;
+			}
+		}
+		return self::$namespaces;
+	}
+
+	/** Stores $wiki's (this wiki's) namespace names, if they changed. */
+	private static function syncNamespaces( string $wiki ): void {
+		$current = MediaWikiServices::getInstance()->getContentLanguage()->getNamespaces();
+		$stored = self::getNamespaces()[ $wiki ] ?? [];
+		ksort( $current );
+		ksort( $stored );
+		if ( $current === $stored ) {
+			return;
+		}
+
+		$dbw = Hermes::getDB( DB_PRIMARY );
+		$dbw->startAtomic( __METHOD__ );
+		$dbw->newDeleteQueryBuilder()
+			->deleteFrom( self::NAMESPACES_TABLE )
+			->where( [ 'hn_wiki' => $wiki ] )
+			->caller( __METHOD__ )
+			->execute();
+		$rows = [];
+		foreach ( $current as $namespace => $text ) {
+			$rows[] = [ 'hn_wiki' => $wiki, 'hn_namespace_id' => $namespace, 'hn_namespace_text' => $text ];
+		}
+		// Ignored if a concurrent request added them first.
+		$dbw->newInsertQueryBuilder()
+			->insertInto( self::NAMESPACES_TABLE )
+			->ignore()
+			->rows( $rows )
+			->caller( __METHOD__ )
+			->execute();
+		$dbw->endAtomic( __METHOD__ );
+		self::$namespaces[ $wiki ] = $current;
 	}
 
 	private static function insert( Project $project ): void {

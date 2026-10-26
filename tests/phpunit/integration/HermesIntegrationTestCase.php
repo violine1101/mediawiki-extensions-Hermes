@@ -91,6 +91,25 @@ abstract class HermesIntegrationTestCase extends MediaWikiIntegrationTestCase {
 		ProjectStore::activate( ProjectStore::getLocalBaseLanguage(), WikiMap::getCurrentWikiId() );
 	}
 
+	/**
+	 * Stores $wiki's namespace names, standing in for that wiki's own ProjectStore::init().
+	 *
+	 * @param string $wiki
+	 * @param array<int, string> $names Namespace ID => name in DB key form
+	 */
+	protected function registerNamespaces( string $wiki, array $names ): void {
+		$rows = [];
+		foreach ( $names as $namespace => $text ) {
+			$rows[] = [ 'hn_wiki' => $wiki, 'hn_namespace_id' => $namespace, 'hn_namespace_text' => $text ];
+		}
+		Hermes::getDB( DB_PRIMARY )->newInsertQueryBuilder()
+			->insertInto( 'hermes_namespaces' )
+			->rows( $rows )
+			->caller( __METHOD__ )
+			->execute();
+		ProjectStore::clearCacheForTesting();
+	}
+
 	/** Sets the URL template of a wiki that has projects already. */
 	protected function setWikiUrl( string $wiki, string $url ): void {
 		Hermes::getDB( DB_PRIMARY )->newUpdateQueryBuilder()
